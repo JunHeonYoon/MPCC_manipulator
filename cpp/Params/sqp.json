@@ -1,0 +1,13 @@
+
+{
+  "eps_prim" : 1e-1,
+  "eps_dual" : 1e-1,
+  "max_iter" : 100,
+  "line_search_max_iter" : 5,
+  "do_SOC" : false,
+  "use_BFGS" : false,
+
+  "line_search_tau" : 0.5,
+  "line_search_eta" : 0.5,
+  "line_search_rho" : 0.5
+}

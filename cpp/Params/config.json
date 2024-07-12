@@ -1,0 +1,13 @@
+
+{
+  "n_reset": 3,
+  "n_sim": 10000,
+  "Ts": 0.01,
+  
+  "model_path": "Params/model.json",
+  "cost_path": "Params/cost.json",
+  "bounds_path": "Params/bounds.json",
+  "track_path": "Params/track.json",
+  "normalization_path": "Params/normalization.json",
+  "sqp_path": "Params/sqp.json"  
+}
