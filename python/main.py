@@ -30,7 +30,10 @@ time_data["solve_qp"] = []
 time_data["get_alpha"] = []
 
 for time_idx in range(10000):
-    state, opt_input, mpc_horizon, compute_time = mpc.runMPC(state)
+    status, state, opt_input, mpc_horizon, compute_time = mpc.runMPC(state)
+    if status == False:
+        print("MPC did not solve properly!!")
+        break
     state = integrator.simTimeStep(state, opt_input)
 
     ee_pos = robot.getEEPosition(state[:robot_dof])

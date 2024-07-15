@@ -36,14 +36,15 @@ enum Status
     QP_PrimalInfeasible,
     QP_DualInfeasible,
     Sigint, 
-    INVALID_SETTINGS 
+    INVALID_SETTINGS,
+    NAN_HESSIAN
 };
 
 class SolverInterface {
     public:
         virtual void setTrack(const ArcLengthSpline track) = 0;
         virtual void setInitialGuess(const std::vector<OptVariables> &initial_guess) = 0;
-        virtual std::vector<OptVariables> solveOCP(Status *status, ComputeTime *mpc_time) = 0;
+        virtual bool solveOCP(std::vector<OptVariables> &opt_sol, Status *status, ComputeTime *mpc_time) = 0;
         virtual ~SolverInterface(){std::cout << "Deleting Solver Interface" << std::endl;}
 };
 }

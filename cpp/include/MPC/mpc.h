@@ -46,7 +46,16 @@ struct MPCReturn {
     Input u0;
     std::vector<OptVariables> mpc_horizon;
     ComputeTime compute_time;
+    void setZero()
+    {
+        u0.setZero();
+        mpc_horizon.resize(N+1);
+        for(size_t i=0;i<=N;i++) mpc_horizon[i].setZero();
+        compute_time.setZero();
+    }
 };
+
+MPCReturn zeroReturn(){MPCReturn zero; zero.setZero(); return zero;}
 
 class MPC {
 public:
@@ -54,9 +63,10 @@ public:
     MPC(double Ts,const PathToJson &path);
 
     /// @brief run MPC by sqp given current state
+    /// @param (MPCReturn) log for MPC; optimal control input, total horizon results, time to run MPC
     /// @param x0 (State) current state
-    /// @return (MPCReturn) log for MPC; optimal control input, total horizon results, time to run MPC
-    MPCReturn runMPC(State &x0);
+    /// @return (bool) whether mpc is solved or not
+    bool runMPC(MPCReturn &mpc_return, State &x0);
 
     /// @brief set track given X-Y-Z-R path data
     /// @param X (Eigen::VectorXd) X path data

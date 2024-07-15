@@ -72,7 +72,7 @@ void MPC::generateNewInitialGuess(const State &x0)
     valid_initial_guess_ = true;
 }
 
-MPCReturn MPC::runMPC(State &x0)
+bool MPC::runMPC(MPCReturn &mpc_return, State &x0)
 {
     double last_s = x0.s;
     x0.s = track_.projectOnSpline(last_s, robot_->getEEPosition(stateToJointVector(x0)));
@@ -86,7 +86,7 @@ MPCReturn MPC::runMPC(State &x0)
     Status sqp_status;
     ComputeTime time_nmpc;
 
-    initial_guess_ = solver_interface_->solveOCP(&sqp_status, &time_nmpc);
+    solver_interface_->solveOCP(initial_guess_, &sqp_status, &time_nmpc);
     if(sqp_status == MAX_ITER_EXCEEDED) valid_initial_guess_ = false;
     else if(sqp_status != SOLVED)
     {
@@ -112,13 +112,17 @@ MPCReturn MPC::runMPC(State &x0)
         case QP_SolvedInaccurate:
             std::cout << "================= Solved Inaccurate ================="<< std::endl;
             break;
+        case NAN_HESSIAN:
+            std::cout << "==================== Nan Hessian ===================="<< std::endl;
+            break;
         }
         std::cout << "===================================================" << std::endl;
-        // exit(0);
         valid_initial_guess_ = false;
     }
 
-    return {initial_guess_[0].uk,initial_guess_,time_nmpc};
+    mpc_return = {initial_guess_[0].uk,initial_guess_,time_nmpc};
+    if(sqp_status == SOLVED) return true;
+    else return false;
 }
 
 void MPC::setTrack(const Eigen::VectorXd &X, const Eigen::VectorXd &Y,const Eigen::VectorXd &Z,const std::vector<Eigen::Matrix3d> &R)

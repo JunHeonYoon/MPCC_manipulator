@@ -235,7 +235,7 @@ void OsqpInterface::setQP(const std::vector<OptVariables> &initial_guess,
     setConstraints(initial_guess, jac_constr, constr, l, u);
 }
 
-std::vector<OptVariables> OsqpInterface::solveOCP(Status *status, ComputeTime *mpc_time)
+bool OsqpInterface::solveOCP(std::vector<OptVariables> &opt_sol, Status *status, ComputeTime *mpc_time)
 {
     auto start_total = std::chrono::high_resolution_clock::now();
 
@@ -258,6 +258,14 @@ std::vector<OptVariables> OsqpInterface::solveOCP(Status *status, ComputeTime *m
     filter_data_list_.clear();
 
     mpc_time->setZero();
+
+    std::vector<OptVariables> zero_guess;
+    zero_guess.resize(N+1);
+    for(size_t i=0; i<=N; i++)
+    {
+        zero_guess[i].xk = initial_guess_[0].xk;
+        zero_guess[i].uk.setZero();
+    }
 
     // SQP itertion
     for(sqp_iter_=0; sqp_iter_<sqp_param_.max_iter; sqp_iter_++)
@@ -298,6 +306,7 @@ std::vector<OptVariables> OsqpInterface::solveOCP(Status *status, ComputeTime *m
         if (isNan(Hess_)) 
         {
             std::cout << "Hessian is NaN\n";
+            (*status) = NAN_HESSIAN;
         }
 
         auto end_set_qp = std::chrono::high_resolution_clock::now();
@@ -306,8 +315,6 @@ std::vector<OptVariables> OsqpInterface::solveOCP(Status *status, ComputeTime *m
         // solve QP to get step_ and step_lambda_
         if(!solveQP(Hess_, grad_obj_, jac_constr_, l_-constr_, u_-constr_, step_, step_lambda_, qp_status_))
         {
-            // printOptVar( initial_guess_);
-            // exit(0);
             switch (qp_status_)
             {
             case OsqpEigen::Status::DualInfeasibleInaccurate:
@@ -332,51 +339,35 @@ std::vector<OptVariables> OsqpInterface::solveOCP(Status *status, ComputeTime *m
                 (*status) = Sigint;
                 break;
             }
-            std::vector<OptVariables> zero_guess;
-            for(size_t i=0; i<N; i++)
-            {
-                zero_guess[i].xk = initial_guess_[0].xk;
-                zero_guess[i].uk.setZero();
-            }
-            initial_guess_ = zero_guess;
-            break;
         }
         if(sqp_param_.do_SOC)
         {
             if(!SecondOrderCorrection(initial_guess_,Hess_,grad_obj_,jac_constr_,step_,step_lambda_, qp_status_))
             {
                 switch (qp_status_)
-            {
-            case OsqpEigen::Status::DualInfeasibleInaccurate:
-                (*status) = QP_DualInfeasibleInaccurate;
-                break;
-            case OsqpEigen::Status::PrimalInfeasibleInaccurate:
-                (*status) = QP_PrimalInfeasibleInaccurate;
-                break;
-            case OsqpEigen::Status::SolvedInaccurate:
-                (*status) = QP_SolvedInaccurate;
-                break;
-            case OsqpEigen::Status::MaxIterReached:
-                (*status) = QP_MaxIterReached;
-                break;
-            case OsqpEigen::Status::PrimalInfeasible:
-                (*status) = QP_PrimalInfeasible;
-                break;
-            case OsqpEigen::Status::DualInfeasible:
-                (*status) = QP_DualInfeasible;
-                break;
-            case OsqpEigen::Status::Sigint:
-                (*status) = Sigint;
-                break;
-            }
-                std::vector<OptVariables> zero_guess;
-                for(size_t i=0; i<N; i++)
                 {
-                    zero_guess[i].xk = initial_guess_[0].xk;
-                    zero_guess[i].uk.setZero();
+                case OsqpEigen::Status::DualInfeasibleInaccurate:
+                    (*status) = QP_DualInfeasibleInaccurate;
+                    break;
+                case OsqpEigen::Status::PrimalInfeasibleInaccurate:
+                    (*status) = QP_PrimalInfeasibleInaccurate;
+                    break;
+                case OsqpEigen::Status::SolvedInaccurate:
+                    (*status) = QP_SolvedInaccurate;
+                    break;
+                case OsqpEigen::Status::MaxIterReached:
+                    (*status) = QP_MaxIterReached;
+                    break;
+                case OsqpEigen::Status::PrimalInfeasible:
+                    (*status) = QP_PrimalInfeasible;
+                    break;
+                case OsqpEigen::Status::DualInfeasible:
+                    (*status) = QP_DualInfeasible;
+                    break;
+                case OsqpEigen::Status::Sigint:
+                    (*status) = Sigint;
+                    break;
                 }
-                initial_guess_ = zero_guess;
-                break;
             }
         }
 
@@ -412,7 +403,7 @@ std::vector<OptVariables> OsqpInterface::solveOCP(Status *status, ComputeTime *m
         // termination condition
         // TODO: critertion about constraint
         // if(primal_step_norm_ < sqp_param_.eps_prim && dual_step_norm_ < sqp_param_.eps_dual)
-        if(primal_step_norm_ < sqp_param_.eps_prim )
+        if(primal_step_norm_ < sqp_param_.eps_prim)
         {
             (*status) = SOLVED;
             break;
@@ -423,7 +414,16 @@ std::vector<OptVariables> OsqpInterface::solveOCP(Status *status, ComputeTime *m
     auto end_total = std::chrono::high_resolution_clock::now();
     mpc_time->total = std::chrono::duration_cast<std::chrono::duration<double>>(end_total - start_total).count();
 
-    return initial_guess_;
+    if((*status) == SOLVED)
+    {
+        opt_sol = initial_guess_;
+        return true;
+    }
+    else
+    {
+        opt_sol = zero_guess;
+        return false;
+    }
 }
 
 bool OsqpInterface::solveQP(const Eigen::MatrixXd &P, const Eigen::VectorXd &q, const Eigen::MatrixXd &A, const Eigen::VectorXd &l,const Eigen::VectorXd &u,

@@ -44,6 +44,11 @@ struct OptVariables
     {
         return xk == other.xk && uk == other.uk;
     }
+    void setZero()
+    {
+        xk.setZero();
+        uk.setZero();
+    }
 };
 
 struct FilterData
@@ -67,7 +72,7 @@ public:
     OsqpInterface(double Ts,const PathToJson &path);
     void setTrack(const ArcLengthSpline track);
     void setInitialGuess(const std::vector<OptVariables> &initial_guess);
-    std::vector<OptVariables> solveOCP(Status *status, ComputeTime *mpc_time);
+    bool solveOCP(std::vector<OptVariables> &opt_sol, Status *status, ComputeTime *mpc_time);
     ~OsqpInterface(){ std::cout << "Deleting Osqp Interface" << std::endl;}
 
 private:

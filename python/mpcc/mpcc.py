@@ -63,11 +63,12 @@ class MPCC():
         return self.spline_track.getPosition(path_parameter), self.spline_track.getOrientation(path_parameter)
 
 
-    def runMPC(self, state:np.array) -> {np.array, np.array, list, dict}:
+    def runMPC(self, state:np.array) -> {bool, np.array, np.array, list, dict}:
         assert self.track_set == True, "Set Track first!"
         assert state.size == MPCC_CPP.NX, f"State size {state.size} does not match expected size {MPCC_CPP.NX}"
         x0 = MPCC_CPP.vectorToState(state)
-        mpc_sol = self.mpc.runMPC(x0)
+        mpc_sol = MPCC_CPP.zeroReturn()
+        mpc_status = self.mpc.runMPC(mpc_sol, x0)
         updated_state = MPCC_CPP.stateToVector(x0)
 
         mpc_horizon=[]
@@ -81,4 +82,4 @@ class MPCC():
                         "solve_qp": mpc_sol.compute_time.solve_qp,
                         "get_alpha": mpc_sol.compute_time.get_alpha}
         
-        return updated_state, MPCC_CPP.inputToVector(mpc_sol.u0), mpc_horizon, compute_time
+        return mpc_status, updated_state, MPCC_CPP.inputToVector(mpc_sol.u0), mpc_horizon, compute_time

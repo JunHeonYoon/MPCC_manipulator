@@ -91,7 +91,13 @@ int main() {
 
     for(int i = 0; i < jsonConfig["n_sim"]; i++)
     {
-        MPCReturn mpc_sol = mpc.runMPC(x0);
+        MPCReturn mpc_sol;
+        bool mpc_status = mpc.runMPC(mpc_sol, x0);
+        if(mpc_status == false)
+        {
+            std::cout<<"MPC did not solved properly!!"<<std::endl;
+            break;
+        }
         x0 = integrator.simTimeStep(x0,mpc_sol.u0,jsonConfig["Ts"]);
         ee_pos = robot.getEEPosition(stateToJointVector(x0));
         ee_ori = robot.getEEOrientation(stateToJointVector(x0));
