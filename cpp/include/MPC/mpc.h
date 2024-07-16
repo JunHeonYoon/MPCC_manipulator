@@ -55,12 +55,11 @@ struct MPCReturn {
     }
 };
 
-MPCReturn zeroReturn(){MPCReturn zero; zero.setZero(); return zero;}
-
 class MPC {
 public:
     MPC();
     MPC(double Ts,const PathToJson &path);
+    MPC(double Ts,const PathToJson &path,const ParamValue &param_value);
 
     /// @brief run MPC by sqp given current state
     /// @param (MPCReturn) log for MPC; optimal control input, total horizon results, time to run MPC
@@ -79,6 +78,11 @@ public:
     /// @return (double) total length of track
     double getTrackLength();
 
+    /// @brief set parameter value
+    /// @param param_value (ParamValue) parameter value
+    void setParam(const ParamValue &param_value);
+
+
 
     std::unique_ptr<RobotModel> robot_;
 
@@ -94,6 +98,10 @@ private:
     /// @param x0 (State) current state
     void generateNewInitialGuess(const State &x0);
 
+    /// @brief print parameter value
+    /// @param param_value (ParamValue) parameter value
+    void printParamValue(const ParamValue& param_value);
+
     ArcLengthSpline track_;
     bool valid_initial_guess_;
     std::vector<OptVariables> initial_guess_;
@@ -101,6 +109,7 @@ private:
     Integrator integrator_;
     Param param_;
     std::unique_ptr<SolverInterface> solver_interface_;
+    PathToJson path_;
 };
 
 }

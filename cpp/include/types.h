@@ -18,6 +18,7 @@
 #define MPCC_TYPES_H
 
 #include "config.h"
+#include <map>
 namespace mpcc{
 /// @brief State of manipulator system
 /// @param q1  (double) joint angle 
@@ -134,6 +135,22 @@ struct PathToJson{
     std::string track_path;
     std::string normalization_path;
     std::string sqp_path;
+};
+
+/// @brief Parameter value
+/// @param param (std::map<std::string, double>) model parameter
+/// @param cost (std::map<std::string, double>) cost parameter
+/// @param bounds (std::map<std::string, double>) bounds parameter
+/// @param track (std::map<std::string, double>) track parameter
+/// @param normalization (std::map<std::string, double>) normalization parameter
+/// @param sqp (std::map<std::string, double>) sqp parameter
+struct ParamValue{
+    std::map<std::string, double> param;
+    std::map<std::string, double> cost;
+    std::map<std::string, double> bounds;
+    std::map<std::string, double> track;
+    std::map<std::string, double> normalization;
+    std::map<std::string, double> sqp;
 };
 
 typedef Eigen::Matrix<double,NX,1> StateVector;

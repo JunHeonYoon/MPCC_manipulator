@@ -1,7 +1,115 @@
 import mpcc
 import numpy as np
 from math import pi
+
+import numpy as np
+import matplotlib.pyplot as plt
+from srmt.planning_scene import PlanningScene
+import json
+from time import time, sleep
+import argparse
+
+
+# ROS library
+import rospy
+from nav_msgs.msg import Path
+from geometry_msgs.msg import PoseStamped
+from std_msgs.msg import Header
+
+
 np.set_printoptions(suppress=True, precision=3)
+
+# Function to create a Path message from the track data
+def create_path_message1(track_data, init_position):
+    path = Path()
+    path.header = Header()
+    path.header.stamp = rospy.Time.now()
+    path.header.frame_id = 'panda_link0'
+
+    initial_x = track_data['X'][0] - 0.
+    initial_y = track_data['Y'][0] - 0.
+    initial_z = track_data['Z'][0] - 0.
+
+    for x, y, z, quat_x, quat_y, quat_z, quat_w in zip(track_data['X'], track_data['Y'], track_data['Z'], 
+                                                       track_data['quat_X'], track_data['quat_Y'], 
+                                                       track_data['quat_Z'], track_data['quat_W']):
+        pose = PoseStamped()
+        pose.header = path.header
+        pose.pose.position.x = x - initial_x + init_position[0] 
+        pose.pose.position.y = y - initial_y + init_position[1]
+        pose.pose.position.z = z - initial_z + init_position[2]
+        pose.pose.orientation.x = quat_x
+        pose.pose.orientation.y = quat_y
+        pose.pose.orientation.z = quat_z
+        pose.pose.orientation.w = quat_w
+        path.poses.append(pose)
+    
+    return path
+
+def create_path_message2(track_pos, track_ori):
+    assert track_pos.shape[0] == track_ori.shape[0]
+    path = Path()
+    path.header = Header()
+    path.header.stamp = rospy.Time.now()
+    path.header.frame_id = 'panda_link0'
+
+
+    initial_x = track_pos[0,0] - 0.
+    initial_y = track_pos[0,1] - 0.
+    initial_z = track_pos[0,2] - 0.
+
+    for pos, ori in zip(track_pos, track_ori):
+        quat = mpcc.RotToQuat(ori)
+        pose = PoseStamped()
+        pose.header = path.header
+        pose.pose.position.x = pos[0] - initial_x + 0.55450 
+        pose.pose.position.y = pos[1] - initial_y + 0.
+        pose.pose.position.z = pos[2] - initial_z + 0.52110
+        pose.pose.orientation.x = quat[0]
+        pose.pose.orientation.y = quat[1]
+        pose.pose.orientation.z = quat[2]
+        pose.pose.orientation.w = quat[3]
+        path.poses.append(pose)
+    
+    return path
+
+# Function to create a Path message from the dataset
+def create_pred_path_message(track_pos, track_ori):
+    assert track_pos.shape[0] == track_ori.shape[0]
+    path = Path()
+    path.header = Header()
+    path.header.stamp = rospy.Time.now()
+    path.header.frame_id = 'panda_link0'
+
+    for pos, ori in zip(track_pos, track_ori):
+        if(ori.shape == (3,3)):
+            quat = mpcc.RotToQuat(ori)
+        else:
+            quat = track_ori.flatten()
+            
+        pose = PoseStamped()
+        pose.header = path.header
+        pose.pose.position.x = pos[0]
+        pose.pose.position.y = pos[1]
+        pose.pose.position.z = pos[2]
+        pose.pose.orientation.x = quat[0]
+        pose.pose.orientation.y = quat[1]
+        pose.pose.orientation.z = quat[2]
+        pose.pose.orientation.w = quat[3]
+        path.poses.append(pose)
+    
+    return path
+
+# Create Planning Scene
+pc = PlanningScene(arm_names=["panda"], arm_dofs=[7], base_link="world")
+
+global_path_pub = rospy.Publisher('/mpcc/global_path', Path, queue_size=10)
+splined_path_pub = rospy.Publisher('/mpcc/splined_path', Path, queue_size=10)
+local_path_pub = rospy.Publisher('/mpcc/local_path', Path, queue_size=10)
+ref_local_path_pub = rospy.Publisher('/mpcc/ref_local_path', Path, queue_size=10)
+
+with open('../cpp/Params/track.json', 'r') as f:
+    track_data = json.load(f)
 
 integrator = mpcc.Integrator()
 robot = mpcc.RobotModel()
@@ -14,6 +122,11 @@ mpc = mpcc.MPCC()
 state = np.array([0., 0., 0., -pi/2, 0., pi/2, pi/4, 0., 0.])
 mpc.setTrack(state)
 spline_pos, spline_ori, spline_arc_length = mpc.getSplinePath()
+
+
+# global_path_msg = create_path_message1(track_data, pred_ee_posi_set[0,0:3])
+splined_path_msg = create_path_message2(spline_pos, spline_ori)
+
 
 debug_data = {}
 debug_data["q"] = []
@@ -29,23 +142,22 @@ time_data["set_qp"] = []
 time_data["solve_qp"] = []
 time_data["get_alpha"] = []
 
-param_value = {"cost": {"qOri": 0.5}}
-
 for time_idx in range(10000):
-    if(time_idx == 100):
-        mpc.setParam(param_value)
-
+    start = time()
     status, state, opt_input, mpc_horizon, compute_time = mpc.runMPC(state)
     if status == False:
         print("MPC did not solve properly!!")
         break
     state = integrator.simTimeStep(state, opt_input)
 
+    pc.display(state[:robot_dof])
+
     ee_pos = robot.getEEPosition(state[:robot_dof])
     ee_ori = robot.getEEOrientation(state[:robot_dof])
     ee_vel = robot.getEEJacobianv(state[:robot_dof]) @ opt_input[:robot_dof]
     min_dist, _ = selcolNN.calculateMlpOutput(state[:robot_dof])
     mani = robot.getEEManipulability(state[:robot_dof])
+
 
     print("===============================================================")
     print("time step   : ",time_idx)
@@ -78,6 +190,14 @@ for time_idx in range(10000):
         ref_ee_pose[i,:3] = ref_pos
         ref_ee_pose[i,3:] = mpcc.RotToQuat(ref_ori)
 
+    local_path_msg = create_pred_path_message(pred_ee_pose[:,:3], pred_ee_pose[:,3:])
+    ref_local_path_msg = create_pred_path_message(ref_ee_pose[:,:3], ref_ee_pose[:,3:])
+    # global_path_pub.publish(global_path_msg)
+    splined_path_pub.publish(splined_path_msg)
+    local_path_pub.publish(local_path_msg)
+    ref_local_path_pub.publish(ref_local_path_msg)
+
+
     debug_data["pred_ee_pose"].append(pred_ee_pose)
     debug_data["ref_ee_pose"].append(ref_ee_pose)
 
@@ -89,6 +209,11 @@ for time_idx in range(10000):
     if np.linalg.norm((spline_pos[-1] - ee_pos), 2) < 1E-2 and np.linalg.norm(mpcc.Log(spline_ori[-1].T @ ee_ori), 2) and abs(state[-2] - spline_arc_length[-1]) < 1E-2:
         print("End point reached!!!")
         break
+    
+    end = time()
+    elapsed = end - start
+    if elapsed < mpc.Ts:
+        sleep(mpc.Ts - elapsed)
 
 with open('splined_path.txt', 'w') as splined_path_file:
     for pos, ori in zip(spline_pos, spline_ori):

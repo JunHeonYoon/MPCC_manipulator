@@ -75,18 +75,18 @@ def create_pred_path_message(pred_data):
     path.header.stamp = rospy.Time.now()
     path.header.frame_id = 'panda_link0'
 
-    pred_data = pred_data.reshape(-1,3)
+    pred_data = pred_data.reshape(-1,7)
 
-    for ee_pos in pred_data:
+    for ee_pose in pred_data:
         pose = PoseStamped()
         pose.header = path.header
-        pose.pose.position.x = ee_pos[0]
-        pose.pose.position.y = ee_pos[1]
-        pose.pose.position.z = ee_pos[2]
-        pose.pose.orientation.x = 0
-        pose.pose.orientation.y = 0
-        pose.pose.orientation.z = 0
-        pose.pose.orientation.w = 1
+        pose.pose.position.x = ee_pose[0]
+        pose.pose.position.y = ee_pose[1]
+        pose.pose.position.z = ee_pose[2]
+        pose.pose.orientation.x = ee_pose[3]
+        pose.pose.orientation.y = ee_pose[4]
+        pose.pose.orientation.z = ee_pose[5]
+        pose.pose.orientation.w = ee_pose[6]
         path.poses.append(pose)
     
     return path
@@ -144,14 +144,14 @@ def main(args):
     pc = PlanningScene(arm_names=["panda"], arm_dofs=[7], base_link="world")
 
     # Read simulated dataset
-    dataset = np.loadtxt("build/debug.txt")
+    dataset = np.loadtxt("debug.txt")
     print(dataset.shape)
     q_set = dataset[:,0:7]
     qdot_set = dataset[:,7:14]
     pred_min_dist_set = dataset[:,14]
     mani_set = dataset[:,15]
-    pred_ee_posi_set = dataset[:, 16:16+(3*N)]
-    ref_ee_posi_set = dataset[:, 16+(3*N):16+2*(3*N)]
+    pred_ee_posi_set = dataset[:, 16:16+(7*N)]
+    ref_ee_posi_set = dataset[:, 16+(7*N):16+2*(7*N)]
 
     if(args.plot):
         # Animated plotter
@@ -178,12 +178,12 @@ def main(args):
     local_path_pub = rospy.Publisher('/mpcc/local_path', Path, queue_size=10)
     ref_local_path_pub = rospy.Publisher('/mpcc/ref_local_path', Path, queue_size=10)
 
-    with open('Params/track.json', 'r') as f:
+    with open('../cpp/Params/track.json', 'r') as f:
         track_data = json.load(f)
     
     global_path_msg = create_path_message1(track_data, pred_ee_posi_set[0,0:3])
 
-    splined_path_set = np.loadtxt("build/splined_path.txt")
+    splined_path_set = np.loadtxt("splined_path.txt")
     splined_path_msg = create_path_message2(splined_path_set)
     
     time_data = np.zeros((1))

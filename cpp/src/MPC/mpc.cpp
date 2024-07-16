@@ -25,11 +25,25 @@ MPC::MPC()
 
 MPC::MPC(double Ts,const PathToJson &path)
 :Ts_(Ts),
+path_(path),
 valid_initial_guess_(false),
 solver_interface_(new OsqpInterface(Ts, path)),
-track_(ArcLengthSpline(path)),
-param_(Param(path.param_path)),
-integrator_(Integrator(Ts,path)),
+track_(path),
+param_(path.param_path),
+integrator_(Ts,path),
+robot_(new RobotModel())
+{
+    initial_guess_.resize(N+1);
+}
+
+MPC::MPC(double Ts,const PathToJson &path,const ParamValue &param_value)
+:Ts_(Ts),
+path_(path),
+valid_initial_guess_(false),
+solver_interface_(new OsqpInterface(Ts, path, param_value)),
+track_(path,param_value),
+param_(path.param_path, param_value.param),
+integrator_(Ts,path),
 robot_(new RobotModel())
 {
     initial_guess_.resize(N+1);
@@ -136,5 +150,34 @@ double MPC::getTrackLength()
 {
     return track_.getLength();
 }
+
+void MPC::setParam(const ParamValue &param_value)
+{
+    param_ = Param(path_.param_path, param_value.param);
+    solver_interface_->setParam(param_value);
+    printParamValue(param_value);
+}
+
+void MPC::printParamValue(const ParamValue& param_value) 
+{
+    std::cout << "param values:" << std::endl;
+    for (const auto& item : param_value.param) std::cout << item.first << ": " << item.second << std::endl;
+
+    std::cout << "cost values:" << std::endl;
+    for (const auto& item : param_value.cost) std::cout << item.first << ": " << item.second << std::endl;
+
+    std::cout << "bounds values:" << std::endl;
+    for (const auto& item : param_value.bounds) std::cout << item.first << ": " << item.second << std::endl;
+
+    std::cout << "track values:" << std::endl;
+    for (const auto& item : param_value.track) std::cout << item.first << ": " << item.second << std::endl;
+
+    std::cout << "normalization values:" << std::endl;
+    for (const auto& item : param_value.normalization) std::cout << item.first << ": " << item.second << std::endl;
+
+    std::cout << "sqp values:" << std::endl;
+    for (const auto& item : param_value.sqp) std::cout << item.first << ": " << item.second << std::endl;
+}
+
 
 }

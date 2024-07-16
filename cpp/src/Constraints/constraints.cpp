@@ -26,6 +26,11 @@ Constraints::Constraints(double Ts,const PathToJson &path)
 {
 }
 
+Constraints::Constraints(double Ts,const PathToJson &path,const ParamValue &param_value)
+:param_(Param(path.param_path,param_value.param))
+{
+}
+
 double getRBF(double delta, double h)
 {
     // Grandia, Ruben, et al. 

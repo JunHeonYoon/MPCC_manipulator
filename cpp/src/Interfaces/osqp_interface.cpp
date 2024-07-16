@@ -19,12 +19,33 @@
 
 namespace mpcc{
 OsqpInterface::OsqpInterface(double Ts,const PathToJson &path)
-:cost_(Cost(path)),
-model_(Model(Ts,path)),
-constraints_(Constraints(Ts,path)),
+:cost_(path),
+model_(Ts,path),
+constraints_(Ts,path),
 bounds_(BoundsParam(path.bounds_path),Param(path.param_path)),
-normalization_param_(NormalizationParam(path.normalization_path)),
-sqp_param_(SQPParam(path.sqp_path))
+normalization_param_(path.normalization_path),
+sqp_param_(path.sqp_path),
+path_(path),
+Ts_(Ts)
+{   
+    robot_ = std::make_unique<RobotModel>();
+    selcolNN_ = std::make_unique<SelCollNNmodel>();
+    Eigen::Vector3d sel_col_n_hidden;
+    sel_col_n_hidden << 128, 64, 32;
+    selcolNN_->setNeuralNetwork(PANDA_DOF, 1, sel_col_n_hidden, true);
+
+    initial_guess_.resize(N+1);
+}
+
+OsqpInterface::OsqpInterface(double Ts,const PathToJson &path,const ParamValue &param_value)
+:cost_(path, param_value),
+model_(Ts,path),
+constraints_(Ts,path,param_value),
+bounds_(BoundsParam(path.bounds_path),Param(path.param_path,param_value.param)),
+normalization_param_(path.normalization_path,param_value.normalization),
+sqp_param_(path.sqp_path,param_value.sqp),
+path_(path),
+Ts_(Ts)
 {   
     robot_ = std::make_unique<RobotModel>();
     selcolNN_ = std::make_unique<SelCollNNmodel>();
@@ -38,6 +59,13 @@ sqp_param_(SQPParam(path.sqp_path))
 void OsqpInterface::setTrack(const ArcLengthSpline track)
 {
     track_ = track;
+}
+
+void OsqpInterface::setParam(const ParamValue &param_value)
+{
+    cost_ = Cost(path_, param_value);
+    constraints_ = Constraints(Ts_,path_,param_value);
+    bounds_ = Bounds(BoundsParam(path_.bounds_path),Param(path_.param_path,param_value.param));
 }
 
 void OsqpInterface::setInitialGuess(const std::vector<OptVariables> &initial_guess)

@@ -42,6 +42,12 @@ int main() {
                            pkg_path + std::string(jsonConfig["normalization_path"]),
                            pkg_path + std::string(jsonConfig["sqp_path"])};
 
+    std::map<std::string, double> param, cost_param;
+    param["desired_ee_velocity"] = 0.2;
+    cost_param["qOri_reduction_ratio"] = 0.1;
+    ParamValue param_value = {param, cost_param};
+
+
     Integrator integrator = Integrator(jsonConfig["Ts"],json_paths);
     RobotModel robot = RobotModel();
     SelCollNNmodel selcolNN = SelCollNNmodel();
@@ -49,6 +55,7 @@ int main() {
 
     std::vector<MPCReturn> log;
     MPC mpc(jsonConfig["Ts"],json_paths);
+    // MPC mpc(jsonConfig["Ts"],json_paths,param_value);
 
     State x0 = {0., 0., 0., -M_PI/2, 0, M_PI/2, M_PI/4,
                 0., 0.};
@@ -92,6 +99,10 @@ int main() {
     for(int i = 0; i < jsonConfig["n_sim"]; i++)
     {
         MPCReturn mpc_sol;
+        if(i == 200)
+        {
+            mpc.setParam(param_value);
+        }
         bool mpc_status = mpc.runMPC(mpc_sol, x0);
         if(mpc_status == false)
         {

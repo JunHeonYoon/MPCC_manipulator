@@ -59,6 +59,7 @@ class ArcLengthSpline {
 public:
     ArcLengthSpline();
     ArcLengthSpline(const PathToJson &path);
+    ArcLengthSpline(const PathToJson &path,const ParamValue &param_value);
 
     /// @brief  generate 6-D arc length parametrized spline given X-Y-Z position and orientation path data
     /// @param X (Eigen::VectorXd) X position data

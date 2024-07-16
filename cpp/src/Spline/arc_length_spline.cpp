@@ -25,6 +25,11 @@ ArcLengthSpline::ArcLengthSpline(const PathToJson &path)
 {
 }
 
+ArcLengthSpline::ArcLengthSpline(const PathToJson &path,const ParamValue &param_value)
+:param_(Param(path.param_path,param_value.param))
+{
+}
+
 void ArcLengthSpline::setData(const Eigen::VectorXd &X_in,const Eigen::VectorXd &Y_in,const Eigen::VectorXd &Z_in,const std::vector<Eigen::Matrix3d> &R_in)
 {
     // set input data if x, y, z and orienatation have same length

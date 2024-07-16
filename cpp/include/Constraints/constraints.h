@@ -101,6 +101,7 @@ class Constraints {
 public:
     Constraints();
     Constraints(double Ts,const PathToJson &path);
+    Constraints(double Ts,const PathToJson &path,const ParamValue &param_value);
     
     /// @brief compute all the polytopic state constraints given current state
     /// @param x (State) current state

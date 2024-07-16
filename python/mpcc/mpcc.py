@@ -28,6 +28,30 @@ class MPCC():
         self.mpc = MPCC_CPP.MPC(self.Ts, self.json_paths)
         self.track_set = False
     
+    def setParam(self, param_value:dict) -> None:
+        param_list = ["param", "cost", "bounds", "normalization", "sqp"]
+        assert set(param_value.keys()).issubset(param_list) == True, f"List of Parameters must be a subset of {param_list}, but got {list(param_value.keys())}"
+
+        param_dict = {
+            "param": ["max_dist_proj", "desired_ee_velocity", "s_trust_region", "tol_sing", "tol_selcol"],
+            "cost": ["qC","qCNmult","qL","qVs","qOri","rdq","rVee","rdVs","qC_reduction_ratio","qL_increase_ratio","qOri_reduction_ratio"],
+            "bounds": ["q1l","q2l","q3l","q4l","q5l","q6l","q7l","sl","vsl","q1u","q2u","q3u","q4u","q5u","q6u","q7u","su","vsu","dq1l","dq2l","dq3l","dq4l","dq5l","dq6l","dq7l","dVsl","dq1u","dq2u","dq3u","dq4u","dq5u","dq6u","dq7u","dVsu"],
+            "normalization": ["q1","q2","q3","q4","q5","q6","q7","s","vs","dq1","dq2","dq3","dq4","dq5","dq6","dq7","dVs"],
+            "sqp": ["eps_prim","eps_dual","line_search_tau","line_search_eta","line_search_rho","max_iter","line_search_max_iter","do_SOC","use_BFGS"]
+        }
+
+        param_value_cpp = MPCC_CPP.ParamValue()
+        # print(dir(param_value_cpp))
+
+        for key, value in param_value.items():
+            valid_keys = param_dict.get(key, [])
+            assert set(value.keys()).issubset(valid_keys), f"Keys for {key} must be a subset of {valid_keys}, but got {list(value.keys())}"
+
+            for sub_key, sub_value in value.items():
+                getattr(param_value_cpp, key)[sub_key] = sub_value
+
+        self.mpc.setParam(param_value_cpp)
+
     def setTrack(self, state:np.array) -> None:
         assert state.size == MPCC_CPP.NX, f"State size {state.size} does not match expected size {MPCC_CPP.NX}"
         self.init_state = state
@@ -67,7 +91,7 @@ class MPCC():
         assert self.track_set == True, "Set Track first!"
         assert state.size == MPCC_CPP.NX, f"State size {state.size} does not match expected size {MPCC_CPP.NX}"
         x0 = MPCC_CPP.vectorToState(state)
-        mpc_sol = MPCC_CPP.zeroReturn()
+        mpc_sol = MPCC_CPP.MPCReturn()
         mpc_status = self.mpc.runMPC(mpc_sol, x0)
         updated_state = MPCC_CPP.stateToVector(x0)
 

@@ -70,13 +70,16 @@ struct ComputeTime
 class OsqpInterface : public SolverInterface {
 public:
     OsqpInterface(double Ts,const PathToJson &path);
+    OsqpInterface(double Ts,const PathToJson &path,const ParamValue &param_value);
     void setTrack(const ArcLengthSpline track);
+    void setParam(const ParamValue &param_value);
     void setInitialGuess(const std::vector<OptVariables> &initial_guess);
     bool solveOCP(std::vector<OptVariables> &opt_sol, Status *status, ComputeTime *mpc_time);
     ~OsqpInterface(){ std::cout << "Deleting Osqp Interface" << std::endl;}
 
 private:
     ArcLengthSpline track_;
+    PathToJson path_;
     std::unique_ptr<RobotModel> robot_;
     std::unique_ptr<SelCollNNmodel> selcolNN_;
     Cost cost_;
@@ -85,6 +88,7 @@ private:
     Bounds bounds_;
     NormalizationParam normalization_param_;
     SQPParam sqp_param_;
+    double Ts_;
 
     static const int N_var = (N+1)*NX + N*NU;
     static const int N_eq = (N+1)*NX;

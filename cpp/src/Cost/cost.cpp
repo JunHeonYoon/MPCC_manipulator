@@ -22,8 +22,14 @@ Cost::Cost()
 }
 
 Cost::Cost(const PathToJson &path) 
-:cost_param_(CostParam(path.cost_path)),
-param_(Param(path.param_path))
+:cost_param_(path.cost_path),
+param_(path.param_path)
+{
+}
+
+Cost::Cost(const PathToJson &path,const ParamValue &param_value) 
+:cost_param_(path.cost_path,param_value.cost),
+param_(path.param_path,param_value.param)
 {
 }
 

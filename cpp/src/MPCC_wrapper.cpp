@@ -1,5 +1,6 @@
 #include <boost/python.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
+#include <boost/python/suite/indexing/map_indexing_suite.hpp>
 #include <eigenpy/eigenpy.hpp>
 #include <Eigen/Dense>
 
@@ -111,7 +112,7 @@ BOOST_PYTHON_MODULE(MPCC_WRAPPER)
         .def_readonly("dVs", &StateInputIndex::dVs)
         .def_readonly("con_selcol", &StateInputIndex::con_selcol)
         .def_readonly("con_sing", &StateInputIndex::con_sing)
-        ;
+    ;
 
     // Bind the static instance si_index
     scope().attr("si_index") = si_index;
@@ -134,7 +135,7 @@ BOOST_PYTHON_MODULE(MPCC_WRAPPER)
         .def_readwrite("vs", &State::vs)
         .def("setZero", &State::setZero)
         .def("unwrap", &State::unwrap)
-        ;
+    ;
 
     class_<Input>("Input")
         .def_readwrite("dq1", &Input::dq1)
@@ -146,7 +147,7 @@ BOOST_PYTHON_MODULE(MPCC_WRAPPER)
         .def_readwrite("dq7", &Input::dq7)
         .def_readwrite("dVs", &Input::dVs)
         .def("setZero", &Input::setZero)
-        ;
+    ;
 
     class_<PathToJson>("PathToJson")
         .def_readwrite("param_path", &PathToJson::param_path)
@@ -155,7 +156,18 @@ BOOST_PYTHON_MODULE(MPCC_WRAPPER)
         .def_readwrite("track_path", &PathToJson::track_path)
         .def_readwrite("normalization_path", &PathToJson::normalization_path)
         .def_readwrite("sqp_path", &PathToJson::sqp_path)
-        ;
+    ;
+
+    class_<std::map<std::string, double>>("StringDoubleMap")
+        .def(map_indexing_suite<std::map<std::string, double>>());
+
+    class_<ParamValue>("ParamValue")
+        .def_readwrite("param", &ParamValue::param)
+        .def_readwrite("cost", &ParamValue::cost)
+        .def_readwrite("bounds", &ParamValue::bounds)
+        .def_readwrite("normalization", &ParamValue::normalization)
+        .def_readwrite("sqp", &ParamValue::sqp)
+    ;
 
     eigenpy::enableEigenPySpecific<Eigen::Matrix<double, NX, 1>>();        // For StateVector
     eigenpy::enableEigenPySpecific<Eigen::Matrix<double, PANDA_DOF, 1>>(); // For JointVector, dJointVector
@@ -277,6 +289,8 @@ BOOST_PYTHON_MODULE(MPCC_WRAPPER)
 
     // ArcLengthSpline binding
     class_<ArcLengthSpline>("ArcLengthSpline", init<>())
+        .def(init<const PathToJson &>())
+        .def(init<const PathToJson &, const ParamValue &>())
         .def("gen6DSpline", &ArcLengthSpline::gen6DSpline)
         .def("getPosition", &ArcLengthSpline::getPosition)
         .def("getOrientation", &ArcLengthSpline::getOrientation)
@@ -294,9 +308,11 @@ BOOST_PYTHON_MODULE(MPCC_WRAPPER)
     // MPC binding
     class_<MPC, std::shared_ptr<MPC>, boost::noncopyable>("MPC", init<>())
         .def(init<double, const PathToJson &>())
+        .def(init<double, const PathToJson &, const ParamValue &>())
         .def("runMPC", &MPC::runMPC)
         .def("setTrack", &MPC::setTrack)
         .def("getTrackLength", &MPC::getTrackLength)
+        .def("setParam", &MPC::setParam)
     ;
 
     class_<ComputeTime>("ComputeTime")
@@ -322,6 +338,4 @@ BOOST_PYTHON_MODULE(MPCC_WRAPPER)
         .def_readwrite("compute_time", &MPCReturn::compute_time)
         .def("setZero", &MPCReturn::setZero)
     ;
-
-    def("zeroReturn", &zeroReturn);
 }

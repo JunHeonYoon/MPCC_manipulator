@@ -101,6 +101,7 @@ struct ErrorInfo{
 class Cost {
 public:
     Cost(const PathToJson &path);
+    Cost(const PathToJson &path,const ParamValue &param_value);
     Cost();
 
     /// @brief compute cost for contouring error, heading error, control input given current state

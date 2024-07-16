@@ -19,6 +19,7 @@
 
 
 #include <vector>
+#include <map>
 #include <nlohmann/json.hpp>
 #include "config.h"
 #include "types.h"
@@ -40,6 +41,7 @@ public:
 
     Param();
     Param(std::string file);
+    Param(std::string file,std::map<std::string, double> param);
 
 };
 
@@ -67,6 +69,7 @@ public:
 
     CostParam();
     CostParam(std::string file);
+    CostParam(std::string file,std::map<std::string, double> cost_param);
 
 };
 
@@ -164,6 +167,7 @@ public:
 
     BoundsParam();
     BoundsParam(std::string file);
+    BoundsParam(std::string file,std::map<std::string, double> bounds_param);
 
 };
 
@@ -177,6 +181,7 @@ public:
 
     NormalizationParam();
     NormalizationParam(std::string file);
+    NormalizationParam(std::string file,std::map<std::string, double> normal_praram);
 };
 
 class SQPParam{
@@ -194,6 +199,7 @@ class SQPParam{
 
         SQPParam();
         SQPParam(std::string file);
+        SQPParam(std::string file,std::map<std::string, double> sqp_param);
 };
 }
 #endif //MPCC_PARAMS_H
