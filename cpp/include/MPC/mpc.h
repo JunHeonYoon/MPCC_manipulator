@@ -110,6 +110,7 @@ private:
     Param param_;
     std::unique_ptr<SolverInterface> solver_interface_;
     PathToJson path_;
+    unsigned int num_valid_guess_failed_;
 };
 
 }

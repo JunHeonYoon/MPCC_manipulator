@@ -27,6 +27,7 @@ MPC::MPC(double Ts,const PathToJson &path)
 :Ts_(Ts),
 path_(path),
 valid_initial_guess_(false),
+num_valid_guess_failed_(0),
 solver_interface_(new OsqpInterface(Ts, path)),
 track_(path),
 param_(path.param_path),
@@ -40,6 +41,7 @@ MPC::MPC(double Ts,const PathToJson &path,const ParamValue &param_value)
 :Ts_(Ts),
 path_(path),
 valid_initial_guess_(false),
+num_valid_guess_failed_(0),
 solver_interface_(new OsqpInterface(Ts, path, param_value)),
 track_(path,param_value),
 param_(path.param_path, param_value.param),
@@ -90,7 +92,11 @@ bool MPC::runMPC(MPCReturn &mpc_return, State &x0)
 {
     double last_s = x0.s;
     x0.s = track_.projectOnSpline(last_s, robot_->getEEPosition(stateToJointVector(x0)));
-    if(fabs(last_s - x0.s) > param_.max_dist_proj) valid_initial_guess_ = false;
+    if(fabs(last_s - x0.s) > param_.max_dist_proj) 
+    {
+        valid_initial_guess_ = false;
+        num_valid_guess_failed_++;
+    }
 
     if(valid_initial_guess_) updateInitialGuess(x0);
     else generateNewInitialGuess(x0);
@@ -101,13 +107,21 @@ bool MPC::runMPC(MPCReturn &mpc_return, State &x0)
     ComputeTime time_nmpc;
 
     solver_interface_->solveOCP(initial_guess_, &sqp_status, &time_nmpc);
-    if(sqp_status == MAX_ITER_EXCEEDED) valid_initial_guess_ = false;
-    else if(sqp_status != SOLVED)
+   
+    if(sqp_status == SOLVED)
+    {
+        valid_initial_guess_ = true;
+        num_valid_guess_failed_ = 0;
+    }
+    else
     {
         std::cout << "===================================================" << std::endl;
         std::cout << "================ QP did not solved ================" << std::endl;
         switch (sqp_status)
         {
+        case MAX_ITER_EXCEEDED:
+            std::cout << "============== SQP Max Iter reached ==============="<< std::endl;
+            break;
         case QP_DualInfeasible:
             std::cout << "================= Dual Infeasible ================="<< std::endl;
             break;
@@ -129,13 +143,17 @@ bool MPC::runMPC(MPCReturn &mpc_return, State &x0)
         case NAN_HESSIAN:
             std::cout << "==================== Nan Hessian ===================="<< std::endl;
             break;
+        case NON_PD_HESSIAN:
+            std::cout << "========== Not Possitive Definite Hessian ==========="<< std::endl;
+            break;
         }
         std::cout << "===================================================" << std::endl;
         valid_initial_guess_ = false;
+        num_valid_guess_failed_++;
     }
 
     mpc_return = {initial_guess_[0].uk,initial_guess_,time_nmpc};
-    if(sqp_status == SOLVED) return true;
+    if(sqp_status == SOLVED || (sqp_status == MAX_ITER_EXCEEDED && num_valid_guess_failed_ < 5)) return true;
     else return false;
 }
 
@@ -161,22 +179,19 @@ void MPC::setParam(const ParamValue &param_value)
 void MPC::printParamValue(const ParamValue& param_value) 
 {
     std::cout << "param values:" << std::endl;
-    for (const auto& item : param_value.param) std::cout << item.first << ": " << item.second << std::endl;
+    for (const auto& item : param_value.param) std::cout << "\t" << item.first << ": " << item.second << std::endl;
 
     std::cout << "cost values:" << std::endl;
-    for (const auto& item : param_value.cost) std::cout << item.first << ": " << item.second << std::endl;
+    for (const auto& item : param_value.cost) std::cout << "\t" << item.first << ": " << item.second << std::endl;
 
     std::cout << "bounds values:" << std::endl;
-    for (const auto& item : param_value.bounds) std::cout << item.first << ": " << item.second << std::endl;
-
-    std::cout << "track values:" << std::endl;
-    for (const auto& item : param_value.track) std::cout << item.first << ": " << item.second << std::endl;
+    for (const auto& item : param_value.bounds) std::cout << "\t" << item.first << ": " << item.second << std::endl;
 
     std::cout << "normalization values:" << std::endl;
-    for (const auto& item : param_value.normalization) std::cout << item.first << ": " << item.second << std::endl;
+    for (const auto& item : param_value.normalization) std::cout << "\t" << item.first << ": " << item.second << std::endl;
 
     std::cout << "sqp values:" << std::endl;
-    for (const auto& item : param_value.sqp) std::cout << item.first << ": " << item.second << std::endl;
+    for (const auto& item : param_value.sqp) std::cout << "\t" << item.first << ": " << item.second << std::endl;
 }
 
 
