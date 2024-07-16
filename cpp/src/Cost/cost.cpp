@@ -33,6 +33,15 @@ param_(path.param_path,param_value.param)
 {
 }
 
+double CubicSpline(double x, double x_0, double x_f, double y_0, double y_f)
+{
+    double x_temp =  (x - x_0) / (x_f - x_0);
+    double x_temp2 = pow(x_temp, 2);
+    double x_temp3 = pow(x_temp, 3);
+
+    return y_0 + (y_f - y_0) * (3 * x_temp2 - 2 * x_temp3);
+}
+
 
 TrackPoint Cost::getRefPoint(const ArcLengthSpline &track,const State &x)
 {
@@ -244,9 +253,12 @@ void Cost::getCost(const ArcLengthSpline &track,const State &x,const Input &u,co
     double ratio = std::min(rb.min_dist / (param_.tol_selcol*2.0), rb.manipul / (param_.tol_sing*2.0));
     if(ratio <= 1.0)
     {
-        contouring_cost_ = cost_param_.q_c * ((1.0 - cost_param_.q_c_red_ratio) / (1.0 - 0.5) * (ratio - 0.5) + cost_param_.q_c_red_ratio);
-        lag_cost_ = cost_param_.q_l * ((1.0 - cost_param_.q_l_inc_ratio) / (1.0 - 0.5) * (ratio - 0.5) + cost_param_.q_l_inc_ratio);
-        heading_cost_ = cost_param_.q_ori * ((1.0 - cost_param_.q_ori_red_ratio) / (1.0 - 0.5) * (ratio - 0.5) + cost_param_.q_ori_red_ratio);
+        // contouring_cost_ = cost_param_.q_c * ((1.0 - cost_param_.q_c_red_ratio) / (1.0 - 0.5) * (ratio - 0.5) + cost_param_.q_c_red_ratio);
+        // lag_cost_ = cost_param_.q_l * ((1.0 - cost_param_.q_l_inc_ratio) / (1.0 - 0.5) * (ratio - 0.5) + cost_param_.q_l_inc_ratio);
+        // heading_cost_ = cost_param_.q_ori * ((1.0 - cost_param_.q_ori_red_ratio) / (1.0 - 0.5) * (ratio - 0.5) + cost_param_.q_ori_red_ratio);
+        contouring_cost_ = cost_param_.q_c * CubicSpline(ratio, 0.5, 1.0, cost_param_.q_c_red_ratio, 1.0);
+        lag_cost_ = cost_param_.q_l * CubicSpline(ratio, 0.5, 1.0, cost_param_.q_l_inc_ratio, 1.0);
+        heading_cost_ = cost_param_.q_ori * CubicSpline(ratio, 0.5, 1.0, cost_param_.q_ori_red_ratio, 1.0);
     }
     else
     {
