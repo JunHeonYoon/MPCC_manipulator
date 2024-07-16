@@ -83,7 +83,7 @@ class MPCC():
         return position, rotation, arc_length
     
     def getRefPose(self, path_parameter:float) -> {np.array, np.array}:
-        assert path_parameter >= np.min(self.spline_path.s) and path_parameter <= np.max(self.spline_path.s), f"Path parameter must be in [{np.min(self.spline_path.s), np.max(self.spline_path.s)}] and your input is {path_parameter}"
+        assert path_parameter >= np.min(self.spline_path.s)-1E-6 and path_parameter <= np.max(self.spline_path.s)+1E-6, f"Path parameter must be in [{np.min(self.spline_path.s), np.max(self.spline_path.s)}] and your input is {path_parameter}"
         return self.spline_track.getPosition(path_parameter), self.spline_track.getOrientation(path_parameter)
 
 
