@@ -30,8 +30,8 @@ Ts_(Ts)
 {   
     robot_ = std::make_unique<RobotModel>();
     selcolNN_ = std::make_unique<SelCollNNmodel>();
-    Eigen::Vector3d sel_col_n_hidden;
-    sel_col_n_hidden << 128, 64, 32;
+    Eigen::VectorXd sel_col_n_hidden(2);
+    sel_col_n_hidden << 256, 64;
     selcolNN_->setNeuralNetwork(PANDA_DOF, 1, sel_col_n_hidden, true);
 
     initial_guess_.resize(N+1);
@@ -49,8 +49,8 @@ Ts_(Ts)
 {   
     robot_ = std::make_unique<RobotModel>();
     selcolNN_ = std::make_unique<SelCollNNmodel>();
-    Eigen::Vector3d sel_col_n_hidden;
-    sel_col_n_hidden << 128, 64, 32;
+    Eigen::VectorXd sel_col_n_hidden(2);
+    sel_col_n_hidden << 256, 64;
     selcolNN_->setNeuralNetwork(PANDA_DOF, 1, sel_col_n_hidden, true);
 
     initial_guess_.resize(N+1);
@@ -322,19 +322,22 @@ bool OsqpInterface::solveOCP(std::vector<OptVariables> &opt_sol, Status *status,
         if (!isPosdef(Hess_)) 
         {
             std::cout << "Hessian not positive definite\n";
-            double tau = 1e-3;
-            Eigen::VectorXd v(N_var);
-            while (!isPosdef(Hess_)) 
-            {
-                v.setConstant(tau);
-                Hess_ += v.asDiagonal();
-                tau *= 10;
-            }
+            // double tau = 1e-3;
+            // Eigen::VectorXd v(N_var);
+            // while (!isPosdef(Hess_)) 
+            // {
+            //     v.setConstant(tau);
+            //     Hess_ += v.asDiagonal();
+            //     tau *= 10;
+            // }
+            (*status) = NON_PD_HESSIAN;
+            break;
         }
         if (isNan(Hess_)) 
         {
             std::cout << "Hessian is NaN\n";
             (*status) = NAN_HESSIAN;
+            break;
         }
 
         auto end_set_qp = std::chrono::high_resolution_clock::now();
