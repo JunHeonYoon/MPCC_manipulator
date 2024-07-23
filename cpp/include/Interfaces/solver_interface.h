@@ -37,7 +37,8 @@ enum Status
     QP_DualInfeasible,
     Sigint, 
     INVALID_SETTINGS,
-    NAN_HESSIAN
+    NAN_HESSIAN,
+    NON_PD_HESSIAN
 };
 
 class SolverInterface {
