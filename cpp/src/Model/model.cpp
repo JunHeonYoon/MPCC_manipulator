@@ -31,15 +31,22 @@ Model::Model(double Ts,const PathToJson &path)
 StateVector Model::getF(const State &x,const Input &u) const
 {
     StateVector f;
-    f(0) = u.dq1;
-    f(1) = u.dq2;
-    f(2) = u.dq3;
-    f(3) = u.dq4;
-    f(4) = u.dq5;
-    f(5) = u.dq6;
-    f(6) = u.dq7;
-    f(7) = x.vs;
-    f(8) = u.dVs;
+    f(0) = x.dq1;
+    f(1) = x.dq2;
+    f(2) = x.dq3;
+    f(3) = x.dq4;
+    f(4) = x.dq5;
+    f(5) = x.dq6;
+    f(6) = x.dq7;
+    f(7) = u.ddq1;
+    f(8) = u.ddq2;
+    f(9) = u.ddq3;
+    f(10) = u.ddq4;
+    f(11) = u.ddq5;
+    f(12) = u.ddq6;
+    f(13) = u.ddq7;
+    f(14) = x.vs;
+    f(15) = u.dVs;
 
     return f;
 }
@@ -55,10 +62,11 @@ LinModelMatrix Model::getModelJacobian(const State &x, const Input &u) const
 
     // Jacobians
     // Matrix A
+    A_c.block(si_index.q1,si_index.dq1,PANDA_DOF,PANDA_DOF).setIdentity();
     A_c(si_index.s,si_index.vs) = 1.0;
 
     // Matrix B
-    B_c.block(si_index.q1,si_index.dq1,PANDA_DOF,PANDA_DOF).setIdentity();
+    B_c.block(si_index.dq1,si_index.ddq1,PANDA_DOF,PANDA_DOF).setIdentity();
     B_c(si_index.vs,si_index.dVs) = 1.0;
 
     return {A_c,B_c,g_c};

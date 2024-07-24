@@ -101,6 +101,7 @@ CostParam::CostParam(std::string file){
     q_ori = jsonCost["qOri"];
 
     r_dq = jsonCost["rdq"];
+    r_ddq = jsonCost["rddq"];
     r_Vee = jsonCost["rVee"];
     r_dVs = jsonCost["rdVs"];
 
@@ -144,13 +145,14 @@ CostParam::CostParam(std::string file, std::map<std::string, double> cost_param)
     get_cost_value("qOri", q_ori);
 
     get_cost_value("rdq", r_dq);
+    get_cost_value("rddq", r_ddq);
     get_cost_value("rVee", r_Vee);
     get_cost_value("rdVs", r_dVs);
 
     get_cost_value("qC_reduction_ratio", q_c_red_ratio);
     get_cost_value("qL_increase_ratio", q_l_inc_ratio);
     get_cost_value("qOri_reduction_ratio", q_ori_red_ratio);
-
+    
     // std::cout << "q_c = " << q_c << std::endl;
     // std::cout << "q_c_N_mult = " << q_c_N_mult << std::endl;
     // std::cout << "q_l = " << q_l << std::endl;
@@ -186,6 +188,13 @@ BoundsParam::BoundsParam(std::string file) {
     lower_state_bounds.q5_l = jsonBounds["q5l"];
     lower_state_bounds.q6_l = jsonBounds["q6l"];
     lower_state_bounds.q7_l = jsonBounds["q7l"];
+    lower_state_bounds.dq1_l = jsonBounds["dq1l"];
+    lower_state_bounds.dq2_l = jsonBounds["dq2l"];
+    lower_state_bounds.dq3_l = jsonBounds["dq3l"];
+    lower_state_bounds.dq4_l = jsonBounds["dq4l"];
+    lower_state_bounds.dq5_l = jsonBounds["dq5l"];
+    lower_state_bounds.dq6_l = jsonBounds["dq6l"];
+    lower_state_bounds.dq7_l = jsonBounds["dq7l"];
     lower_state_bounds.s_l  = jsonBounds["sl"];
     lower_state_bounds.vs_l = jsonBounds["vsl"];
 
@@ -196,25 +205,32 @@ BoundsParam::BoundsParam(std::string file) {
     upper_state_bounds.q5_u = jsonBounds["q5u"];
     upper_state_bounds.q6_u = jsonBounds["q6u"];
     upper_state_bounds.q7_u = jsonBounds["q7u"];
+    upper_state_bounds.dq1_u = jsonBounds["dq1u"];
+    upper_state_bounds.dq2_u = jsonBounds["dq2u"];
+    upper_state_bounds.dq3_u = jsonBounds["dq3u"];
+    upper_state_bounds.dq4_u = jsonBounds["dq4u"];
+    upper_state_bounds.dq5_u = jsonBounds["dq5u"];
+    upper_state_bounds.dq6_u = jsonBounds["dq6u"];
+    upper_state_bounds.dq7_u = jsonBounds["dq7u"];
     upper_state_bounds.s_u  = jsonBounds["su"];
     upper_state_bounds.vs_u = jsonBounds["vsu"];
 
-    lower_input_bounds.dq1_l = jsonBounds["dq1l"];
-    lower_input_bounds.dq2_l = jsonBounds["dq2l"];
-    lower_input_bounds.dq3_l = jsonBounds["dq3l"];
-    lower_input_bounds.dq4_l = jsonBounds["dq4l"];
-    lower_input_bounds.dq5_l = jsonBounds["dq5l"];
-    lower_input_bounds.dq6_l = jsonBounds["dq6l"];
-    lower_input_bounds.dq7_l = jsonBounds["dq7l"];
+    lower_input_bounds.ddq1_l = jsonBounds["ddq1l"];
+    lower_input_bounds.ddq2_l = jsonBounds["ddq2l"];
+    lower_input_bounds.ddq3_l = jsonBounds["ddq3l"];
+    lower_input_bounds.ddq4_l = jsonBounds["ddq4l"];
+    lower_input_bounds.ddq5_l = jsonBounds["ddq5l"];
+    lower_input_bounds.ddq6_l = jsonBounds["ddq6l"];
+    lower_input_bounds.ddq7_l = jsonBounds["ddq7l"];
     lower_input_bounds.dVs_l = jsonBounds["dVsl"];
 
-    upper_input_bounds.dq1_u = jsonBounds["dq1u"];
-    upper_input_bounds.dq2_u = jsonBounds["dq2u"];
-    upper_input_bounds.dq3_u = jsonBounds["dq3u"];
-    upper_input_bounds.dq4_u = jsonBounds["dq4u"];
-    upper_input_bounds.dq5_u = jsonBounds["dq5u"];
-    upper_input_bounds.dq6_u = jsonBounds["dq6u"];
-    upper_input_bounds.dq7_u = jsonBounds["dq7u"];
+    upper_input_bounds.ddq1_u = jsonBounds["ddq1u"];
+    upper_input_bounds.ddq2_u = jsonBounds["ddq2u"];
+    upper_input_bounds.ddq3_u = jsonBounds["ddq3u"];
+    upper_input_bounds.ddq4_u = jsonBounds["ddq4u"];
+    upper_input_bounds.ddq5_u = jsonBounds["ddq5u"];
+    upper_input_bounds.ddq6_u = jsonBounds["ddq6u"];
+    upper_input_bounds.ddq7_u = jsonBounds["ddq7u"];
     upper_input_bounds.dVs_u = jsonBounds["dVsu"];
 }
 
@@ -235,6 +251,13 @@ BoundsParam::BoundsParam(std::string file, std::map<std::string, double> bounds_
     get_bound_value("q5l", lower_state_bounds.q5_l);
     get_bound_value("q6l", lower_state_bounds.q6_l);
     get_bound_value("q7l", lower_state_bounds.q7_l);
+    get_bound_value("dq1l", lower_state_bounds.dq1_l);
+    get_bound_value("dq2l", lower_state_bounds.dq2_l);
+    get_bound_value("dq3l", lower_state_bounds.dq3_l);
+    get_bound_value("dq4l", lower_state_bounds.dq4_l);
+    get_bound_value("dq5l", lower_state_bounds.dq5_l);
+    get_bound_value("dq6l", lower_state_bounds.dq6_l);
+    get_bound_value("dq7l", lower_state_bounds.dq7_l);
     get_bound_value("sl", lower_state_bounds.s_l);
     get_bound_value("vsl", lower_state_bounds.vs_l);
 
@@ -245,25 +268,32 @@ BoundsParam::BoundsParam(std::string file, std::map<std::string, double> bounds_
     get_bound_value("q5u", upper_state_bounds.q5_u);
     get_bound_value("q6u", upper_state_bounds.q6_u);
     get_bound_value("q7u", upper_state_bounds.q7_u);
+    get_bound_value("dq1u", upper_state_bounds.dq1_u);
+    get_bound_value("dq2u", upper_state_bounds.dq2_u);
+    get_bound_value("dq3u", upper_state_bounds.dq3_u);
+    get_bound_value("dq4u", upper_state_bounds.dq4_u);
+    get_bound_value("dq5u", upper_state_bounds.dq5_u);
+    get_bound_value("dq6u", upper_state_bounds.dq6_u);
+    get_bound_value("dq7u", upper_state_bounds.dq7_u);
     get_bound_value("su", upper_state_bounds.s_u);
     get_bound_value("vsu", upper_state_bounds.vs_u);
 
-    get_bound_value("dq1l", lower_input_bounds.dq1_l);
-    get_bound_value("dq2l", lower_input_bounds.dq2_l);
-    get_bound_value("dq3l", lower_input_bounds.dq3_l);
-    get_bound_value("dq4l", lower_input_bounds.dq4_l);
-    get_bound_value("dq5l", lower_input_bounds.dq5_l);
-    get_bound_value("dq6l", lower_input_bounds.dq6_l);
-    get_bound_value("dq7l", lower_input_bounds.dq7_l);
+    get_bound_value("ddq1l", lower_input_bounds.ddq1_l);
+    get_bound_value("ddq2l", lower_input_bounds.ddq2_l);
+    get_bound_value("ddq3l", lower_input_bounds.ddq3_l);
+    get_bound_value("ddq4l", lower_input_bounds.ddq4_l);
+    get_bound_value("ddq5l", lower_input_bounds.ddq5_l);
+    get_bound_value("ddq6l", lower_input_bounds.ddq6_l);
+    get_bound_value("ddq7l", lower_input_bounds.ddq7_l);
     get_bound_value("dVsl", lower_input_bounds.dVs_l);
 
-    get_bound_value("dq1u", upper_input_bounds.dq1_u);
-    get_bound_value("dq2u", upper_input_bounds.dq2_u);
-    get_bound_value("dq3u", upper_input_bounds.dq3_u);
-    get_bound_value("dq4u", upper_input_bounds.dq4_u);
-    get_bound_value("dq5u", upper_input_bounds.dq5_u);
-    get_bound_value("dq6u", upper_input_bounds.dq6_u);
-    get_bound_value("dq7u", upper_input_bounds.dq7_u);
+    get_bound_value("ddq1u", upper_input_bounds.ddq1_u);
+    get_bound_value("ddq2u", upper_input_bounds.ddq2_u);
+    get_bound_value("ddq3u", upper_input_bounds.ddq3_u);
+    get_bound_value("ddq4u", upper_input_bounds.ddq4_u);
+    get_bound_value("ddq5u", upper_input_bounds.ddq5_u);
+    get_bound_value("ddq6u", upper_input_bounds.ddq6_u);
+    get_bound_value("ddq7u", upper_input_bounds.ddq7_u);
     get_bound_value("dVsu", upper_input_bounds.dVs_u);
 }
 
@@ -290,6 +320,13 @@ NormalizationParam::NormalizationParam(std::string file)
     T_x(si_index.q5,si_index.q5) = jsonNorm["q5"];
     T_x(si_index.q6,si_index.q6) = jsonNorm["q6"];
     T_x(si_index.q7,si_index.q7) = jsonNorm["q7"];
+    T_x(si_index.dq1,si_index.dq1) = jsonNorm["dq1"];
+    T_x(si_index.dq2,si_index.dq2) = jsonNorm["dq2"];
+    T_x(si_index.dq3,si_index.dq3) = jsonNorm["dq3"];
+    T_x(si_index.dq4,si_index.dq4) = jsonNorm["dq4"];
+    T_x(si_index.dq5,si_index.dq5) = jsonNorm["dq5"];
+    T_x(si_index.dq6,si_index.dq6) = jsonNorm["dq6"];
+    T_x(si_index.dq7,si_index.dq7) = jsonNorm["dq7"];
     T_x(si_index.s,si_index.s) = jsonNorm["s"];
     T_x(si_index.vs,si_index.vs) = jsonNorm["vs"];
 
@@ -301,13 +338,13 @@ NormalizationParam::NormalizationParam(std::string file)
     }
 
     T_u.setIdentity();
-    T_u(si_index.dq1,si_index.dq1) = jsonNorm["dq1"];
-    T_u(si_index.dq2,si_index.dq2) = jsonNorm["dq2"];
-    T_u(si_index.dq3,si_index.dq3) = jsonNorm["dq3"];
-    T_u(si_index.dq4,si_index.dq4) = jsonNorm["dq4"];
-    T_u(si_index.dq5,si_index.dq5) = jsonNorm["dq5"];
-    T_u(si_index.dq6,si_index.dq6) = jsonNorm["dq6"];
-    T_u(si_index.dq7,si_index.dq7) = jsonNorm["dq7"];
+    T_u(si_index.ddq1,si_index.ddq1) = jsonNorm["ddq1"];
+    T_u(si_index.ddq2,si_index.ddq2) = jsonNorm["ddq2"];
+    T_u(si_index.ddq3,si_index.ddq3) = jsonNorm["ddq3"];
+    T_u(si_index.ddq4,si_index.ddq4) = jsonNorm["ddq4"];
+    T_u(si_index.ddq5,si_index.ddq5) = jsonNorm["ddq5"];
+    T_u(si_index.ddq6,si_index.ddq6) = jsonNorm["ddq6"];
+    T_u(si_index.ddq7,si_index.ddq7) = jsonNorm["ddq7"];
     T_u(si_index.dVs,si_index.dVs) = jsonNorm["dVs"];
 
     T_u_inv.setIdentity();
@@ -335,6 +372,13 @@ NormalizationParam::NormalizationParam(std::string file, std::map<std::string, d
     get_norm_value("q5", T_x(si_index.q5, si_index.q5));
     get_norm_value("q6", T_x(si_index.q6, si_index.q6));
     get_norm_value("q7", T_x(si_index.q7, si_index.q7));
+    get_norm_value("dq1", T_x(si_index.dq1, si_index.dq1));
+    get_norm_value("dq2", T_x(si_index.dq2, si_index.dq2));
+    get_norm_value("dq3", T_x(si_index.dq3, si_index.dq3));
+    get_norm_value("dq4", T_x(si_index.dq4, si_index.dq4));
+    get_norm_value("dq5", T_x(si_index.dq5, si_index.dq5));
+    get_norm_value("dq6", T_x(si_index.dq6, si_index.dq6));
+    get_norm_value("dq7", T_x(si_index.dq7, si_index.dq7));
     get_norm_value("s", T_x(si_index.s, si_index.s));
     get_norm_value("vs", T_x(si_index.vs, si_index.vs));
 
@@ -344,13 +388,13 @@ NormalizationParam::NormalizationParam(std::string file, std::map<std::string, d
     }
 
     T_u.setIdentity();
-    get_norm_value("dq1", T_u(si_index.dq1, si_index.dq1));
-    get_norm_value("dq2", T_u(si_index.dq2, si_index.dq2));
-    get_norm_value("dq3", T_u(si_index.dq3, si_index.dq3));
-    get_norm_value("dq4", T_u(si_index.dq4, si_index.dq4));
-    get_norm_value("dq5", T_u(si_index.dq5, si_index.dq5));
-    get_norm_value("dq6", T_u(si_index.dq6, si_index.dq6));
-    get_norm_value("dq7", T_u(si_index.dq7, si_index.dq7));
+    get_norm_value("ddq1", T_u(si_index.ddq1, si_index.ddq1));
+    get_norm_value("ddq2", T_u(si_index.ddq2, si_index.ddq2));
+    get_norm_value("ddq3", T_u(si_index.ddq3, si_index.ddq3));
+    get_norm_value("ddq4", T_u(si_index.ddq4, si_index.ddq4));
+    get_norm_value("ddq5", T_u(si_index.ddq5, si_index.ddq5));
+    get_norm_value("ddq6", T_u(si_index.ddq6, si_index.ddq6));
+    get_norm_value("ddq7", T_u(si_index.ddq7, si_index.ddq7));
     get_norm_value("dVs", T_u(si_index.dVs, si_index.dVs));
 
     T_u_inv.setIdentity();

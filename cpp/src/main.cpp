@@ -42,22 +42,23 @@ int main() {
                            pkg_path + std::string(jsonConfig["normalization_path"]),
                            pkg_path + std::string(jsonConfig["sqp_path"])};
 
-    std::map<std::string, double> param, cost_param;
-    param["desired_ee_velocity"] = 0.2;
-    cost_param["qOri_reduction_ratio"] = 0.1;
-    ParamValue param_value = {param, cost_param};
+    // std::map<std::string, double> param, cost_param;
+    // param["desired_ee_velocity"] = 0.2;
+    // cost_param["qOri_reduction_ratio"] = 0.1;
+    // ParamValue param_value = {param, cost_param};
 
 
     Integrator integrator = Integrator(jsonConfig["Ts"],json_paths);
     RobotModel robot = RobotModel();
     SelCollNNmodel selcolNN = SelCollNNmodel();
-    selcolNN.setNeuralNetwork(PANDA_DOF, 1,(Eigen::VectorXd(3) << 128, 64, 32).finished(), true);
+    selcolNN.setNeuralNetwork(PANDA_DOF, 1,(Eigen::VectorXd(2) << 256 , 64).finished(), true);
 
     std::vector<MPCReturn> log;
     MPC mpc(jsonConfig["Ts"],json_paths);
     // MPC mpc(jsonConfig["Ts"],json_paths,param_value);
 
     State x0 = {0., 0., 0., -M_PI/2, 0, M_PI/2, M_PI/4,
+                0., 0., 0., 0., 0., 0., 0.,
                 0., 0.};
     Eigen::Vector3d ee_pos = robot.getEEPosition(stateToJointVector(x0));
     Eigen::Matrix3d ee_ori = robot.getEEOrientation(stateToJointVector(x0));
@@ -99,10 +100,10 @@ int main() {
     for(int i = 0; i < jsonConfig["n_sim"]; i++)
     {
         MPCReturn mpc_sol;
-        if(i == 200)
-        {
-            mpc.setParam(param_value);
-        }
+        // if(i == 200)
+        // {
+        //     mpc.setParam(param_value);
+        // }
         bool mpc_status = mpc.runMPC(mpc_sol, x0);
         if(mpc_status == false)
         {
@@ -118,12 +119,14 @@ int main() {
         std::cout << "q now           :\t";
         std::cout << std::fixed << std::setprecision(6) << stateToJointVector(x0).transpose() << std::endl;
         std::cout << "q_dot now       :\t";
-        std::cout << std::fixed << std::setprecision(6) << inputTodJointVector(mpc_sol.u0).transpose()  << std::endl;
+        std::cout << std::fixed << std::setprecision(6) << stateTodJointVector(x0).transpose()  << std::endl;
+        std::cout << "q_ddot now       :\t";
+        std::cout << std::fixed << std::setprecision(6) << inputToddJointVector(mpc_sol.u0).transpose()  << std::endl;
         std::cout << "x               :\t";
         std::cout << std::fixed << std::setprecision(6) << ee_pos.transpose() << std::endl;
         std::cout << "x_dot           :\t";
-        std::cout << std::fixed << std::setprecision(6) << (robot.getJacobianv(stateToJointVector(x0))*inputTodJointVector(mpc_sol.u0)).transpose() << std::endl;
-        std::cout << std::fixed << std::setprecision(6) << (robot.getJacobianv(stateToJointVector(x0))*inputTodJointVector(mpc_sol.u0)).norm() << std::endl;
+        std::cout << std::fixed << std::setprecision(6) << (robot.getJacobianv(stateToJointVector(x0))*stateTodJointVector(x0)).transpose() << std::endl;
+        std::cout << std::fixed << std::setprecision(6) << (robot.getJacobianv(stateToJointVector(x0))*stateTodJointVector(x0)).norm() << std::endl;
         std::cout << "R               :" << std::endl;
         std::cout << std::fixed << std::setprecision(6) << ee_ori << std::endl;
         std::cout << "manipulability  :\t";
@@ -145,7 +148,8 @@ int main() {
         std::cout << "==============================================================="<<std::endl;
         
         debug_file << stateToJointVector(x0).transpose() << " " 
-                   << inputTodJointVector(mpc_sol.u0).transpose() << " " 
+                   << stateTodJointVector(x0).transpose() << " " 
+                   << inputToddJointVector(mpc_sol.u0).transpose() << " " 
                    << (selcolNN.calculateMlpOutput(stateToJointVector(x0),false)).first << " "
                    << robot.getManipulability(stateToJointVector(x0)) << " ";
                 //    << std::endl;

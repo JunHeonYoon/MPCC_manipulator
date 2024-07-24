@@ -153,19 +153,20 @@ private:
     /// @param rb (RobotData) kinemetic information (ex. EE-pose, Jacobian, ...) wrt current state
     /// @param obj (*double) exact value of heading cost
     /// @param grad (*CostGrad) gradient of heading cost
-    /// @param grad (*CostHess) hessian of heading cost
+    /// @param hess (*CostHess) hessian of heading cost
     void getHeadingCost(const ArcLengthSpline &track,const State &x,const RobotData &rb,
                         double* obj,CostGrad* grad,CostHess* hess);
 
     /// @brief compute control input cost
     /// @param track (ArcLengthSpline) reference track
+    /// @param x (State) current state
     /// @param u (Input) current control input
     /// @param rb (RobotData) kinemetic information (ex. EE-pose, Jacobian, ...) wrt current state
     /// @param k (int) receding horizon index
     /// @param obj (*double) exact value for control input cost
     /// @param grad (*CostGrad) gradient of control input cost
-    /// @param grad (*CostHess) hessian of control input cost
-    void getInputCost(const ArcLengthSpline &track,const Input &u,const RobotData &rb,int k,
+    /// @param hess (*CostHess) hessian of control input cost
+    void getInputCost(const ArcLengthSpline &track,const State &x,const Input &u,const RobotData &rb,int k,
                       double* obj,CostGrad* grad,CostHess* hess);
     
 

@@ -7,7 +7,7 @@ integrator = mpcc.Integrator()
 robot = mpcc.RobotModel()
 robot_dof = robot.num_q
 selcolNN = mpcc.SelfCollisionNN()
-selcolNN.setNeuralNetwork(input_size=robot_dof, output_size=1, hidden_layer_size=np.array([128, 64, 32]), is_nerf=True)
+selcolNN.setNeuralNetwork(input_size=robot_dof, output_size=1, hidden_layer_size=np.array([256, 64]), is_nerf=True)
 
 mpc = mpcc.MPCC()
 
@@ -32,8 +32,8 @@ time_data["get_alpha"] = []
 param_value = {"cost": {"qOri": 0.5}}
 
 for time_idx in range(10000):
-    if(time_idx == 100):
-        mpc.setParam(param_value)
+    # if(time_idx == 100):
+    #     mpc.setParam(param_value)
 
     status, state, opt_input, mpc_horizon, compute_time = mpc.runMPC(state)
     if status == False:

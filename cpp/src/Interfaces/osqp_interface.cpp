@@ -739,6 +739,7 @@ void OsqpInterface::printOptVar(std::vector<OptVariables> opt_var)
     {
         std::cout << "State[" << i << "]: " << std::endl;; 
         std::cout << "\tq    : " << stateToJointVector(opt_var[i].xk).transpose() << std::endl;
+        std::cout << "\tqdot : " << stateTodJointVector(opt_var[i].xk).transpose() << std::endl;; 
         std::cout << "\ts    : " << opt_var[i].xk.s << std::endl;
         std::cout << "\ts dot: " << opt_var[i].xk.vs << std::endl;
     }
@@ -746,7 +747,7 @@ void OsqpInterface::printOptVar(std::vector<OptVariables> opt_var)
     for(size_t i=0;i<N;i++)
     {
         std::cout << "Input[" << i << "]: " << std::endl;; 
-        std::cout << "\tqdot: " << inputTodJointVector(opt_var[i].uk).transpose() << std::endl;; 
+        std::cout << "\tqddot: " << inputToddJointVector(opt_var[i].uk).transpose() << std::endl;; 
         std::cout << "\tdVs  : " << opt_var[i].uk.dVs << std::endl;; 
     }
 }

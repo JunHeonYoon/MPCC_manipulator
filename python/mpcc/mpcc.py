@@ -34,14 +34,13 @@ class MPCC():
 
         param_dict = {
             "param": ["max_dist_proj", "desired_ee_velocity", "s_trust_region", "tol_sing", "tol_selcol"],
-            "cost": ["qC","qCNmult","qL","qVs","qOri","rdq","rVee","rdVs","qC_reduction_ratio","qL_increase_ratio","qOri_reduction_ratio"],
+            "cost": ["qC","qCNmult","qL","qVs","qOri","rdq","rddq","rVee","rdVs","qC_reduction_ratio","qL_increase_ratio","qOri_reduction_ratio"],
             "bounds": ["q1l","q2l","q3l","q4l","q5l","q6l","q7l","sl","vsl","q1u","q2u","q3u","q4u","q5u","q6u","q7u","su","vsu","dq1l","dq2l","dq3l","dq4l","dq5l","dq6l","dq7l","dVsl","dq1u","dq2u","dq3u","dq4u","dq5u","dq6u","dq7u","dVsu"],
             "normalization": ["q1","q2","q3","q4","q5","q6","q7","s","vs","dq1","dq2","dq3","dq4","dq5","dq6","dq7","dVs"],
             "sqp": ["eps_prim","eps_dual","line_search_tau","line_search_eta","line_search_rho","max_iter","line_search_max_iter","do_SOC","use_BFGS"]
         }
 
         param_value_cpp = MPCC_CPP.ParamValue()
-        # print(dir(param_value_cpp))
 
         for key, value in param_value.items():
             valid_keys = param_dict.get(key, [])
@@ -83,7 +82,7 @@ class MPCC():
         return position, rotation, arc_length
     
     def getRefPose(self, path_parameter:float) -> {np.array, np.array}:
-        assert path_parameter >= np.min(self.spline_path.s)-1E-6 and path_parameter <= np.max(self.spline_path.s)+1E-6, f"Path parameter must be in [{np.min(self.spline_path.s), np.max(self.spline_path.s)}] and your input is {path_parameter}"
+        assert path_parameter >= np.min(self.spline_path.s)-1E-3 and path_parameter <= np.max(self.spline_path.s)+1E-3, f"Path parameter must be in [{np.min(self.spline_path.s), np.max(self.spline_path.s)}] and your input is {path_parameter}"
         return self.spline_track.getPosition(path_parameter), self.spline_track.getOrientation(path_parameter)
 
 

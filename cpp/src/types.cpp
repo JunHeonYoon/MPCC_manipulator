@@ -27,8 +27,15 @@ StateVector stateToVector(const State &x)
     xk(4) = x.q5;
     xk(5) = x.q6;
     xk(6) = x.q7;
-    xk(7) = x.s;
-    xk(8) = x.vs;
+    xk(7) = x.dq1;
+    xk(8) = x.dq2;
+    xk(9) = x.dq3;
+    xk(10) = x.dq4;
+    xk(11) = x.dq5;
+    xk(12) = x.dq6;
+    xk(13) = x.dq7;
+    xk(14) = x.s;
+    xk(15) = x.vs;
     return xk;
 }
 
@@ -45,29 +52,42 @@ JointVector stateToJointVector(const State &x)
     return xk;
 }
 
-dJointVector inputTodJointVector(const Input &u)
+dJointVector stateTodJointVector(const State &x)
 {
-    dJointVector uk;
-    uk(0) = u.dq1;
-    uk(1) = u.dq2;
-    uk(2) = u.dq3;
-    uk(3) = u.dq4;
-    uk(4) = u.dq5;
-    uk(5) = u.dq6;
-    uk(6) = u.dq7;
+    dJointVector xk;
+    xk(0) = x.dq1;
+    xk(1) = x.dq2;
+    xk(2) = x.dq3;
+    xk(3) = x.dq4;
+    xk(4) = x.dq5;
+    xk(5) = x.dq6;
+    xk(6) = x.dq7;
+    return xk;
+}
+
+ddJointVector inputToddJointVector(const Input &u)
+{
+    ddJointVector uk;
+    uk(0) = u.ddq1;
+    uk(1) = u.ddq2;
+    uk(2) = u.ddq3;
+    uk(3) = u.ddq4;
+    uk(4) = u.ddq5;
+    uk(5) = u.ddq6;
+    uk(6) = u.ddq7;
     return uk;
 }
 
 InputVector inputToVector(const Input &u)
 {
     InputVector uk;
-    uk(0) = u.dq1;
-    uk(1) = u.dq2;
-    uk(2) = u.dq3;
-    uk(3) = u.dq4;
-    uk(4) = u.dq5;
-    uk(5) = u.dq6;
-    uk(6) = u.dq7;
+    uk(0) = u.ddq1;
+    uk(1) = u.ddq2;
+    uk(2) = u.ddq3;
+    uk(3) = u.ddq4;
+    uk(4) = u.ddq5;
+    uk(5) = u.ddq6;
+    uk(6) = u.ddq7;
     uk(7) = u.dVs;
     return uk;
 }
@@ -82,8 +102,15 @@ State vectorToState(const StateVector &xk)
     x.q5 = xk(4);
     x.q6 = xk(5);
     x.q7 = xk(6);
-    x.s  = xk(7);
-    x.vs = xk(8);
+    x.dq1 = xk(7);
+    x.dq2 = xk(8);
+    x.dq3 = xk(9);
+    x.dq4 = xk(10);
+    x.dq5 = xk(11);
+    x.dq6 = xk(12);
+    x.dq7 = xk(13);
+    x.s  = xk(14);
+    x.vs = xk(15);
 
     return x;
 }
@@ -91,13 +118,13 @@ State vectorToState(const StateVector &xk)
 Input vectorToInput(const InputVector &uk)
 {
     Input u;
-    u.dq1 = uk(0);
-    u.dq2 = uk(1);
-    u.dq3 = uk(2);
-    u.dq4 = uk(3);
-    u.dq5 = uk(4);
-    u.dq6 = uk(5);
-    u.dq7 = uk(6);
+    u.ddq1 = uk(0);
+    u.ddq2 = uk(1);
+    u.ddq3 = uk(2);
+    u.ddq4 = uk(3);
+    u.ddq5 = uk(4);
+    u.ddq6 = uk(5);
+    u.ddq7 = uk(6);
     u.dVs = uk(7);
 
     return u;
@@ -113,8 +140,15 @@ State arrayToState(double *xk)
     x.q5 = xk[4];
     x.q6 = xk[5];
     x.q7 = xk[6];
-    x.s  = xk[7];
-    x.vs = xk[8];
+    x.dq1 = xk[7];
+    x.dq2 = xk[8];
+    x.dq3 = xk[9];
+    x.dq4 = xk[10];
+    x.dq5 = xk[11];
+    x.dq6 = xk[12];
+    x.dq7 = xk[13];
+    x.s  = xk[14];
+    x.vs = xk[15];
 
     return x;
 }
@@ -122,13 +156,13 @@ State arrayToState(double *xk)
 Input arrayToInput(double *uk)
 {
     Input u;
-    u.dq1 = uk[0];
-    u.dq2 = uk[1];
-    u.dq3 = uk[2];
-    u.dq4 = uk[3];
-    u.dq5 = uk[4];
-    u.dq6 = uk[5];
-    u.dq7 = uk[6];
+    u.ddq1 = uk[0];
+    u.ddq2 = uk[1];
+    u.ddq3 = uk[2];
+    u.ddq4 = uk[3];
+    u.ddq5 = uk[4];
+    u.ddq6 = uk[5];
+    u.ddq7 = uk[6];
     u.dVs = uk[7];
 
     return u;
