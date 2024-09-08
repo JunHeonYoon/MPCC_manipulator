@@ -31,7 +31,8 @@ static const int PANDA_DOF = 7;
 static const int NX = 9;  // [joint angle, s(path param), vs]
 static const int NU = 8;  // [djoint angle, dVs]
 
-static const int NPC = 2; // number of polytopic constraints: Self collision, Singularity
+// static const int NPC = 2; // number of polytopic constraints: Self collision, Singularity
+static const int NPC = 3; // number of polytopic constraints: Self collision, Singularity, Env collision
 
 static constexpr int N = 10;
 static constexpr double INF = 1E30;
@@ -63,6 +64,7 @@ struct StateInputIndex{
     // Index of constraints
     int con_selcol = 0; // self collision 
     int con_sing = 1;   // singularity
+    int con_envcol = 2;   // env collision
 };
 
 static const StateInputIndex si_index;

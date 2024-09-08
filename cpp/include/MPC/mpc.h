@@ -67,6 +67,13 @@ public:
     /// @return (bool) whether mpc is solved or not
     bool runMPC(MPCReturn &mpc_return, State &x0);
 
+    /// @brief run MPC by sqp given current state
+    /// @param (MPCReturn) log for MPC; optimal control input, total horizon results, time to run MPC
+    /// @param x0 (State) current state
+    /// @param voxel (std::vector<float>) Voxel Occupancy grid map
+    /// @return (bool) whether mpc is solved or not
+    bool runMPC_(MPCReturn &mpc_return, State &x0, const std::vector<float> &voxel);
+
     /// @brief set track given X-Y-Z-R path data
     /// @param X (Eigen::VectorXd) X path data
     /// @param Y (Eigen::VectorXd) Y path data

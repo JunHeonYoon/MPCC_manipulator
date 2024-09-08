@@ -9,6 +9,7 @@
 #include "Params/params.h"
 #include "Model/robot_model.h"
 #include "Constraints/SelfCollision/SelfCollisionModel.h"
+#include "Constraints/EnvCollision/EnvCollisionModel.h"
 #include "Model/integrator.h"
 #include "Params/track.h"
 #include "Spline/cubic_spline_rot.h"
@@ -112,6 +113,7 @@ BOOST_PYTHON_MODULE(MPCC_WRAPPER)
         .def_readonly("dVs", &StateInputIndex::dVs)
         .def_readonly("con_selcol", &StateInputIndex::con_selcol)
         .def_readonly("con_sing", &StateInputIndex::con_sing)
+        .def_readonly("con_envcol", &StateInputIndex::con_envcol)
     ;
 
     // Bind the static instance si_index
@@ -236,6 +238,17 @@ BOOST_PYTHON_MODULE(MPCC_WRAPPER)
             .def("setNeuralNetwork", &SelCollNNmodel::setNeuralNetwork)
             .def("calculateMlpOutput", &SelCollNNmodel::calculateMlpOutput)
     ;
+
+    // =================================================
+    // ============== EnvCollisionModel.h ==============
+    // =================================================
+    // EnvCollNNmodel binding
+    class_<EnvCollNNmodel, std::shared_ptr<EnvCollNNmodel>, boost::noncopyable>("EnvCollNNmodel", no_init)
+            .def(init<>())
+            .def(init<const std::string&>())
+            .def("setNeuralNetwork", &EnvCollNNmodel::setNeuralNetwork)
+            .def("forward", &EnvCollNNmodel::forward)
+    ;
     
     // =================================================
     // ================= integrator.h ==================
@@ -310,6 +323,7 @@ BOOST_PYTHON_MODULE(MPCC_WRAPPER)
         .def(init<double, const PathToJson &>())
         .def(init<double, const PathToJson &, const ParamValue &>())
         .def("runMPC", &MPC::runMPC)
+        .def("runMPC_", &MPC::runMPC_)
         .def("setTrack", &MPC::setTrack)
         .def("getTrackLength", &MPC::getTrackLength)
         .def("setParam", &MPC::setParam)

@@ -26,15 +26,25 @@ bounds_(BoundsParam(path.bounds_path),Param(path.param_path)),
 normalization_param_(path.normalization_path),
 sqp_param_(path.sqp_path),
 path_(path),
-Ts_(Ts)
+Ts_(Ts),
+device_(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
 {   
     robot_ = std::make_unique<RobotModel>();
+
     selcolNN_ = std::make_unique<SelCollNNmodel>();
     Eigen::VectorXd sel_col_n_hidden(2);
     sel_col_n_hidden << 256, 64;
     selcolNN_->setNeuralNetwork(PANDA_DOF, 1, sel_col_n_hidden, true);
 
+    // envcolNN_ = std::make_unique<EnvCollNNmodel>();
+    // envcolNN_->setNeuralNetwork(std::vector<int>{36, 36, 36}, PANDA_DOF);
+    // envcolNN_.setNeuralNetwork(std::vector<int>{36, 36, 36}, PANDA_DOF);
+    env_model_ = torch::jit::load(pkg_path + "NNmodel/env_collision.pt");
+    env_model_.to(device_);
+
     initial_guess_.resize(N+1);
+    rb_.resize(N+1);
+    for(size_t i=0; i<rb_.size(); i++) rb_[i].setZero();
 }
 
 OsqpInterface::OsqpInterface(double Ts,const PathToJson &path,const ParamValue &param_value)
@@ -45,15 +55,26 @@ bounds_(BoundsParam(path.bounds_path),Param(path.param_path,param_value.param)),
 normalization_param_(path.normalization_path,param_value.normalization),
 sqp_param_(path.sqp_path,param_value.sqp),
 path_(path),
-Ts_(Ts)
+Ts_(Ts),
+device_(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
 {   
     robot_ = std::make_unique<RobotModel>();
+
     selcolNN_ = std::make_unique<SelCollNNmodel>();
     Eigen::VectorXd sel_col_n_hidden(2);
     sel_col_n_hidden << 256, 64;
     selcolNN_->setNeuralNetwork(PANDA_DOF, 1, sel_col_n_hidden, true);
 
+    // envcolNN_ = std::make_unique<EnvCollNNmodel>();
+    // envcolNN_->setNeuralNetwork(std::vector<int>{36, 36, 36}, PANDA_DOF);
+    // envcolNN_.setNeuralNetwork(std::vector<int>{36, 36, 36}, PANDA_DOF);
+    env_model_ = torch::jit::load(pkg_path + "NNmodel/env_collision.pt");
+    env_model_.to(device_);
+
+
     initial_guess_.resize(N+1);
+    rb_.resize(N+1);
+    for(size_t i=0; i<rb_.size(); i++) rb_[i].setZero();
 }
 
 void OsqpInterface::setTrack(const ArcLengthSpline track)
@@ -68,14 +89,91 @@ void OsqpInterface::setParam(const ParamValue &param_value)
     bounds_ = Bounds(BoundsParam(path_.bounds_path),Param(path_.param_path,param_value.param));
 }
 
+void OsqpInterface::setEnvData(const std::vector<float> &voxel)
+{
+    std::vector<float> x_occ;
+    std::vector<float> x_q;
+
+    x_occ.resize(voxel.size()*(N+1));
+    x_q.resize(PANDA_DOF*(N+1));
+    for(size_t i=0; i<=N; i++)
+    {
+        assert(rb_[i].is_data_valid == true);
+        std::copy(voxel.begin(), voxel.end(), x_occ.begin() + i * voxel.size());
+        std::transform(rb_[i].q_.data(), rb_[i].q_.data() + rb_[i].q_.size(),
+                       x_q.begin() + i * rb_[i].q_.size(),
+                       [](double val) { return static_cast<float>(val); });
+    }
+    // auto env_pred = envcolNN_->forward(x_occ, x_q);
+    // auto env_pred = envcolNN_.forward(x_occ, x_q);
+
+
+    at::Tensor x_q_ten = torch::from_blob(x_q.data(), {N+1, PANDA_DOF}, torch::kFloat32).clone().to(device_);
+    at::Tensor x_occ_ten = torch::from_blob(x_occ.data(), {N+1, 1, 36,36,36}, torch::kFloat32).clone().to(device_);
+    // std::cout << x_q << std::endl;
+    // std::cout << x_occ << std::endl;
+
+    // Set requires_grad_ to true for x_q to enable gradient computation
+    x_q_ten.set_requires_grad(true);
+
+    // Forward pass through the model
+    std::vector<torch::jit::IValue> inputs;
+    inputs.push_back(x_q_ten);
+    inputs.push_back(x_occ_ten);
+
+    // for(auto& val : inputs) std::cout << inputs <<std::endl;
+
+    torch::Tensor output = env_model_.forward(inputs).toTensor().cpu();
+
+
+    // Convert the output tensor to a vector for easy handling
+    Eigen::VectorXf env_min_dist_pred(output.numel());
+    std::memcpy(env_min_dist_pred.data(), output.data_ptr<float>(), output.numel() * sizeof(float));
+
+    // Calculate the Jacobian
+    int batch_size = output.size(0);
+    Eigen::MatrixXf jacobian_pred_T(x_q_ten.size(1), batch_size);
+    for (int i=0; i<batch_size; ++i) 
+    {
+        at::Tensor scalar_output = output[i][0];  // output[i] is a scalar (since output is [10, 1])
+    
+        // Perform backward pass for each scalar output to compute the gradient
+        scalar_output.backward(torch::Tensor(), true);
+
+        // Ensure the gradient is contiguous
+        at::Tensor grad = x_q_ten.grad()[i].cpu();
+
+        // Use memcpy to copy the gradient into the Eigen matrix (1D memory block)
+        std::memcpy(jacobian_pred_T.col(i).data(), grad.data_ptr<float>(), 7 * sizeof(float));
+
+        // Reset gradients for the next iteration
+        x_q_ten.grad().zero_();
+    }
+
+    auto env_pred = std::make_pair(env_min_dist_pred.cast<double>(), jacobian_pred_T.transpose().cast<double>());
+    // std::cout << "Model inference completed\n";
+    // std::cout << "Ans: " << env_pred.first.size() << std:: endl;
+    // std::cout << "Jac: " << env_pred.second.rows() << ", "<< env_pred.second.cols() << std:: endl;
+
+
+
+    for(size_t i=0; i<=N; i++)
+    {
+        rb_[i].updateEnv(env_pred.first(i), env_pred.second.row(i).transpose());
+    }
+}
+
 void OsqpInterface::setInitialGuess(const std::vector<OptVariables> &initial_guess)
 {
+    for(size_t i=0; i<rb_.size(); i++) rb_[i].setZero();
     initial_guess_ = initial_guess;
     initial_guess_vec_.setZero(N_var);
     for(size_t i=0;i<=N; i++)
     {
         initial_guess_vec_.segment(NX*i, NX) = stateToVector(initial_guess[i].xk);
         if(i != N) initial_guess_vec_.segment(NX*(N+1) + NU*i, NU) = inputToVector(initial_guess[i].uk);
+
+        rb_[i].update(stateToJointVector(initial_guess[i].xk), robot_, selcolNN_);
     }
 }
 
@@ -87,8 +185,9 @@ void OsqpInterface::setCost(const std::vector<OptVariables> &initial_guess,
     if(hess_obj) hess_obj->setZero(N_var,N_var);
     for(size_t i=0; i<=N; i++)
     {
-        RobotData rbk;
-        rbk.update(stateToJointVector(initial_guess[i].xk), robot_, selcolNN_);
+        // RobotData rbk;
+        // rbk.update(stateToJointVector(initial_guess[i].xk), robot_, selcolNN_);
+        assert(rb_[i].isUpdated() == true);
 
         double obj_k;
         CostGrad grad_cost_k;
@@ -96,15 +195,18 @@ void OsqpInterface::setCost(const std::vector<OptVariables> &initial_guess,
         
         if(obj && !grad_obj && !hess_obj)
         {
-            cost_.getCost(track_,initial_guess[i].xk,initial_guess[i].uk,rbk,i, &obj_k, NULL,NULL);
+            // cost_.getCost(track_,initial_guess[i].xk,initial_guess[i].uk,rbk,i, &obj_k, NULL,NULL);
+            cost_.getCost(track_,initial_guess[i].xk,initial_guess[i].uk,rb_[i],i, &obj_k, NULL,NULL);
         }
         else if(obj && grad_obj && !hess_obj)
         {
-            cost_.getCost(track_,initial_guess[i].xk,initial_guess[i].uk,rbk,i, &obj_k, &grad_cost_k,NULL);
+            // cost_.getCost(track_,initial_guess[i].xk,initial_guess[i].uk,rbk,i, &obj_k, &grad_cost_k,NULL);
+            cost_.getCost(track_,initial_guess[i].xk,initial_guess[i].uk,rb_[i],i, &obj_k, &grad_cost_k,NULL);
         }
         else if(obj && grad_obj && hess_obj)
         {
-            cost_.getCost(track_,initial_guess[i].xk,initial_guess[i].uk,rbk,i, &obj_k, &grad_cost_k,&hess_cost_k);
+            // cost_.getCost(track_,initial_guess[i].xk,initial_guess[i].uk,rbk,i, &obj_k, &grad_cost_k,&hess_cost_k);
+            cost_.getCost(track_,initial_guess[i].xk,initial_guess[i].uk,rb_[i],i, &obj_k, &grad_cost_k,&hess_cost_k);
         }
         if(obj) (*obj) += obj_k;
         if(grad_obj) grad_obj->segment(NX*i, NX) = normalization_param_.T_x*grad_cost_k.f_x;
@@ -186,18 +288,21 @@ void OsqpInterface::setPolytopicConstraints(const std::vector<OptVariables> &ini
 
     for(size_t i=0;i<=N;i++)
     {
-        RobotData rbk;
-        rbk.update(stateToJointVector(initial_guess[i].xk), robot_, selcolNN_);
+        // RobotData rbk;
+        // rbk.update(stateToJointVector(initial_guess[i].xk), robot_, selcolNN_);
+        assert(rb_[i].isUpdated() == true);
 
         ConstraintsInfo constr_info_k;
         ConstraintsJac jac_constr_k;
         if(constr_ineqp && !jac_constr_ineqp)
         {
-            constraints_.getConstraints(initial_guess[i].xk,initial_guess[i].uk,rbk,i,&constr_info_k,NULL);
+            // constraints_.getConstraints(initial_guess[i].xk,initial_guess[i].uk,rbk,i,&constr_info_k,NULL);
+            constraints_.getConstraints(initial_guess[i].xk,initial_guess[i].uk,rb_[i],i,&constr_info_k,NULL);
         }
         else if(constr_ineqp && jac_constr_ineqp)
         {
-            constraints_.getConstraints(initial_guess[i].xk,initial_guess[i].uk,rbk,i,&constr_info_k,&jac_constr_k);
+            // constraints_.getConstraints(initial_guess[i].xk,initial_guess[i].uk,rbk,i,&constr_info_k,&jac_constr_k);
+            constraints_.getConstraints(initial_guess[i].xk,initial_guess[i].uk,rb_[i],i,&constr_info_k,&jac_constr_k);
             // std:cout << "self collision constraint["<<i<<"]: " << constr_info_k.c_vec(si_index.con_selcol) << " < " << constr_info_k.c_uvec(si_index.con_selcol) <<std::endl;
         }
         if(jac_constr_ineqp)

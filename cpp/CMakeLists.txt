@@ -11,16 +11,27 @@ MESSAGE( STATUS "Using CvPlot: " ${USE_CVPLOT} )
 
 add_definitions(-DBUILD_DIRECTORY=\"${CMAKE_SOURCE_DIR}\")
 
+set(CMAKE_CUDA_ARCHITECTURES "native")
+set(CUDA_TOOLKIT_ROOT_DIR /usr/local/cuda-11.8)
+set(CMAKE_CUDA_COMPILER /usr/local/cuda-11.8/bin/nvcc)
+set(CUDACXX /usr/local/cuda-11.8/bin/nvcc)
+
 find_package(Eigen3 REQUIRED)
 find_package(RBDL REQUIRED)
 find_package(OsqpEigen REQUIRED)
-include_directories(include)
+find_package(Torch REQUIRED)
+include_directories(
+        ${TORCH_INCLUDE_DIRS}
+        ${EIGEN3_INCLUDE_DIR}
+        include
+)
 
 
 add_library(MPCC_LIB SHARED
         src/types.cpp
         src/Model/robot_model.cpp
         src/Constraints/SelfCollision/SelfCollisionModel.cpp
+        src/Constraints/EnvCollision/EnvCollisionModel.cpp
         src/Interfaces/osqp_interface.cpp
         src/Interfaces/solver_interface.cpp
         src/Model/model.cpp
@@ -38,11 +49,13 @@ add_library(MPCC_LIB SHARED
         include/types.h
         include/Model/robot_model.h
         include/Constraints/SelfCollision/SelfCollisionModel.h
+        include/Constraints/EnvCollision/EnvCollisionModel.h
         include/Params/track.h
         )
 target_link_libraries(MPCC_LIB PUBLIC
         ${RBDL_LIBRARY} 
         OsqpEigen::OsqpEigen 
+        "${TORCH_LIBRARIES}"
 )
 
 add_executable(MPCC_EXE src/main.cpp)

@@ -9,58 +9,76 @@ namespace mpcc
 // Data containing kinematic of robot wrt given joint angle
 struct RobotData
 {
-    Eigen::Matrix<double,PANDA_DOF,1> q;           // joint angle
+    Eigen::Matrix<double,PANDA_DOF,1> q_;           // joint angle
     // Eigen::Matrix<double,PANDA_DOF,1> q_dot;       // joint velocity
     
-    Eigen::Vector3d EE_position;                   // End-Effector position
-    Eigen::Matrix3d EE_orientation;                // End-Effector orientation
+    Eigen::Vector3d EE_position_;                   // End-Effector position
+    Eigen::Matrix3d EE_orientation_;                // End-Effector orientation
 
-    Eigen::Matrix<double,6,PANDA_DOF> J;           // End-Effector Jacobian
-    Eigen::Matrix<double,3,PANDA_DOF> Jv;          // End-Effector translation Jacobian
-    Eigen::Matrix<double,3,PANDA_DOF> Jw;          // End-Effector rotation Jacobian
+    Eigen::Matrix<double,6,PANDA_DOF> J_;           // End-Effector Jacobian
+    Eigen::Matrix<double,3,PANDA_DOF> Jv_;          // End-Effector translation Jacobian
+    Eigen::Matrix<double,3,PANDA_DOF> Jw_;          // End-Effector rotation Jacobian
 
-    double manipul;                                // Manipullabilty
-    Eigen::Matrix<double,PANDA_DOF,1> d_manipul;   // Gradient of Manipullabilty wrt q
+    double manipul_;                                // Manipullabilty
+    Eigen::Matrix<double,PANDA_DOF,1> d_manipul_;   // Gradient of Manipullabilty wrt q
 
-    double min_dist;                               // Minimum distance between robot links
-    Eigen::Matrix<double,PANDA_DOF,1> d_min_dist;  // Jacobian of minimum distance between robot links
+    double sel_min_dist_;                               // Minimum distance between robot links
+    Eigen::Matrix<double,PANDA_DOF,1> d_sel_min_dist_;  // Jacobian of minimum distance between robot links
 
-    bool is_data_valid = false;
+    double env_min_dist_;                               // Minimum distance between robot links and enviornment
+    Eigen::Matrix<double,PANDA_DOF,1> d_env_min_dist_;  // Jacobian of minimum distance between robot links and enviornment
+
+    bool is_data_valid;
+    bool is_env_data_valid;
 
     void setZero()
     {
-        q.setZero();
+        q_.setZero();
         // q_dot.setZero();
-        EE_position.setZero();
-        EE_orientation.setZero();
-        Jv.setZero();
-        Jw.setZero();
-        manipul = 0;
-        d_manipul.setZero();
+        EE_position_.setZero();
+        EE_orientation_.setZero();
+        J_.setZero();
+        Jv_.setZero();
+        Jw_.setZero();
+        manipul_ = 0;
+        d_manipul_.setZero();
+        sel_min_dist_ = 0;
+        d_sel_min_dist_.setZero();
+        env_min_dist_ = 0;
+        d_env_min_dist_.setZero();
+        is_data_valid = false;
+        is_env_data_valid = false;
     }
 
     void update(Eigen::Matrix<double,PANDA_DOF,1> q_input, const std::unique_ptr<RobotModel> &robot_model, const std::unique_ptr<SelCollNNmodel> &selcol_model)
     {
-        q = q_input;
-        EE_position = robot_model->getEEPosition(q);
-        EE_orientation = robot_model->getEEOrientation(q);
-        J = robot_model->getJacobian(q);
-        Jv = J.block(0,0,3,PANDA_DOF);
-        Jw = J.block(3,0,3,PANDA_DOF);
-        manipul = robot_model->getManipulability(q);
-        d_manipul = robot_model->getDManipulability(q);
+        q_ = q_input;
+        EE_position_ = robot_model->getEEPosition(q_);
+        EE_orientation_ = robot_model->getEEOrientation(q_);
+        J_ = robot_model->getJacobian(q_);
+        Jv_ = J_.block(0,0,3,PANDA_DOF);
+        Jw_ = J_.block(3,0,3,PANDA_DOF);
+        manipul_ = robot_model->getManipulability(q_);
+        d_manipul_ = robot_model->getDManipulability(q_);
 
-        auto pred = selcol_model->calculateMlpOutput(q, false);
-        min_dist = pred.first.value();
-        d_min_dist = pred.second.transpose();
+        auto pred = selcol_model->calculateMlpOutput(q_, false);
+        sel_min_dist_ = pred.first.value();
+        d_sel_min_dist_ = pred.second.transpose();
 
         is_data_valid = true;
     }
 
-    bool check_valid_data(Eigen::Matrix<double,PANDA_DOF,1> q_input)
+    void updateEnv(double env_min_dist, Eigen::Matrix<double,PANDA_DOF,1> d_env_min_dist)
     {
-        if((q - q_input).norm() < 1E-8 && is_data_valid) return true;
-        else return false;
+        env_min_dist_ = env_min_dist;
+        d_env_min_dist_ = d_env_min_dist;
+
+        is_env_data_valid = true;
+    }
+
+    bool isUpdated()
+    {
+        return (is_data_valid && is_env_data_valid);
     }
 };
 }

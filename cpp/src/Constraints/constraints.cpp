@@ -62,8 +62,8 @@ void Constraints::getSelcollConstraint(const State &x,const Input &u,const Robot
     const dJointVector dq = inputTodJointVector(u);
 
     // compute minimum distance between each links and its derivative
-    double min_dist = 0.01*rb.min_dist; // unit: [cm]
-    Eigen::VectorXd d_min_dist = 0.01*rb.d_min_dist;
+    double min_dist = 0.01*rb.sel_min_dist_; // unit: [cm]
+    Eigen::VectorXd d_min_dist = 0.01*rb.d_sel_min_dist_;
 
     // compute RBF value of minimum distance and its derivative
     double r = param_.tol_selcol*0.01; // buffer [cm]
@@ -102,8 +102,8 @@ void Constraints::getSingularConstraint(const State &x,const Input &u,const Robo
     const dJointVector dq = inputTodJointVector(u);
 
     //  compute manipulability and its derivative
-    double manipulability = rb.manipul; 
-    Eigen::VectorXd d_manipulability = rb.d_manipul;
+    double manipulability = rb.manipul_; 
+    Eigen::VectorXd d_manipulability = rb.d_manipul_;
 
     // compute RBF value of manipulability and its derivative
     double eps = param_.tol_sing;    // buffer
@@ -134,41 +134,89 @@ void Constraints::getSingularConstraint(const State &x,const Input &u,const Robo
     return;
 }
 
+void Constraints::getEnvcollConstraint(const State &x,const Input &u,const RobotData &rb,int k,
+                                       OneDConstraintInfo *constraint, OneDConstraintsJac* Jac)
+{
+    // compute environment-collision constraints
+    // -∇_q Γ(q)^T * q_dot <= -RBF(Γ(q) - r), where r is buffer
+    const JointVector q = stateToJointVector(x);
+    const dJointVector dq = inputTodJointVector(u);
+
+    // compute minimum distance between each links and its derivative
+    double min_dist = 0.01*rb.env_min_dist_; // unit: [cm]
+    Eigen::VectorXd d_min_dist = 0.01*rb.d_env_min_dist_;
+
+    // compute RBF value of minimum distance and its derivative
+    double r = param_.tol_selcol*0.01; // buffer [cm]
+    double delta = -0.5; // switching point of RBF
+    double RBF = getRBF(delta, min_dist - r);
+
+    if(constraint)
+    {
+        constraint->setZero();
+        if(k != N)
+        {
+            constraint->c_l = -INF;
+            constraint->c_u = 0.0;
+            constraint->c = -d_min_dist.dot(dq) + RBF;
+        }
+    }
+    if(Jac)
+    {
+        Jac->setZero();
+        if(k != N)
+        {
+            Eigen::Matrix<double, PANDA_DOF, PANDA_DOF> dd_min_dist = d_min_dist * d_min_dist.transpose(); // hessian matrix (approximation)
+            double d_RBF = getDRBF(delta, min_dist - r);
+            Jac->c_x_i.block(0,si_index.q1,1,PANDA_DOF) = (-dd_min_dist*dq + d_RBF*d_min_dist).transpose();
+            Jac->c_u_i.block(0,si_index.dq1,1,PANDA_DOF) = -d_min_dist.transpose();
+        }
+    }
+    return;
+}
+
 void Constraints::getConstraints(const State &x,const Input &u,const RobotData &rb,int k,
                                  ConstraintsInfo *constraint, ConstraintsJac* Jac)
 {
     // compute all the polytopic state constraints
     // compute the three constraints
-    OneDConstraintInfo constraint_selcol, constraint_sing;
-    OneDConstraintsJac jac_selcol, jac_sing;
+    OneDConstraintInfo constraint_selcol, constraint_sing, constraint_envcol;
+    OneDConstraintsJac jac_selcol, jac_sing, jac_envcol;
 
     if(Jac)
     {
         getSelcollConstraint(x, u, rb, k, &constraint_selcol, &jac_selcol);
         getSingularConstraint(x, u, rb, k, &constraint_sing, &jac_sing);
+        getEnvcollConstraint(x, u, rb, k, &constraint_envcol, &jac_envcol);
     }
     else
     {
         getSelcollConstraint(x, u, rb, k, &constraint_selcol, NULL);
         getSingularConstraint(x, u, rb, k, &constraint_sing, NULL);
+        getEnvcollConstraint(x, u, rb, k, &constraint_envcol, NULL);
     }
 
     if(constraint)
     {
         constraint->c_vec(si_index.con_selcol) = constraint_selcol.c;
         constraint->c_vec(si_index.con_sing) = constraint_sing.c;
+        constraint->c_vec(si_index.con_envcol) = constraint_envcol.c;
         constraint->c_lvec(si_index.con_selcol) = constraint_selcol.c_l;
         constraint->c_lvec(si_index.con_sing) = constraint_sing.c_l;
+        constraint->c_lvec(si_index.con_selcol) = constraint_envcol.c_l;
         constraint->c_uvec(si_index.con_selcol) = constraint_selcol.c_u;
         constraint->c_uvec(si_index.con_sing) = constraint_sing.c_u;
+        constraint->c_uvec(si_index.con_envcol) = constraint_envcol.c_u;
     }
     
     if(Jac)
     {
         Jac->c_x.row(si_index.con_selcol) = jac_selcol.c_x_i;
         Jac->c_x.row(si_index.con_sing) = jac_sing.c_x_i;
+        Jac->c_x.row(si_index.con_envcol) = jac_envcol.c_x_i;
         Jac->c_u.row(si_index.con_selcol) = jac_selcol.c_u_i;
         Jac->c_u.row(si_index.con_sing) = jac_sing.c_u_i;
+        Jac->c_u.row(si_index.con_envcol) = jac_envcol.c_u_i;
     }
     return;
 }
