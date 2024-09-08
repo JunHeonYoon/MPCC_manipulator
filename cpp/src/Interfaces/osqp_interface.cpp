@@ -123,32 +123,31 @@ void OsqpInterface::setEnvData(const std::vector<float> &voxel)
 
     // for(auto& val : inputs) std::cout << inputs <<std::endl;
 
-    torch::Tensor output = env_model_.forward(inputs).toTensor().cpu();
+    torch::Tensor output = env_model_.forward(inputs).toTensor();
 
 
     // Convert the output tensor to a vector for easy handling
     Eigen::VectorXf env_min_dist_pred(output.numel());
-    std::memcpy(env_min_dist_pred.data(), output.data_ptr<float>(), output.numel() * sizeof(float));
+    std::memcpy(env_min_dist_pred.data(), output.cpu().data_ptr<float>(), output.numel() * sizeof(float));
 
     // Calculate the Jacobian
-    int batch_size = output.size(0);
-    Eigen::MatrixXf jacobian_pred_T(x_q_ten.size(1), batch_size);
-    for (int i=0; i<batch_size; ++i) 
-    {
-        at::Tensor scalar_output = output[i][0];  // output[i] is a scalar (since output is [10, 1])
-    
-        // Perform backward pass for each scalar output to compute the gradient
-        scalar_output.backward(torch::Tensor(), true);
+    // GPU에서 병렬로 Jacobian 계산
+    // grad_outputs를 std::vector로 래핑
+    std::vector<torch::Tensor> grad_outputs = {torch::ones_like(output).to(device_)};
 
-        // Ensure the gradient is contiguous
-        at::Tensor grad = x_q_ten.grad()[i].cpu();
+    // autograd::grad로 Jacobian 계산
+    std::vector<torch::Tensor> jacobians = torch::autograd::grad(
+        {output},                // Output tensor
+        {x_q_ten},               // Input tensor we want to differentiate
+        grad_outputs,            // Gradient w.r.t the outputs (as a vector)
+        true,                    // Create graph
+        true                     // Retain graph
+    );
 
-        // Use memcpy to copy the gradient into the Eigen matrix (1D memory block)
-        std::memcpy(jacobian_pred_T.col(i).data(), grad.data_ptr<float>(), 7 * sizeof(float));
 
-        // Reset gradients for the next iteration
-        x_q_ten.grad().zero_();
-    }
+    // Tensor를 Eigen 형태로 변환
+    Eigen::MatrixXf jacobian_pred_T(7, output.size(0));
+    std::memcpy(jacobian_pred_T.data(), jacobians[0].cpu().data_ptr<float>(), 7 * output.size(0) * sizeof(float));
 
     auto env_pred = std::make_pair(env_min_dist_pred.cast<double>(), jacobian_pred_T.transpose().cast<double>());
     // std::cout << "Model inference completed\n";
