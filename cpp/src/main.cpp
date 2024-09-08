@@ -51,7 +51,7 @@ int main() {
     Integrator integrator = Integrator(jsonConfig["Ts"],json_paths);
     RobotModel robot = RobotModel();
     SelCollNNmodel selcolNN = SelCollNNmodel();
-    selcolNN.setNeuralNetwork(PANDA_DOF, 1,(Eigen::VectorXd(3) << 128, 64, 32).finished(), true);
+    selcolNN.setNeuralNetwork(PANDA_DOF, 1,(Eigen::VectorXd(2) << 256 , 64).finished(), true);
 
     std::vector<MPCReturn> log;
     MPC mpc(jsonConfig["Ts"],json_paths);

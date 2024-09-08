@@ -1,6 +1,7 @@
 .vscode
 cpp/build
 cpp/External
+cpp/NNmodel/env_collision.pt
 
 python/__pycache__/
 python/*.pyc

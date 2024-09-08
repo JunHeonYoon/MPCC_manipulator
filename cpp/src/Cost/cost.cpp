@@ -83,7 +83,7 @@ ErrorInfo Cost::getErrorInfo(const ArcLengthSpline &track,const State &x,const R
 {
     ErrorInfo error_info;
     // compute error between reference and X-Y-Z position of the robot EE
-    const Eigen::Vector3d pos = rb.EE_position;
+    const Eigen::Vector3d pos = rb.EE_position_;
     const TrackPoint track_point = getRefPoint(track,x);
     const Eigen::Vector3d total_error = pos - Eigen::Vector3d(track_point.x_ref,track_point.y_ref, track_point.z_ref);
     
@@ -97,7 +97,7 @@ ErrorInfo Cost::getErrorInfo(const ArcLengthSpline &track,const State &x,const R
     // jacobian of the total error with respect to state X
     Eigen::Matrix<double,3,NX> d_total_error;
     d_total_error.setZero();
-    d_total_error.block(0,si_index.q1,3,PANDA_DOF) = rb.Jv;
+    d_total_error.block(0,si_index.q1,3,PANDA_DOF) = rb.Jv_;
     d_total_error.block(0,si_index.s,3,1) = -Tangent;
 
     // jacobian of the lag error with respect to state X
@@ -167,7 +167,7 @@ void Cost::getHeadingCost(const ArcLengthSpline &track,const State &x,const Robo
      // compute heading orientation error cost
     const TrackOrienatation ref_ori = getRefOrientation(track,x);
     const Eigen::Matrix3d ref_R = ref_ori.R_ref;
-    const Eigen::Matrix3d cur_R = rb.EE_orientation;
+    const Eigen::Matrix3d cur_R = rb.EE_orientation_;
 
     const Eigen::Matrix3d R_bar = ref_R.transpose() * cur_R;
     const Eigen::Vector3d Log_R_bar = getInverseSkewVector(LogMatrix(R_bar));
@@ -186,7 +186,7 @@ void Cost::getHeadingCost(const ArcLengthSpline &track,const State &x,const Robo
         Eigen::Matrix3d J_r_inv;
         if(Log_R_bar.norm() < 1e-8) J_r_inv = Eigen::Matrix3d::Identity();
         else J_r_inv = Eigen::Matrix3d::Identity() + 1./2.*getSkewMatrix(Log_R_bar) + ( 1. / Log_R_bar.squaredNorm() + ( 1. + cos(Log_R_bar.norm()) ) / ( 2. * Log_R_bar.norm() * sin(Log_R_bar.norm()) ) )*getSkewMatrix(Log_R_bar)*getSkewMatrix(Log_R_bar);
-        d_Log_R_bar.block(0,si_index.q1,3,PANDA_DOF) = J_r_inv * cur_R.transpose() * rb.Jw;
+        d_Log_R_bar.block(0,si_index.q1,3,PANDA_DOF) = J_r_inv * cur_R.transpose() * rb.Jw_;
         d_Log_R_bar.block(0,si_index.s,3,1) = -J_r_inv * cur_R.transpose() * ref_ori.dR_ref;
     }
 
@@ -211,7 +211,7 @@ void Cost::getInputCost(const ArcLengthSpline &track,const Input &u,const RobotD
 {
     // compute control input cost, formed by joint velocity, joint acceleration, acceleration of path parameter 
     dJointVector dq = inputTodJointVector(u);
-    Eigen::Matrix<double, 6, PANDA_DOF> J = rb.J;
+    Eigen::Matrix<double, 6, PANDA_DOF> J = rb.J_;
 
     // Exact Input cost
     if(obj)
@@ -250,7 +250,7 @@ void Cost::getInputCost(const ArcLengthSpline &track,const Input &u,const RobotD
 void Cost::getCost(const ArcLengthSpline &track,const State &x,const Input &u,const RobotData &rb,int k,
                    double* obj,CostGrad* grad,CostHess* hess)
 {
-    double ratio = std::min(rb.min_dist / (param_.tol_selcol*2.0), rb.manipul / (param_.tol_sing*2.0));
+    double ratio = std::min(rb.sel_min_dist_ / (param_.tol_selcol*2.0), rb.manipul_ / (param_.tol_sing*2.0));
     if(ratio <= 1.0)
     {
         // contouring_cost_ = cost_param_.q_c * ((1.0 - cost_param_.q_c_red_ratio) / (1.0 - 0.5) * (ratio - 0.5) + cost_param_.q_c_red_ratio);
