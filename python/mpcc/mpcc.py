@@ -33,7 +33,7 @@ class MPCC():
         assert set(param_value.keys()).issubset(param_list) == True, f"List of Parameters must be a subset of {param_list}, but got {list(param_value.keys())}"
 
         param_dict = {
-            "param": ["max_dist_proj", "desired_ee_velocity", "s_trust_region", "tol_sing", "tol_selcol"],
+            "param": ["max_dist_proj", "desired_ee_velocity", "s_trust_region", "tol_sing", "tol_selcol", "tol_envcol"],
             "cost": ["qC","qCNmult","qL","qVs","qOri","rdq","rVee","rdVs","qC_reduction_ratio","qL_increase_ratio","qOri_reduction_ratio"],
             "bounds": ["q1l","q2l","q3l","q4l","q5l","q6l","q7l","sl","vsl","q1u","q2u","q3u","q4u","q5u","q6u","q7u","su","vsu","dq1l","dq2l","dq3l","dq4l","dq5l","dq6l","dq7l","dVsl","dq1u","dq2u","dq3u","dq4u","dq5u","dq6u","dq7u","dVsu"],
             "normalization": ["q1","q2","q3","q4","q5","q6","q7","s","vs","dq1","dq2","dq3","dq4","dq5","dq6","dq7","dVs"],
@@ -87,12 +87,13 @@ class MPCC():
         return self.spline_track.getPosition(path_parameter), self.spline_track.getOrientation(path_parameter)
 
 
-    def runMPC(self, state:np.array) -> {bool, np.array, np.array, list, dict}:
+    def runMPC(self, state:np.array, input:np.array, voxel:np.array = np.zeros(int(36*36*36))) -> {bool, np.array, np.array, list, dict}:
         assert self.track_set == True, "Set Track first!"
         assert state.size == MPCC_CPP.NX, f"State size {state.size} does not match expected size {MPCC_CPP.NX}"
         x0 = MPCC_CPP.vectorToState(state)
+        u0 = MPCC_CPP.vectorToInput(input)
         mpc_sol = MPCC_CPP.MPCReturn()
-        mpc_status = self.mpc.runMPC(mpc_sol, x0)
+        mpc_status = self.mpc.runMPC_(mpc_sol, x0, u0, voxel)
         updated_state = MPCC_CPP.stateToVector(x0)
 
         mpc_horizon=[]
@@ -104,6 +105,7 @@ class MPCC():
         compute_time = {"total": mpc_sol.compute_time.total,
                         "set_qp": mpc_sol.compute_time.set_qp,
                         "solve_qp": mpc_sol.compute_time.solve_qp,
-                        "get_alpha": mpc_sol.compute_time.get_alpha}
+                        "get_alpha": mpc_sol.compute_time.get_alpha,
+                        "set_env": mpc_sol.compute_time.set_env}
         
         return mpc_status, updated_state, MPCC_CPP.inputToVector(mpc_sol.u0), mpc_horizon, compute_time
