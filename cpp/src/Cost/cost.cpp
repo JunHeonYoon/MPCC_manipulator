@@ -206,18 +206,30 @@ void Cost::getHeadingCost(const ArcLengthSpline &track,const State &x,const Robo
     return;
 }
 
-void Cost::getInputCost(const ArcLengthSpline &track,const Input &u,const RobotData &rb,int k,
+void Cost::getInputCost(const ArcLengthSpline &track,const State &x,const Input &u,const RobotData &rb,int k,
                         double* obj,CostGrad* grad,CostHess* hess)
 {
     // compute control input cost, formed by joint velocity, joint acceleration, acceleration of path parameter 
     dJointVector dq = inputTodJointVector(u);
     Eigen::Matrix<double, 6, PANDA_DOF> J = rb.J_;
+    Eigen::Matrix<double, 3, PANDA_DOF> Jv = rb.Jv_;
+    TrackPoint track_point = getRefPoint(track, x);
+    Eigen::Vector3d Tangent = Eigen::Vector3d(track_point.dx_ref,track_point.dy_ref, track_point.dz_ref);
+    Eigen::Vector3d Normal = Eigen::Vector3d(track_point.ddx_ref,track_point.ddy_ref, track_point.ddz_ref);
+    
+    double path_vel = Tangent.dot(Jv * dq);
+    double vel_error = path_vel - x.vs;
+    double NJq = Normal.dot(Jv * dq);
+
 
     // Exact Input cost
     if(obj)
     {
         (*obj) = 0;
-        if(k != N) (*obj) = cost_param_.r_dq * dq.squaredNorm() + cost_param_.r_dVs * pow(u.dVs,2) + cost_param_.r_Vee * (J * dq).squaredNorm();
+        if(k != N) (*obj) = cost_param_.r_dq * dq.squaredNorm() +
+                            cost_param_.r_dVs * pow(u.dVs,2) + 
+                            // cost_param_.r_Vee * (J * dq).squaredNorm();
+                            cost_param_.r_Vee * pow(vel_error, 2);
     }
 
 
@@ -225,10 +237,13 @@ void Cost::getInputCost(const ArcLengthSpline &track,const Input &u,const RobotD
     if(grad)
     {
         grad->setZero();
+        grad->f_x(si_index.s) = 2.0 * cost_param_.r_Vee * vel_error * NJq;
+        grad->f_x(si_index.vs) = 2.0 * cost_param_.r_Vee * vel_error * (-1);
         if(k != N)
         {
             grad->f_u.segment(si_index.dq1,PANDA_DOF) = 2.0 * cost_param_.r_dq * dq + 
-                                                        2.0 * cost_param_.r_Vee * (J.transpose() * J * dq);
+                                                        // 2.0 * cost_param_.r_Vee * (J.transpose() * J * dq);
+                                                        2.0 * cost_param_.r_Vee * vel_error * (Jv.transpose() * Tangent);
             grad->f_u(si_index.dVs) = 2.0 * cost_param_.r_dVs*u.dVs;
         }
     }
@@ -236,11 +251,18 @@ void Cost::getInputCost(const ArcLengthSpline &track,const Input &u,const RobotD
     if(hess)
     {
         hess->setZero();
+        hess->f_xx(si_index.s,si_index.s) = 2.0 * cost_param_.r_Vee * NJq * NJq;
+        hess->f_xx(si_index.vs,si_index.vs) = 2.0 * cost_param_.r_Vee;
+        hess->f_xx(si_index.vs,si_index.s) = 2.0 * cost_param_.r_Vee * (-1) * NJq;
+        hess->f_xx(si_index.s,si_index.vs) = 2.0 * cost_param_.r_Vee * (-1) * NJq;
         if(k != N)
         {
             hess->f_uu.block(si_index.dq1,si_index.dq1,PANDA_DOF,PANDA_DOF) = 2.0 * cost_param_.r_dq * Eigen::MatrixXd::Identity(PANDA_DOF,PANDA_DOF) + 
-                                                                              2.0 * cost_param_.r_Vee * (J.transpose() * J);
+                                                                            //   2.0 * cost_param_.r_Vee * (J.transpose() * J);
+                                                                              2.0 * cost_param_.r_Vee * (Jv.transpose() * Tangent) * (Tangent.transpose() * Jv);
             hess->f_uu(si_index.dVs,si_index.dVs) = 2.0 * cost_param_.r_dVs;
+            hess->f_xu.block(si_index.s,si_index.dq1,1,PANDA_DOF) = 2.0 * cost_param_.r_Vee * (NJq * (Tangent.transpose() * Jv) + vel_error * (Normal.transpose() * Jv));
+            hess->f_xu.block(si_index.vs,si_index.dq1,1,PANDA_DOF) = 2.0 * cost_param_.r_Vee * (-1) * Tangent.transpose() * Jv;
         }
     }
 
@@ -274,20 +296,20 @@ void Cost::getCost(const ArcLengthSpline &track,const State &x,const Input &u,co
     {
         getContouringCost(track, x, rb, k, &obj_contouring, NULL, NULL);
         getHeadingCost(track, x, rb, &obj_heading, NULL, NULL);
-        getInputCost(track, u, rb, k, &obj_input, NULL, NULL);
+        getInputCost(track, x, u, rb, k, &obj_input, NULL, NULL);
 
     }
     else if(obj && grad && !hess)
     {
         getContouringCost(track, x, rb, k, &obj_contouring, &grad_contouring, NULL);
         getHeadingCost(track, x, rb, &obj_heading, &grad_heading, NULL);
-        getInputCost(track, u, rb, k, &obj_input, &grad_input, NULL);
+        getInputCost(track, x, u, rb, k, &obj_input, &grad_input, NULL);
     }
     else if(obj && grad && hess)
     {
         getContouringCost(track, x, rb, k, &obj_contouring, &grad_contouring, &hess_contouring);
         getHeadingCost(track, x, rb, &obj_heading, &grad_heading, &hess_heading);
-        getInputCost(track, u, rb, k, &obj_input, &grad_input, &hess_input);
+        getInputCost(track, x, u, rb, k, &obj_input, &grad_input, &hess_input);
     }
 
     if(obj)

@@ -159,13 +159,14 @@ private:
 
     /// @brief compute control input cost
     /// @param track (ArcLengthSpline) reference track
+    /// @param x (State) current state
     /// @param u (Input) current control input
     /// @param rb (RobotData) kinemetic information (ex. EE-pose, Jacobian, ...) wrt current state
     /// @param k (int) receding horizon index
     /// @param obj (*double) exact value for control input cost
     /// @param grad (*CostGrad) gradient of control input cost
     /// @param grad (*CostHess) hessian of control input cost
-    void getInputCost(const ArcLengthSpline &track,const Input &u,const RobotData &rb,int k,
+    void getInputCost(const ArcLengthSpline &track,const State &x,const Input &u,const RobotData &rb,int k,
                       double* obj,CostGrad* grad,CostHess* hess);
     
 
