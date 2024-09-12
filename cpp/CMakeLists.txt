@@ -4,24 +4,27 @@ project(MPCC)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "-O2")
 
-set(CMAKE_CXX_FLAGS "-O2")
-
 option(USE_CVPLOT "Use cv-plot library" ON)
 MESSAGE( STATUS "Using CvPlot: " ${USE_CVPLOT} )
 
+option(USE_LIBTORCH "Use libtorch library" OFF)
+MESSAGE( STATUS "Using lbtorch: " ${USE_LIBTORCH} )
+
 add_definitions(-DBUILD_DIRECTORY=\"${CMAKE_SOURCE_DIR}\")
 
-set(CMAKE_CUDA_ARCHITECTURES "native")
-set(CUDA_TOOLKIT_ROOT_DIR /usr/local/cuda-11.8)
-set(CMAKE_CUDA_COMPILER /usr/local/cuda-11.8/bin/nvcc)
-set(CUDACXX /usr/local/cuda-11.8/bin/nvcc)
+if(USE_LIBTORCH)
+        set(CMAKE_CUDA_ARCHITECTURES "native")
+        set(CUDA_TOOLKIT_ROOT_DIR /usr/local/cuda-11.8)
+        set(CMAKE_CUDA_COMPILER /usr/local/cuda-11.8/bin/nvcc)
+        set(CUDACXX /usr/local/cuda-11.8/bin/nvcc)
+        find_package(Torch REQUIRED)
+        include_directories(${TORCH_INCLUDE_DIRS})
+endif()
 
 find_package(Eigen3 REQUIRED)
 find_package(RBDL REQUIRED)
 find_package(OsqpEigen REQUIRED)
-find_package(Torch REQUIRED)
 include_directories(
-        ${TORCH_INCLUDE_DIRS}
         ${EIGEN3_INCLUDE_DIR}
         include
 )
@@ -51,12 +54,14 @@ add_library(MPCC_LIB SHARED
         include/Constraints/SelfCollision/SelfCollisionModel.h
         include/Constraints/EnvCollision/EnvCollisionModel.h
         include/Params/track.h
-        )
+)
 target_link_libraries(MPCC_LIB PUBLIC
         ${RBDL_LIBRARY} 
         OsqpEigen::OsqpEigen 
-        "${TORCH_LIBRARIES}"
 )
+if(USE_LIBTORCH)
+        target_link_libraries(MPCC_LIB PUBLIC "${TORCH_LIBRARIES}")
+endif()
 
 add_executable(MPCC_EXE src/main.cpp)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
