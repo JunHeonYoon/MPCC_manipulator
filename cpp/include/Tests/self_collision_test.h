@@ -22,8 +22,8 @@ TEST(TestSelfCollision, TestCalculateMLPOutput)
     bool result;
     try
     {
-        Eigen::VectorXd n_hidden(3);
-        n_hidden << 128, 64, 32;
+        Eigen::VectorXd n_hidden(2);
+        n_hidden << 256, 64;
         selcol->setNeuralNetwork(mpcc::PANDA_DOF, 1, n_hidden, true);
         beg = hd_clock::now();
         auto pred0 = selcol->calculateMlpOutput(q0, false);
