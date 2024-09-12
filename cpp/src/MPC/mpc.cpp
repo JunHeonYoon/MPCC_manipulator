@@ -88,7 +88,7 @@ void MPC::generateNewInitialGuess(const State &x0)
     valid_initial_guess_ = true;
 }
 
-bool MPC::runMPC(MPCReturn &mpc_return, State &x0)
+bool MPC::runMPC(MPCReturn &mpc_return, State &x0, Input &u0)
 {
     // double last_s = x0.s;
     // x0.s = track_.projectOnSpline(last_s, robot_->getEEPosition(stateToJointVector(x0)));
@@ -160,13 +160,22 @@ bool MPC::runMPC(MPCReturn &mpc_return, State &x0)
     free_voxel.resize(36*36*36);
     std::fill(free_voxel.begin(), free_voxel.end(), 0.);
 
-    return runMPC_(mpc_return, x0, free_voxel);
+    return runMPC_(mpc_return, x0, u0, free_voxel);
 }
 
-bool MPC::runMPC_(MPCReturn &mpc_return, State &x0, const std::vector<float> &voxel)
+bool MPC::runMPC_(MPCReturn &mpc_return, State &x0, Input &u0, const std::vector<float> &voxel)
 {
+    auto start_mpc = std::chrono::high_resolution_clock::now();
     double last_s = x0.s;
     x0.s = track_.projectOnSpline(last_s, robot_->getEEPosition(stateToJointVector(x0)));
+
+    JointVector q = stateToJointVector(x0);
+    dJointVector qdot = inputTodJointVector(u0);
+    Eigen::MatrixXd Jv = robot_->getJacobianv(q);
+    Eigen::Vector3d ee_vel = Jv*qdot;
+    Eigen::Vector3d vs_dir = track_.getDerivative(x0.s);
+    x0.vs = ee_vel.dot(vs_dir);
+
     if(fabs(last_s - x0.s) > param_.max_dist_proj) 
     {
         valid_initial_guess_ = false;
@@ -177,12 +186,16 @@ bool MPC::runMPC_(MPCReturn &mpc_return, State &x0, const std::vector<float> &vo
     else generateNewInitialGuess(x0);
 
     solver_interface_->setInitialGuess(initial_guess_);
+    auto start_env = std::chrono::high_resolution_clock::now();
     solver_interface_->setEnvData(voxel);
+    auto end_env = std::chrono::high_resolution_clock::now();
 
     Status sqp_status;
     ComputeTime time_nmpc;
 
     solver_interface_->solveOCP(initial_guess_, &sqp_status, &time_nmpc);
+
+
    
     if(sqp_status == SOLVED)
     {
@@ -229,6 +242,9 @@ bool MPC::runMPC_(MPCReturn &mpc_return, State &x0, const std::vector<float> &vo
     }
 
     mpc_return = {initial_guess_[0].uk,initial_guess_,time_nmpc};
+    auto end_mpc = std::chrono::high_resolution_clock::now();
+    mpc_return.compute_time.total = std::chrono::duration_cast<std::chrono::duration<double>>(end_mpc - start_mpc).count();
+    mpc_return.compute_time.set_env = std::chrono::duration_cast<std::chrono::duration<double>>(end_env - start_env).count();
     if(sqp_status == SOLVED || (sqp_status == MAX_ITER_EXCEEDED && num_valid_guess_failed_ < 5)) return true;
     else return false;
 }
