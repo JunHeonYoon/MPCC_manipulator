@@ -40,6 +40,7 @@ Param::Param(std::string file){
 
     tol_sing = jsonModel["tol_sing"];
     tol_selcol = jsonModel["tol_selcol"];
+    tol_envcol = jsonModel["tol_envcol"];
 
     // std::cout << "max_dist_proj = " << max_dist_proj << std::endl;
     // std::cout << "desired_ee_velocity = " << desired_ee_velocity << std::endl;
@@ -70,6 +71,7 @@ Param::Param(std::string file, std::map<std::string, double> param){
     get_param_value("s_trust_region", s_trust_region);
     get_param_value("tol_sing", tol_sing);
     get_param_value("tol_selcol", tol_selcol);
+    get_param_value("tol_envcol", tol_envcol);
 
     // std::cout << "max_dist_proj = " << max_dist_proj << std::endl;
     // std::cout << "desired_ee_velocity = " << desired_ee_velocity << std::endl;
@@ -150,7 +152,7 @@ CostParam::CostParam(std::string file, std::map<std::string, double> cost_param)
     get_cost_value("qC_reduction_ratio", q_c_red_ratio);
     get_cost_value("qL_increase_ratio", q_l_inc_ratio);
     get_cost_value("qOri_reduction_ratio", q_ori_red_ratio);
-
+    
     // std::cout << "q_c = " << q_c << std::endl;
     // std::cout << "q_c_N_mult = " << q_c_N_mult << std::endl;
     // std::cout << "q_l = " << q_l << std::endl;

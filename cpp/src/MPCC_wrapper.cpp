@@ -72,6 +72,46 @@ struct PairConverter {
     }
 };
 
+// Converter: std::vector<float> to numpy array
+struct VectorFloat_to_numpy
+{
+    static PyObject* convert(const std::vector<float>& vec)
+    {
+        boost::python::list py_list;
+        for (const auto& mat : vec)
+        {
+            py_list.append(mat);
+        }
+        return incref(py_list.ptr());
+    }
+};
+
+// Converter: numpy array to std::vector<float>
+struct Numpy_to_VectorFloat
+{
+    Numpy_to_VectorFloat()
+    {
+        boost::python::converter::registry::push_back(&convertible, &construct, boost::python::type_id<std::vector<float>>());
+    }
+
+    static void* convertible(PyObject* obj_ptr)
+    {
+        return PyArray_Check(obj_ptr) ? obj_ptr : nullptr;
+    }
+
+    static void construct(PyObject* obj_ptr, boost::python::converter::rvalue_from_python_stage1_data* data)
+    {
+        PyArrayObject* array = reinterpret_cast<PyArrayObject*>(obj_ptr);
+        void* storage = ((boost::python::converter::rvalue_from_python_storage<std::vector<float>>*)data)->storage.bytes;
+
+        npy_intp size = PyArray_SIZE(array);
+        float* raw_data = reinterpret_cast<float*>(PyArray_DATA(array));
+
+        new (storage) std::vector<float>(raw_data, raw_data + size);
+        data->convertible = storage;
+    }
+};
+
 
 BOOST_PYTHON_MODULE(MPCC_WRAPPER)
 {
@@ -79,6 +119,8 @@ BOOST_PYTHON_MODULE(MPCC_WRAPPER)
     to_python_converter<std::vector<Eigen::Matrix3d>, VectorEigenMatrix3d_to_python>();
     VectorEigenMatrix3d_from_python();
     to_python_converter<std::pair<Eigen::VectorXd, Eigen::MatrixXd>, PairConverter>();
+    to_python_converter<std::vector<float>, VectorFloat_to_numpy>();
+    Numpy_to_VectorFloat();
 
     // =================================================
     // =================== config.h ====================
@@ -333,6 +375,7 @@ BOOST_PYTHON_MODULE(MPCC_WRAPPER)
         .def_readwrite("set_qp", &ComputeTime::set_qp)
         .def_readwrite("solve_qp", &ComputeTime::solve_qp)
         .def_readwrite("get_alpha", &ComputeTime::get_alpha)
+        .def_readwrite("set_env", &ComputeTime::set_env)
         .def_readwrite("total", &ComputeTime::total)
         .def("setZero", &ComputeTime::setZero)
     ;

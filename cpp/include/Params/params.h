@@ -38,6 +38,7 @@ public:
 
     double tol_sing;
     double tol_selcol;
+    double tol_envcol;
 
     Param();
     Param(std::string file);

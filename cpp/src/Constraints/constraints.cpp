@@ -147,7 +147,7 @@ void Constraints::getEnvcollConstraint(const State &x,const Input &u,const Robot
     Eigen::VectorXd d_min_dist = 0.01*rb.d_env_min_dist_;
 
     // compute RBF value of minimum distance and its derivative
-    double r = param_.tol_selcol*0.01; // buffer [cm]
+    double r = param_.tol_envcol*0.01; // buffer [cm]
     double delta = -0.5; // switching point of RBF
     double RBF = getRBF(delta, min_dist - r);
 
@@ -198,25 +198,29 @@ void Constraints::getConstraints(const State &x,const Input &u,const RobotData &
 
     if(constraint)
     {
+        constraint->setZero();
         constraint->c_vec(si_index.con_selcol) = constraint_selcol.c;
         constraint->c_vec(si_index.con_sing) = constraint_sing.c;
-        constraint->c_vec(si_index.con_envcol) = constraint_envcol.c;
+        // constraint->c_vec(si_index.con_envcol) = constraint_envcol.c;
+
         constraint->c_lvec(si_index.con_selcol) = constraint_selcol.c_l;
         constraint->c_lvec(si_index.con_sing) = constraint_sing.c_l;
-        constraint->c_lvec(si_index.con_selcol) = constraint_envcol.c_l;
+        // constraint->c_lvec(si_index.con_envcol) = constraint_envcol.c_l;
+
         constraint->c_uvec(si_index.con_selcol) = constraint_selcol.c_u;
         constraint->c_uvec(si_index.con_sing) = constraint_sing.c_u;
-        constraint->c_uvec(si_index.con_envcol) = constraint_envcol.c_u;
+        // constraint->c_uvec(si_index.con_envcol) = constraint_envcol.c_u;
     }
     
     if(Jac)
     {
+        Jac->setZero();
         Jac->c_x.row(si_index.con_selcol) = jac_selcol.c_x_i;
         Jac->c_x.row(si_index.con_sing) = jac_sing.c_x_i;
-        Jac->c_x.row(si_index.con_envcol) = jac_envcol.c_x_i;
+        // Jac->c_x.row(si_index.con_envcol) = jac_envcol.c_x_i;
         Jac->c_u.row(si_index.con_selcol) = jac_selcol.c_u_i;
         Jac->c_u.row(si_index.con_sing) = jac_sing.c_u_i;
-        Jac->c_u.row(si_index.con_envcol) = jac_envcol.c_u_i;
+        // Jac->c_u.row(si_index.con_envcol) = jac_envcol.c_u_i;
     }
     return;
 }

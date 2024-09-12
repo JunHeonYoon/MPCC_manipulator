@@ -26,8 +26,8 @@ bounds_(BoundsParam(path.bounds_path),Param(path.param_path)),
 normalization_param_(path.normalization_path),
 sqp_param_(path.sqp_path),
 path_(path),
-Ts_(Ts),
-device_(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
+Ts_(Ts)
+// device_(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
 {   
     robot_ = std::make_unique<RobotModel>();
 
@@ -39,8 +39,8 @@ device_(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
     // envcolNN_ = std::make_unique<EnvCollNNmodel>();
     // envcolNN_->setNeuralNetwork(std::vector<int>{36, 36, 36}, PANDA_DOF);
     // envcolNN_.setNeuralNetwork(std::vector<int>{36, 36, 36}, PANDA_DOF);
-    env_model_ = torch::jit::load(pkg_path + "NNmodel/env_collision.pt");
-    env_model_.to(device_);
+    // env_model_ = torch::jit::load(pkg_path + "NNmodel/env_collision.pt");
+    // env_model_.to(device_);
 
     initial_guess_.resize(N+1);
     rb_.resize(N+1);
@@ -55,8 +55,8 @@ bounds_(BoundsParam(path.bounds_path),Param(path.param_path,param_value.param)),
 normalization_param_(path.normalization_path,param_value.normalization),
 sqp_param_(path.sqp_path,param_value.sqp),
 path_(path),
-Ts_(Ts),
-device_(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
+Ts_(Ts)
+// device_(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
 {   
     robot_ = std::make_unique<RobotModel>();
 
@@ -68,8 +68,8 @@ device_(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
     // envcolNN_ = std::make_unique<EnvCollNNmodel>();
     // envcolNN_->setNeuralNetwork(std::vector<int>{36, 36, 36}, PANDA_DOF);
     // envcolNN_.setNeuralNetwork(std::vector<int>{36, 36, 36}, PANDA_DOF);
-    env_model_ = torch::jit::load(pkg_path + "NNmodel/env_collision.pt");
-    env_model_.to(device_);
+    // env_model_ = torch::jit::load(pkg_path + "NNmodel/env_collision.pt");
+    // env_model_.to(device_);
 
 
     initial_guess_.resize(N+1);
@@ -91,74 +91,75 @@ void OsqpInterface::setParam(const ParamValue &param_value)
 
 void OsqpInterface::setEnvData(const std::vector<float> &voxel)
 {
-    std::vector<float> x_occ;
-    std::vector<float> x_q;
+    // std::vector<float> x_occ;
+    // std::vector<float> x_q;
 
-    x_occ.resize(voxel.size()*(N+1));
-    x_q.resize(PANDA_DOF*(N+1));
+    // x_occ.resize(voxel.size()*(N+1));
+    // x_q.resize(PANDA_DOF*(N+1));
+    // for(size_t i=0; i<=N; i++)
+    // {
+    //     assert(rb_[i].is_data_valid == true);
+    //     std::copy(voxel.begin(), voxel.end(), x_occ.begin() + i * voxel.size());
+    //     std::transform(rb_[i].q_.data(), rb_[i].q_.data() + rb_[i].q_.size(),
+    //                    x_q.begin() + i * rb_[i].q_.size(),
+    //                    [](double val) { return static_cast<float>(val); });
+    // }
+    // // auto env_pred = envcolNN_->forward(x_occ, x_q);
+    // // auto env_pred = envcolNN_.forward(x_occ, x_q);
+
+
+    // at::Tensor x_q_ten = torch::from_blob(x_q.data(), {N+1, PANDA_DOF}, torch::kFloat32).clone().to(device_);
+    // at::Tensor x_occ_ten = torch::from_blob(x_occ.data(), {N+1, 1, 36,36,36}, torch::kFloat32).clone().to(device_);
+    // // std::cout << x_q << std::endl;
+    // // std::cout << x_occ << std::endl;
+
+    // // Set requires_grad_ to true for x_q to enable gradient computation
+    // x_q_ten.set_requires_grad(true);
+
+    // // Forward pass through the model
+    // std::vector<torch::jit::IValue> inputs;
+    // inputs.push_back(x_q_ten);
+    // inputs.push_back(x_occ_ten);
+
+    // // for(auto& val : inputs) std::cout << inputs <<std::endl;
+
+    // torch::Tensor output = env_model_.forward(inputs).toTensor();
+
+
+    // // Convert the output tensor to a vector for easy handling
+    // Eigen::VectorXf env_min_dist_pred(output.numel());
+    // std::memcpy(env_min_dist_pred.data(), output.cpu().data_ptr<float>(), output.numel() * sizeof(float));
+
+    // // Calculate the Jacobian
+    // // GPU에서 병렬로 Jacobian 계산
+    // // grad_outputs를 std::vector로 래핑
+    // std::vector<torch::Tensor> grad_outputs = {torch::ones_like(output).to(device_)};
+
+    // // autograd::grad로 Jacobian 계산
+    // std::vector<torch::Tensor> jacobians = torch::autograd::grad(
+    //     {output},                // Output tensor
+    //     {x_q_ten},               // Input tensor we want to differentiate
+    //     grad_outputs,            // Gradient w.r.t the outputs (as a vector)
+    //     true,                    // Create graph
+    //     true                     // Retain graph
+    // );
+
+
+    // // Tensor를 Eigen 형태로 변환
+    // Eigen::MatrixXf jacobian_pred_T(7, output.size(0));
+    // std::memcpy(jacobian_pred_T.data(), jacobians[0].cpu().data_ptr<float>(), 7 * output.size(0) * sizeof(float));
+
+    // auto env_pred = std::make_pair(env_min_dist_pred.cast<double>(), jacobian_pred_T.transpose().cast<double>());
+    // // std::cout << "Model inference completed\n";
+    // // std::cout << "Ans: " << env_pred.first.size() << std:: endl;
+    // // std::cout << "Jac: " << env_pred.second.rows() << ", "<< env_pred.second.cols() << std:: endl;
+
+
+
     for(size_t i=0; i<=N; i++)
     {
-        assert(rb_[i].is_data_valid == true);
-        std::copy(voxel.begin(), voxel.end(), x_occ.begin() + i * voxel.size());
-        std::transform(rb_[i].q_.data(), rb_[i].q_.data() + rb_[i].q_.size(),
-                       x_q.begin() + i * rb_[i].q_.size(),
-                       [](double val) { return static_cast<float>(val); });
-    }
-    // auto env_pred = envcolNN_->forward(x_occ, x_q);
-    // auto env_pred = envcolNN_.forward(x_occ, x_q);
-
-
-    at::Tensor x_q_ten = torch::from_blob(x_q.data(), {N+1, PANDA_DOF}, torch::kFloat32).clone().to(device_);
-    at::Tensor x_occ_ten = torch::from_blob(x_occ.data(), {N+1, 1, 36,36,36}, torch::kFloat32).clone().to(device_);
-    // std::cout << x_q << std::endl;
-    // std::cout << x_occ << std::endl;
-
-    // Set requires_grad_ to true for x_q to enable gradient computation
-    x_q_ten.set_requires_grad(true);
-
-    // Forward pass through the model
-    std::vector<torch::jit::IValue> inputs;
-    inputs.push_back(x_q_ten);
-    inputs.push_back(x_occ_ten);
-
-    // for(auto& val : inputs) std::cout << inputs <<std::endl;
-
-    torch::Tensor output = env_model_.forward(inputs).toTensor();
-
-
-    // Convert the output tensor to a vector for easy handling
-    Eigen::VectorXf env_min_dist_pred(output.numel());
-    std::memcpy(env_min_dist_pred.data(), output.cpu().data_ptr<float>(), output.numel() * sizeof(float));
-
-    // Calculate the Jacobian
-    // GPU에서 병렬로 Jacobian 계산
-    // grad_outputs를 std::vector로 래핑
-    std::vector<torch::Tensor> grad_outputs = {torch::ones_like(output).to(device_)};
-
-    // autograd::grad로 Jacobian 계산
-    std::vector<torch::Tensor> jacobians = torch::autograd::grad(
-        {output},                // Output tensor
-        {x_q_ten},               // Input tensor we want to differentiate
-        grad_outputs,            // Gradient w.r.t the outputs (as a vector)
-        true,                    // Create graph
-        true                     // Retain graph
-    );
-
-
-    // Tensor를 Eigen 형태로 변환
-    Eigen::MatrixXf jacobian_pred_T(7, output.size(0));
-    std::memcpy(jacobian_pred_T.data(), jacobians[0].cpu().data_ptr<float>(), 7 * output.size(0) * sizeof(float));
-
-    auto env_pred = std::make_pair(env_min_dist_pred.cast<double>(), jacobian_pred_T.transpose().cast<double>());
-    // std::cout << "Model inference completed\n";
-    // std::cout << "Ans: " << env_pred.first.size() << std:: endl;
-    // std::cout << "Jac: " << env_pred.second.rows() << ", "<< env_pred.second.cols() << std:: endl;
-
-
-
-    for(size_t i=0; i<=N; i++)
-    {
-        rb_[i].updateEnv(env_pred.first(i), env_pred.second.row(i).transpose());
+        // rb_[i].updateEnv(env_pred.first(i), env_pred.second.row(i).transpose());
+        rb_[i].updateEnv(0., Eigen::MatrixXd::Zero(PANDA_DOF,1));
     }
 }
 

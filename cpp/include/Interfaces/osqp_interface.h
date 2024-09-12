@@ -71,11 +71,12 @@ struct FilterData
 
 struct ComputeTime
 {
+    double set_env;
     double set_qp;
     double solve_qp;
     double get_alpha;
     double total;
-    void setZero(){set_qp=0; solve_qp=0;get_alpha=0;}
+    void setZero(){set_env=0; set_qp=0; solve_qp=0;get_alpha=0;}
 };
 
 class OsqpInterface : public SolverInterface {
@@ -98,8 +99,8 @@ private:
     // EnvCollNNmodel envcolNN_;
 
 
-    torch::jit::script::Module env_model_;
-    torch::Device device_;
+    // torch::jit::script::Module env_model_;
+    // torch::Device device_;
 
 
 
