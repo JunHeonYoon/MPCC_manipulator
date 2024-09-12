@@ -7,11 +7,12 @@ integrator = mpcc.Integrator()
 robot = mpcc.RobotModel()
 robot_dof = robot.num_q
 selcolNN = mpcc.SelfCollisionNN()
-selcolNN.setNeuralNetwork(input_size=robot_dof, output_size=1, hidden_layer_size=np.array([128, 64, 32]), is_nerf=True)
+selcolNN.setNeuralNetwork(input_size=robot_dof, output_size=1, hidden_layer_size=np.array([256, 64]), is_nerf=True)
 
 mpc = mpcc.MPCC()
 
 state = np.array([0., 0., 0., -pi/2, 0., pi/2, pi/4, 0., 0.])
+input = np.array([0., 0., 0., 0., 0., 0., 0., 0.])
 mpc.setTrack(state)
 spline_pos, spline_ori, spline_arc_length = mpc.getSplinePath()
 
@@ -32,18 +33,18 @@ time_data["get_alpha"] = []
 param_value = {"cost": {"qOri": 0.5}}
 
 for time_idx in range(10000):
-    if(time_idx == 100):
-        mpc.setParam(param_value)
+    # if(time_idx == 100):
+    #     mpc.setParam(param_value)
 
-    status, state, opt_input, mpc_horizon, compute_time = mpc.runMPC(state)
+    status, state, input, mpc_horizon, compute_time = mpc.runMPC(state, input)
     if status == False:
         print("MPC did not solve properly!!")
         break
-    state = integrator.simTimeStep(state, opt_input)
+    state = integrator.simTimeStep(state, input)
 
     ee_pos = robot.getEEPosition(state[:robot_dof])
     ee_ori = robot.getEEOrientation(state[:robot_dof])
-    ee_vel = robot.getEEJacobianv(state[:robot_dof]) @ opt_input[:robot_dof]
+    ee_vel = robot.getEEJacobianv(state[:robot_dof]) @ input[:robot_dof]
     min_dist, _ = selcolNN.calculateMlpOutput(state[:robot_dof])
     mani = robot.getEEManipulability(state[:robot_dof])
 
@@ -51,7 +52,7 @@ for time_idx in range(10000):
     print("time step   : ",time_idx)
     print("state       : ", state)
     print("q           : ", state[:robot_dof])
-    print("qdot        : ", opt_input[:robot_dof])
+    print("qdot        : ", input[:robot_dof])
     print("x           : ", ee_pos)
     print("xdot        : {:0.5f}".format(np.linalg.norm(ee_vel)))
     print("xdot        : ", ee_vel)
@@ -60,12 +61,12 @@ for time_idx in range(10000):
     print("min dist[cm]: {:0.5f}".format(min_dist[0]))
     print("s           : {:0.6f}".format(state[-2]))
     print("vs          : {:0.6f}".format(state[-1]))
-    print("dVs         : {:0.5f}".format(opt_input[-1]))
+    print("dVs         : {:0.5f}".format(input[-1]))
     print("MPC time    : {:0.5f}".format(compute_time["total"]))
     print("===============================================================")
 
     debug_data["q"].append(state[:robot_dof]) 
-    debug_data["qdot"].append(opt_input[:robot_dof])
+    debug_data["qdot"].append(input[:robot_dof])
     debug_data["min_dist"].append(min_dist[0])
     debug_data["mani"].append(mani)
 
