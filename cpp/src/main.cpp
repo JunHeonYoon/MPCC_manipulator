@@ -59,6 +59,8 @@ int main() {
 
     State x0 = {0., 0., 0., -M_PI/2, 0, M_PI/2, M_PI/4,
                 0., 0.};
+    Input u0 = {0., 0., 0., 0., 0., 0., 0.,
+                0.};
     Eigen::Vector3d ee_pos = robot.getEEPosition(stateToJointVector(x0));
     Eigen::Matrix3d ee_ori = robot.getEEOrientation(stateToJointVector(x0));
 
@@ -103,13 +105,14 @@ int main() {
         {
             mpc.setParam(param_value);
         }
-        bool mpc_status = mpc.runMPC(mpc_sol, x0);
+        bool mpc_status = mpc.runMPC(mpc_sol, x0, u0);
         if(mpc_status == false)
         {
             std::cout<<"MPC did not solved properly!!"<<std::endl;
             break;
         }
-        x0 = integrator.simTimeStep(x0,mpc_sol.u0,jsonConfig["Ts"]);
+        u0 = mpc_sol.u0;
+        x0 = integrator.simTimeStep(x0,u0,jsonConfig["Ts"]);
         ee_pos = robot.getEEPosition(stateToJointVector(x0));
         ee_ori = robot.getEEOrientation(stateToJointVector(x0));
 
@@ -118,12 +121,12 @@ int main() {
         std::cout << "q now           :\t";
         std::cout << std::fixed << std::setprecision(6) << stateToJointVector(x0).transpose() << std::endl;
         std::cout << "q_dot now       :\t";
-        std::cout << std::fixed << std::setprecision(6) << inputTodJointVector(mpc_sol.u0).transpose()  << std::endl;
+        std::cout << std::fixed << std::setprecision(6) << inputTodJointVector(u0).transpose()  << std::endl;
         std::cout << "x               :\t";
         std::cout << std::fixed << std::setprecision(6) << ee_pos.transpose() << std::endl;
         std::cout << "x_dot           :\t";
-        std::cout << std::fixed << std::setprecision(6) << (robot.getJacobianv(stateToJointVector(x0))*inputTodJointVector(mpc_sol.u0)).transpose() << std::endl;
-        std::cout << std::fixed << std::setprecision(6) << (robot.getJacobianv(stateToJointVector(x0))*inputTodJointVector(mpc_sol.u0)).norm() << std::endl;
+        std::cout << std::fixed << std::setprecision(6) << (robot.getJacobianv(stateToJointVector(x0))*inputTodJointVector(u0)).transpose() << std::endl;
+        std::cout << std::fixed << std::setprecision(6) << (robot.getJacobianv(stateToJointVector(x0))*inputTodJointVector(u0)).norm() << std::endl;
         std::cout << "R               :" << std::endl;
         std::cout << std::fixed << std::setprecision(6) << ee_ori << std::endl;
         std::cout << "manipulability  :\t";
@@ -135,7 +138,7 @@ int main() {
         std::cout << "vs              :";
         std::cout << std::fixed << std::setprecision(6) << x0.vs << std::endl;
         std::cout << "dVs              :";
-        std::cout << std::fixed << std::setprecision(6) << mpc_sol.u0.dVs << std::endl;
+        std::cout << std::fixed << std::setprecision(6) << u0.dVs << std::endl;
         std::cout << "x_error         :";
         std::cout << std::fixed << std::setprecision(6) << (end_point - ee_pos).transpose() << std::endl;
         std::cout << "R error         :";
@@ -145,7 +148,7 @@ int main() {
         std::cout << "==============================================================="<<std::endl;
         
         debug_file << stateToJointVector(x0).transpose() << " " 
-                   << inputTodJointVector(mpc_sol.u0).transpose() << " " 
+                   << inputTodJointVector(u0).transpose() << " " 
                    << (selcolNN.calculateMlpOutput(stateToJointVector(x0),false)).first << " "
                    << robot.getManipulability(stateToJointVector(x0)) << " ";
                 //    << std::endl;
@@ -246,12 +249,13 @@ int main() {
     };
 
     std::vector<double> step(log.size()), limit_time(step.size()),
-                        time_total(step.size()), time_set_qp(step.size()), time_solve_qp(step.size()), time_get_alpha(step.size());
+                        time_total(step.size()), time_set_env(step.size()), time_set_qp(step.size()), time_solve_qp(step.size()), time_get_alpha(step.size());
     for (size_t i = 0; i < step.size(); i++) 
     {
         step[i] = i;
         limit_time[i] = jsonConfig["Ts"];
         time_total[i] = log[i].compute_time.total;
+        time_set_env[i] = log[i].compute_time.set_env;
         time_set_qp[i] = log[i].compute_time.set_qp;
         time_solve_qp[i] = log[i].compute_time.solve_qp;
         time_get_alpha[i] = log[i].compute_time.get_alpha;
@@ -259,9 +263,10 @@ int main() {
     auto axes = CvPlot::makePlotAxes();
     axes.create<CvPlot::Series>(step, limit_time, "-k").setName("Ts");
     axes.create<CvPlot::Series>(step, time_total, "-r").setName("Total");
+    axes.create<CvPlot::Series>(step, time_set_env, "-c").setName("Set Env");
     axes.create<CvPlot::Series>(step, time_set_qp, "-b").setName("Set QP");
     axes.create<CvPlot::Series>(step, time_solve_qp, "-g").setName("Solve QP");
-    axes.create<CvPlot::Series>(step, time_get_alpha, "-c").setName("Linesearch");
+    // axes.create<CvPlot::Series>(step, time_get_alpha, "-c").setName("Linesearch");
 
     axes.create<Legend>()._parentAxes = &axes;
     axes.setXLim({0.,double(step.size())});
