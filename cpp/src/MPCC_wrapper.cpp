@@ -9,7 +9,7 @@
 #include "Params/params.h"
 #include "Model/robot_model.h"
 #include "Constraints/SelfCollision/SelfCollisionModel.h"
-#include "Constraints/EnvCollision/EnvCollisionModel.h"
+// #include "Constraints/EnvCollision/EnvCollisionModel.h"
 #include "Model/integrator.h"
 #include "Params/track.h"
 #include "Spline/cubic_spline_rot.h"
@@ -285,12 +285,12 @@ BOOST_PYTHON_MODULE(MPCC_WRAPPER)
     // ============== EnvCollisionModel.h ==============
     // =================================================
     // EnvCollNNmodel binding
-    class_<EnvCollNNmodel, std::shared_ptr<EnvCollNNmodel>, boost::noncopyable>("EnvCollNNmodel", no_init)
-            .def(init<>())
-            .def(init<const std::string&>())
-            .def("setNeuralNetwork", &EnvCollNNmodel::setNeuralNetwork)
-            .def("forward", &EnvCollNNmodel::forward)
-    ;
+    // class_<EnvCollNNmodel, std::shared_ptr<EnvCollNNmodel>, boost::noncopyable>("EnvCollNNmodel", no_init)
+    //         .def(init<>())
+    //         .def(init<const std::string&>())
+    //         .def("setNeuralNetwork", &EnvCollNNmodel::setNeuralNetwork)
+    //         .def("forward", &EnvCollNNmodel::forward)
+    // ;
     
     // =================================================
     // ================= integrator.h ==================

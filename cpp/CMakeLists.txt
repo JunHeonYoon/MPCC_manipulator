@@ -34,7 +34,6 @@ add_library(MPCC_LIB SHARED
         src/types.cpp
         src/Model/robot_model.cpp
         src/Constraints/SelfCollision/SelfCollisionModel.cpp
-        src/Constraints/EnvCollision/EnvCollisionModel.cpp
         src/Interfaces/osqp_interface.cpp
         src/Interfaces/solver_interface.cpp
         src/Model/model.cpp
@@ -52,9 +51,14 @@ add_library(MPCC_LIB SHARED
         include/types.h
         include/Model/robot_model.h
         include/Constraints/SelfCollision/SelfCollisionModel.h
-        include/Constraints/EnvCollision/EnvCollisionModel.h
         include/Params/track.h
-)
+        )
+if(USE_LIBTORCH)
+        add_library(MPCC_LIB SHARED
+        src/Constraints/EnvCollision/EnvCollisionModel.cpp
+        include/Constraints/EnvCollision/EnvCollisionModel.h
+        )
+endif()
 target_link_libraries(MPCC_LIB PUBLIC
         ${RBDL_LIBRARY} 
         OsqpEigen::OsqpEigen 

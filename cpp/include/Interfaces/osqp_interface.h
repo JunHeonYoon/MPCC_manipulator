@@ -34,12 +34,15 @@
 
 #include <config.h>
 #include <iostream>
-#include <vector>
-#include <torch/script.h>
-#include <torch/torch.h>
 #include <memory>
 #include <filesystem>
 #include <cassert>
+#include <vector>
+
+#ifdef USE_LIBTORCH
+#include <torch/script.h>
+#include <torch/torch.h>
+#endif
 
 namespace mpcc{
 
