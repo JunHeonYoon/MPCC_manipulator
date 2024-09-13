@@ -42,8 +42,8 @@ TEST(TestCost, TestSPD)
     std::unique_ptr<mpcc::SelCollNNmodel> selcolNN = std::make_unique<mpcc::SelCollNNmodel>();
     mpcc::ArcLengthSpline track = mpcc::ArcLengthSpline(json_paths);
 
-    Eigen::Vector3d sel_col_n_hidden;
-    sel_col_n_hidden << 128, 64, 32;
+    Eigen::Vector2d sel_col_n_hidden;
+    sel_col_n_hidden << 256, 64;
     selcolNN->setNeuralNetwork(mpcc::PANDA_DOF, 1, sel_col_n_hidden, true);
 
     genRoundTrack(track);
@@ -123,8 +123,8 @@ TEST(TestCost, TestLinearization)
 
     genRoundTrack(track);
 
-    Eigen::Vector3d sel_col_n_hidden;
-    sel_col_n_hidden << 128, 64, 32;
+    Eigen::Vector2d sel_col_n_hidden;
+    sel_col_n_hidden << 256, 64;
     selcolNN->setNeuralNetwork(mpcc::PANDA_DOF, 1, sel_col_n_hidden, true);
 
     mpcc::Bounds_x x_LB = bound.getBoundsLX();

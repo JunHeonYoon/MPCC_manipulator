@@ -78,8 +78,8 @@ TEST(TestConstraints, TestSelfCollision)
     mpcc::Model model = mpcc::Model(0.02, json_paths);
     mpcc::Param param = mpcc::Param(json_paths.param_path);
 
-    Eigen::Vector3d sel_col_n_hidden;
-    sel_col_n_hidden << 128, 64, 32;
+    Eigen::Vector2d sel_col_n_hidden;
+    sel_col_n_hidden << 256, 64;
     selcolNN->setNeuralNetwork(mpcc::PANDA_DOF, 1, sel_col_n_hidden, true);
     
     genRoundTrack(track);
@@ -160,8 +160,8 @@ TEST(TestConstraints, TestSingularity)
     mpcc::Model model = mpcc::Model(0.02, json_paths);
     mpcc::Param param = mpcc::Param(json_paths.param_path);
 
-    Eigen::Vector3d sel_col_n_hidden;
-    sel_col_n_hidden << 128, 64, 32;
+    Eigen::Vector2d sel_col_n_hidden;
+    sel_col_n_hidden << 256, 64;
     selcolNN->setNeuralNetwork(mpcc::PANDA_DOF, 1, sel_col_n_hidden, true);
     
     genRoundTrack(track);
