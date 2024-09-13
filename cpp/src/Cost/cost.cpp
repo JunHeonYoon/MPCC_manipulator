@@ -156,7 +156,7 @@ void Cost::getContouringCost(const ArcLengthSpline &track,const State &x,const R
         hess->setZero();
         hess->f_xx = 2.0*ContouringCost(0)*error_info.d_contouring_error.transpose()*error_info.d_contouring_error +
                      2.0*ContouringCost(1)*error_info.d_lag_error.transpose()*error_info.d_lag_error;
-        hess->f_xx(si_index.s,si_index.s) += 2.0 * cost_param_.q_vs;
+        hess->f_xx(si_index.vs,si_index.vs) += 2.0 * cost_param_.q_vs;
     }
     return;
 }
@@ -227,9 +227,9 @@ void Cost::getInputCost(const ArcLengthSpline &track,const State &x,const Input 
     {
         (*obj) = 0;
         if(k != N) (*obj) = cost_param_.r_dq * dq.squaredNorm() +
-                            cost_param_.r_dVs * pow(u.dVs,2) + 
+                            cost_param_.r_dVs * pow(u.dVs,2);
                             // cost_param_.r_Vee * (J * dq).squaredNorm();
-                            cost_param_.r_Vee * pow(vel_error, 2);
+                            // cost_param_.r_Vee * pow(vel_error, 2);
     }
 
 
@@ -237,13 +237,13 @@ void Cost::getInputCost(const ArcLengthSpline &track,const State &x,const Input 
     if(grad)
     {
         grad->setZero();
-        grad->f_x(si_index.s) = 2.0 * cost_param_.r_Vee * vel_error * NJq;
-        grad->f_x(si_index.vs) = 2.0 * cost_param_.r_Vee * vel_error * (-1);
+        // grad->f_x(si_index.s) = 2.0 * cost_param_.r_Vee * vel_error * NJq;
+        // grad->f_x(si_index.vs) = 2.0 * cost_param_.r_Vee * vel_error * (-1);
         if(k != N)
         {
-            grad->f_u.segment(si_index.dq1,PANDA_DOF) = 2.0 * cost_param_.r_dq * dq + 
+            grad->f_u.segment(si_index.dq1,PANDA_DOF) = 2.0 * cost_param_.r_dq * dq;
                                                         // 2.0 * cost_param_.r_Vee * (J.transpose() * J * dq);
-                                                        2.0 * cost_param_.r_Vee * vel_error * (Jv.transpose() * Tangent);
+                                                        // 2.0 * cost_param_.r_Vee * vel_error * (Jv.transpose() * Tangent);
             grad->f_u(si_index.dVs) = 2.0 * cost_param_.r_dVs*u.dVs;
         }
     }
@@ -251,18 +251,18 @@ void Cost::getInputCost(const ArcLengthSpline &track,const State &x,const Input 
     if(hess)
     {
         hess->setZero();
-        hess->f_xx(si_index.s,si_index.s) = 2.0 * cost_param_.r_Vee * NJq * NJq;
-        hess->f_xx(si_index.vs,si_index.vs) = 2.0 * cost_param_.r_Vee;
-        hess->f_xx(si_index.vs,si_index.s) = 2.0 * cost_param_.r_Vee * (-1) * NJq;
-        hess->f_xx(si_index.s,si_index.vs) = 2.0 * cost_param_.r_Vee * (-1) * NJq;
+        // hess->f_xx(si_index.s,si_index.s) = 2.0 * cost_param_.r_Vee * NJq * NJq;
+        // hess->f_xx(si_index.vs,si_index.vs) = 2.0 * cost_param_.r_Vee;
+        // hess->f_xx(si_index.vs,si_index.s) = 2.0 * cost_param_.r_Vee * (-1) * NJq;
+        // hess->f_xx(si_index.s,si_index.vs) = hess->f_xx(si_index.vs,si_index.s);
         if(k != N)
         {
-            hess->f_uu.block(si_index.dq1,si_index.dq1,PANDA_DOF,PANDA_DOF) = 2.0 * cost_param_.r_dq * Eigen::MatrixXd::Identity(PANDA_DOF,PANDA_DOF) + 
+            hess->f_uu.block(si_index.dq1,si_index.dq1,PANDA_DOF,PANDA_DOF) = 2.0 * cost_param_.r_dq * Eigen::MatrixXd::Identity(PANDA_DOF,PANDA_DOF);
                                                                             //   2.0 * cost_param_.r_Vee * (J.transpose() * J);
-                                                                              2.0 * cost_param_.r_Vee * (Jv.transpose() * Tangent) * (Tangent.transpose() * Jv);
+                                                                            //   2.0 * cost_param_.r_Vee * (Jv.transpose() * Tangent) * (Tangent.transpose() * Jv);
             hess->f_uu(si_index.dVs,si_index.dVs) = 2.0 * cost_param_.r_dVs;
-            hess->f_xu.block(si_index.s,si_index.dq1,1,PANDA_DOF) = 2.0 * cost_param_.r_Vee * (NJq * (Tangent.transpose() * Jv) + vel_error * (Normal.transpose() * Jv));
-            hess->f_xu.block(si_index.vs,si_index.dq1,1,PANDA_DOF) = 2.0 * cost_param_.r_Vee * (-1) * Tangent.transpose() * Jv;
+            // hess->f_xu.block(si_index.s,si_index.dq1,1,PANDA_DOF) = 2.0 * cost_param_.r_Vee * (NJq * (Tangent.transpose() * Jv) + vel_error * (Normal.transpose() * Jv));
+            // hess->f_xu.block(si_index.vs,si_index.dq1,1,PANDA_DOF) = 2.0 * cost_param_.r_Vee * (-1) * Tangent.transpose() * Jv;
         }
     }
 
@@ -329,8 +329,8 @@ void Cost::getCost(const ArcLengthSpline &track,const State &x,const Input &u,co
         hess->f_uu = hess_contouring.f_uu + hess_heading.f_uu + hess_input.f_uu;
         hess->f_xu = hess_contouring.f_xu + hess_heading.f_xu + hess_input.f_xu;
 
-        hess->f_xx += Q_MPC::Identity()*1e-9;
-        hess->f_uu += R_MPC::Identity()*1e-9;
+        hess->f_xx += Q_MPC::Identity()*1e-6;
+        hess->f_uu += R_MPC::Identity()*1e-6;
     }
     return;
 }
