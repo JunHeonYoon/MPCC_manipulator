@@ -26,10 +26,10 @@
 
 namespace mpcc{
 
-static const int PANDA_DOF = 7;
+static const int TOCABI_DOF = 11; // 3 for waist, 8 for right arm
 
-static const int NX = 9;  // [joint angle, s(path param), vs]
-static const int NU = 8;  // [djoint angle, dVs]
+static const int NX = 13;  // [joint angle, s(path param), vs]
+static const int NU = 12;  // [djoint angle, dVs]
 
 // static const int NPC = 2; // number of polytopic constraints: Self collision, Singularity
 static const int NPC = 3; // number of polytopic constraints: Self collision, Singularity, Env collision
@@ -48,8 +48,12 @@ struct StateInputIndex{
     int q5 = 4;
     int q6 = 5;
     int q7 = 6;
-    int s  = 7;
-    int vs = 8;
+    int q8 = 7;
+    int q9 = 8;
+    int q10 = 9;
+    int q11 = 10;
+    int s  = 11;
+    int vs = 12;
 
     // Index of control input
     int dq1 = 0;
@@ -59,7 +63,11 @@ struct StateInputIndex{
     int dq5 = 4;
     int dq6 = 5;
     int dq7 = 6;
-    int dVs = 7;
+    int dq8 = 7;
+    int dq9 = 8;
+    int dq10 = 9;
+    int dq11 = 10;
+    int dVs = 11;
 
     // Index of constraints
     int con_selcol = 0; // self collision 

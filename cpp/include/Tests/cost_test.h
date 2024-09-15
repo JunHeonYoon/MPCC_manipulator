@@ -44,7 +44,7 @@ TEST(TestCost, TestSPD)
 
     Eigen::Vector2d sel_col_n_hidden;
     sel_col_n_hidden << 256, 64;
-    selcolNN->setNeuralNetwork(mpcc::PANDA_DOF, 1, sel_col_n_hidden, true);
+    selcolNN->setNeuralNetwork(mpcc::TOCABI_DOF, 1, sel_col_n_hidden, true);
 
     genRoundTrack(track);
 
@@ -68,7 +68,7 @@ TEST(TestCost, TestSPD)
     mpcc::Input uk = mpcc::vectorToInput(uk_vec);
 
     mpcc::RobotData rbk;
-    rbk.update(xk_vec.head(mpcc::PANDA_DOF),robot,selcolNN);
+    rbk.update(xk_vec.head(mpcc::TOCABI_DOF),robot,selcolNN);
 
     // calculate cost matrix
     double temp_obj;
@@ -125,7 +125,7 @@ TEST(TestCost, TestLinearization)
 
     Eigen::Vector2d sel_col_n_hidden;
     sel_col_n_hidden << 256, 64;
-    selcolNN->setNeuralNetwork(mpcc::PANDA_DOF, 1, sel_col_n_hidden, true);
+    selcolNN->setNeuralNetwork(mpcc::TOCABI_DOF, 1, sel_col_n_hidden, true);
 
     mpcc::Bounds_x x_LB = bound.getBoundsLX();
     mpcc::Bounds_x x_UB = bound.getBoundsUX();
@@ -154,8 +154,8 @@ TEST(TestCost, TestLinearization)
     mpcc::Input uk1 = mpcc::vectorToInput(uk1_vec);
 
     mpcc::RobotData rbk, rbk1;
-    rbk.update(xk_vec.head(mpcc::PANDA_DOF),robot,selcolNN);
-    rbk1.update(xk1_vec.head(mpcc::PANDA_DOF),robot,selcolNN);
+    rbk.update(xk_vec.head(mpcc::TOCABI_DOF),robot,selcolNN);
+    rbk1.update(xk1_vec.head(mpcc::TOCABI_DOF),robot,selcolNN);
 
     double obj, obj1;
     mpcc::CostGrad cost_grad;

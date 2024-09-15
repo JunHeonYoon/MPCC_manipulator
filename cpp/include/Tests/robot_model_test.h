@@ -16,8 +16,7 @@ TEST(TestRobotModel, TestGetEEPosition)
     std::unique_ptr<mpcc::RobotModel> robot;
     robot = std::make_unique<mpcc::RobotModel>();
     mpcc::JointVector q0;
-    // q0 <<  -0.002, -0.001,  0.002, -1.574,  0.006,  1.584,  0.789;
-    q0 << 0, 0, 0, -M_PI/2, 0, M_PI/2, M_PI/4;
+    q0 << 0., 0., 0., -0.3, -0.3, -1.5, 1.27, 1.0, 0.0, 1.0, 0.0;
     Vector3d x0 = Vector3d::Zero();
     bool result;
     try
@@ -44,7 +43,7 @@ TEST(TestRobotModel, TestGetEEOrientation)
     robot = std::make_unique<mpcc::RobotModel>();
     mpcc::JointVector q0;
     q0.setZero();
-    q0 << 0, 0, 0, -M_PI/2, 0, M_PI/2, M_PI/4;
+    q0 << 0., 0., 0., -0.3, -0.3, -1.5, 1.27, 1.0, 0.0, 1.0, 0.0;
     Matrix3d r0 = Matrix3d::Zero();
     bool result;
     try
@@ -67,8 +66,8 @@ TEST(TestRobotModel, TestGetJacobianv)
     std::unique_ptr<mpcc::RobotModel> robot;
     robot = std::make_unique<mpcc::RobotModel>();
     mpcc::JointVector q0;
-    q0 <<  -0.002, -0.001,  0.002, -1.574,  0.006,  1.584,  0.789;
-    Matrix<double, 3, mpcc::PANDA_DOF> J0;
+    q0 <<  0., 0., 0., -0.3, -0.3, -1.5, 1.27, 1.0, 0.0, 1.0, 0.0;
+    Matrix<double, 3, mpcc::TOCABI_DOF> J0;
     J0.setZero();
     bool result;
     try
@@ -95,11 +94,11 @@ TEST(TestRobotModel, TestManipulability)
     std::unique_ptr<mpcc::RobotModel> robot;
     robot = std::make_unique<mpcc::RobotModel>();
     mpcc::JointVector q0, dq, q1;
-    q0 <<  0, 0, 0, 0.1, 0, M_PI/2, M_PI/4;
+    q0 <<  0., 0., 0., -0.3, -0.3, -1.5, 1.27, 1.0, 0.0, 1.0, 0.0;
     dq = mpcc::JointVector::Ones()*0.01;
     q1 = q0 + dq;
     double mani0 = 0, mani1 = 0, mani_est = 0;
-    VectorXd d_mani = VectorXd::Zero(mpcc::PANDA_DOF);
+    VectorXd d_mani = VectorXd::Zero(mpcc::TOCABI_DOF);
     bool result;
     try
     {

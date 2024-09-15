@@ -130,9 +130,6 @@ namespace mpcc
 
     void SelCollNNmodel::setNeuralNetwork(int n_input, int n_output, Eigen::VectorXd n_hidden, bool is_nerf)
     {
-        // Eigen::VectorXd n_hidden;
-        // n_hidden.resize(4);
-        // n_hidden << 256, 256, 256, 256;
         initializeNetwork(n_input, n_output, n_hidden, is_nerf);
         loadNetwork();
     }

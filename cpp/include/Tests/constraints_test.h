@@ -80,7 +80,7 @@ TEST(TestConstraints, TestSelfCollision)
 
     Eigen::Vector2d sel_col_n_hidden;
     sel_col_n_hidden << 256, 64;
-    selcolNN->setNeuralNetwork(mpcc::PANDA_DOF, 1, sel_col_n_hidden, true);
+    selcolNN->setNeuralNetwork(mpcc::TOCABI_DOF, 1, sel_col_n_hidden, true);
     
     genRoundTrack(track);
 
@@ -111,8 +111,8 @@ TEST(TestConstraints, TestSelfCollision)
     mpcc::Input uk1 = mpcc::vectorToInput(uk1_vec);
 
     mpcc::RobotData rbk, rbk1;
-    rbk.update(xk_vec.head(mpcc::PANDA_DOF),robot,selcolNN);
-    rbk1.update(xk1_vec.head(mpcc::PANDA_DOF),robot,selcolNN);
+    rbk.update(xk_vec.head(mpcc::TOCABI_DOF),robot,selcolNN);
+    rbk1.update(xk1_vec.head(mpcc::TOCABI_DOF),robot,selcolNN);
 
 
     mpcc::ConstraintsInfo constr_info, constr_info1;
@@ -162,7 +162,7 @@ TEST(TestConstraints, TestSingularity)
 
     Eigen::Vector2d sel_col_n_hidden;
     sel_col_n_hidden << 256, 64;
-    selcolNN->setNeuralNetwork(mpcc::PANDA_DOF, 1, sel_col_n_hidden, true);
+    selcolNN->setNeuralNetwork(mpcc::TOCABI_DOF, 1, sel_col_n_hidden, true);
     
     genRoundTrack(track);
 
@@ -193,8 +193,8 @@ TEST(TestConstraints, TestSingularity)
     mpcc::Input uk1 = mpcc::vectorToInput(uk1_vec);
 
     mpcc::RobotData rbk, rbk1;
-    rbk.update(xk_vec.head(mpcc::PANDA_DOF),robot,selcolNN);
-    rbk1.update(xk1_vec.head(mpcc::PANDA_DOF),robot,selcolNN);
+    rbk.update(xk_vec.head(mpcc::TOCABI_DOF),robot,selcolNN);
+    rbk1.update(xk1_vec.head(mpcc::TOCABI_DOF),robot,selcolNN);
 
     bool result = false;
 

@@ -2,6 +2,7 @@
 #define MPCC_ROBOT_MODEL_H
 
 #include <rbdl/rbdl.h>
+#include <rbdl/addons/urdfreader/urdfreader.h>
 #include "config.h"
 #include "types.h"
 
@@ -9,7 +10,7 @@ using namespace RigidBodyDynamics;
 using namespace Eigen;
 using namespace std;
 
-#define PANDA_NUM_LINKS 10 // with hand
+#define TOCABI_NUM_LINKS 13 // 12 for arm 1 for palm
 
 namespace mpcc
 {   
@@ -30,7 +31,7 @@ namespace mpcc
 			}
             const MatrixXd & getJacobian(const VectorXd &q) 
             {
-				Jacobian(PANDA_NUM_LINKS, q);
+				Jacobian(TOCABI_NUM_LINKS, q);
 				return j_;
 			}
             const MatrixXd & getJacobian(const VectorXd &q, const int & frame_id) 
@@ -40,7 +41,7 @@ namespace mpcc
 			}
             const MatrixXd & getJacobianv(const VectorXd &q) 
             {
-				Jacobian(PANDA_NUM_LINKS, q);
+				Jacobian(TOCABI_NUM_LINKS, q);
 				return j_v_;
 			}
             const MatrixXd & getJacobianv(const VectorXd &q, const int & frame_id) 
@@ -55,7 +56,7 @@ namespace mpcc
 			}
             const MatrixXd & getJacobianw(const VectorXd &q) 
             {
-				Jacobian(PANDA_NUM_LINKS, q);
+				Jacobian(TOCABI_NUM_LINKS, q);
 				return j_w_;
 			}
             const Vector3d & getPosition(const int & frame_id) 
@@ -65,12 +66,12 @@ namespace mpcc
 			}
             const Vector3d & getEEPosition() 
             {
-				Position(PANDA_NUM_LINKS);
+				Position(TOCABI_NUM_LINKS);
 				return x_;
 			}
             const Vector3d & getEEPosition(const VectorXd &q) 
             {
-				Position(PANDA_NUM_LINKS, q);
+				Position(TOCABI_NUM_LINKS, q);
 				return x_;
 			}      
 			const Matrix3d & getOrientation(const int & frame_id) 
@@ -80,12 +81,12 @@ namespace mpcc
 			}
             const Matrix3d & getEEOrientation() 
             {
-				Orientation(PANDA_NUM_LINKS);
+				Orientation(TOCABI_NUM_LINKS);
 				return rotation_;
 			}
             const Matrix3d & getEEOrientation(const VectorXd &q) 
             {
-				Orientation(PANDA_NUM_LINKS, q);
+				Orientation(TOCABI_NUM_LINKS, q);
 
 				return rotation_;
 			}
@@ -96,12 +97,12 @@ namespace mpcc
 			}
             const Affine3d & getEETransformation() 
             {
-				Transformation(PANDA_NUM_LINKS);
+				Transformation(TOCABI_NUM_LINKS);
 				return trans_;
 			}
             const Affine3d & getEETransformation(const VectorXd &q) 
             {
-				Transformation(PANDA_NUM_LINKS, q);
+				Transformation(TOCABI_NUM_LINKS, q);
 				return trans_;
 			}
             const VectorXd & getJointPosition() 
@@ -120,7 +121,7 @@ namespace mpcc
 			}
             const double & getManipulability(const VectorXd &q)
             {
-                Manipulability(PANDA_NUM_LINKS,q);
+                Manipulability(TOCABI_NUM_LINKS,q);
                 return mani_;
             }
             const double & getManipulability(const VectorXd &q, const int & frame_id)
@@ -130,7 +131,7 @@ namespace mpcc
             }
             const VectorXd & getDManipulability(const VectorXd &q)
             {
-                dManipulability(PANDA_NUM_LINKS,q);
+                dManipulability(TOCABI_NUM_LINKS,q);
                 return d_mani_;
             }
             const VectorXd & getDManipulability(const VectorXd &q, const int & frame_id)
@@ -140,9 +141,7 @@ namespace mpcc
             }
             
         private:
-            void setRobot();
-            void setPanda(unsigned int base_id, Vector3d joint_position, Matrix3d joint_rotataion);
-            void setHusky();
+            void setRobot(const std::string &urdf_file_path);
             void Jacobian(const int & frame_id);
             void Jacobian(const int & frame_id, const VectorXd &q);
 			void Position(const int & frame_id);
@@ -157,9 +156,8 @@ namespace mpcc
             void dManipulability(const int & frame_id, const VectorXd &q); 
 
             std::shared_ptr<Model> model_;
-            unsigned int base_id_;     // for mobile base
-            unsigned int body_id_[PANDA_NUM_LINKS];  // only for manipulator (link0~7, hand)
-            // Vector3d link_position_[panda_num_links]; // only for manipulator (link0~7, hand)
+            unsigned int body_id_[TOCABI_NUM_LINKS];  // only for manipulator (link0~7, hand)
+            // Vector3d link_position_[TOCABI_NUM_LINKS]; // only for manipulator (link0~7, hand)
 
             // Current state
             VectorXd q_rbdl_;

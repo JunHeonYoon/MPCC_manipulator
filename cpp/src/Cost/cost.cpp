@@ -97,7 +97,7 @@ ErrorInfo Cost::getErrorInfo(const ArcLengthSpline &track,const State &x,const R
     // jacobian of the total error with respect to state X
     Eigen::Matrix<double,3,NX> d_total_error;
     d_total_error.setZero();
-    d_total_error.block(0,si_index.q1,3,PANDA_DOF) = rb.Jv_;
+    d_total_error.block(0,si_index.q1,3,TOCABI_DOF) = rb.Jv_;
     d_total_error.block(0,si_index.s,3,1) = -Tangent;
 
     // jacobian of the lag error with respect to state X
@@ -186,7 +186,7 @@ void Cost::getHeadingCost(const ArcLengthSpline &track,const State &x,const Robo
         Eigen::Matrix3d J_r_inv;
         if(Log_R_bar.norm() < 1e-8) J_r_inv = Eigen::Matrix3d::Identity();
         else J_r_inv = Eigen::Matrix3d::Identity() + 1./2.*getSkewMatrix(Log_R_bar) + ( 1. / Log_R_bar.squaredNorm() + ( 1. + cos(Log_R_bar.norm()) ) / ( 2. * Log_R_bar.norm() * sin(Log_R_bar.norm()) ) )*getSkewMatrix(Log_R_bar)*getSkewMatrix(Log_R_bar);
-        d_Log_R_bar.block(0,si_index.q1,3,PANDA_DOF) = J_r_inv * cur_R.transpose() * rb.Jw_;
+        d_Log_R_bar.block(0,si_index.q1,3,TOCABI_DOF) = J_r_inv * cur_R.transpose() * rb.Jw_;
         d_Log_R_bar.block(0,si_index.s,3,1) = -J_r_inv * cur_R.transpose() * ref_ori.dR_ref;
     }
 
@@ -211,8 +211,8 @@ void Cost::getInputCost(const ArcLengthSpline &track,const State &x,const Input 
 {
     // compute control input cost, formed by joint velocity, joint acceleration, acceleration of path parameter 
     dJointVector dq = inputTodJointVector(u);
-    Eigen::Matrix<double, 6, PANDA_DOF> J = rb.J_;
-    Eigen::Matrix<double, 3, PANDA_DOF> Jv = rb.Jv_;
+    Eigen::Matrix<double, 6, TOCABI_DOF> J = rb.J_;
+    Eigen::Matrix<double, 3, TOCABI_DOF> Jv = rb.Jv_;
     TrackPoint track_point = getRefPoint(track, x);
     Eigen::Vector3d Tangent = Eigen::Vector3d(track_point.dx_ref,track_point.dy_ref, track_point.dz_ref);
     Eigen::Vector3d Normal = Eigen::Vector3d(track_point.ddx_ref,track_point.ddy_ref, track_point.ddz_ref);
@@ -221,12 +221,17 @@ void Cost::getInputCost(const ArcLengthSpline &track,const State &x,const Input 
     double vel_error = path_vel - x.vs;
     double NJq = Normal.dot(Jv * dq);
 
+    Eigen::VectorXd weighted_rdq = cost_param_.r_dq * Eigen::VectorXd::Ones(TOCABI_DOF);
+    weighted_rdq.segment(si_index.dq1, 3) *= cost_param_.r_dq_W_mult; // 3 is number of tocabi waist
+    Eigen::MatrixXd rdq_mat = weighted_rdq.asDiagonal();
+
 
     // Exact Input cost
     if(obj)
     {
         (*obj) = 0;
-        if(k != N) (*obj) = cost_param_.r_dq * dq.squaredNorm() +
+        // if(k != N) (*obj) = cost_param_.r_dq * dq.squaredNorm() +
+        if(k != N) (*obj) = dq.dot(rdq_mat * dq) +
                             cost_param_.r_dVs * pow(u.dVs,2);
                             // cost_param_.r_Vee * (J * dq).squaredNorm();
                             // cost_param_.r_Vee * pow(vel_error, 2);
@@ -241,7 +246,8 @@ void Cost::getInputCost(const ArcLengthSpline &track,const State &x,const Input 
         // grad->f_x(si_index.vs) = 2.0 * cost_param_.r_Vee * vel_error * (-1);
         if(k != N)
         {
-            grad->f_u.segment(si_index.dq1,PANDA_DOF) = 2.0 * cost_param_.r_dq * dq;
+            // grad->f_u.segment(si_index.dq1,TOCABI_DOF) = 2.0 * cost_param_.r_dq * dq;
+            grad->f_u.segment(si_index.dq1,TOCABI_DOF) = 2.0 * rdq_mat * dq;
                                                         // 2.0 * cost_param_.r_Vee * (J.transpose() * J * dq);
                                                         // 2.0 * cost_param_.r_Vee * vel_error * (Jv.transpose() * Tangent);
             grad->f_u(si_index.dVs) = 2.0 * cost_param_.r_dVs*u.dVs;
@@ -257,12 +263,13 @@ void Cost::getInputCost(const ArcLengthSpline &track,const State &x,const Input 
         // hess->f_xx(si_index.s,si_index.vs) = hess->f_xx(si_index.vs,si_index.s);
         if(k != N)
         {
-            hess->f_uu.block(si_index.dq1,si_index.dq1,PANDA_DOF,PANDA_DOF) = 2.0 * cost_param_.r_dq * Eigen::MatrixXd::Identity(PANDA_DOF,PANDA_DOF);
+            // hess->f_uu.block(si_index.dq1,si_index.dq1,TOCABI_DOF,TOCABI_DOF) = 2.0 * cost_param_.r_dq * Eigen::MatrixXd::Identity(TOCABI_DOF,TOCABI_DOF);
+            hess->f_uu.block(si_index.dq1,si_index.dq1,TOCABI_DOF,TOCABI_DOF) = 2.0 * rdq_mat;
                                                                             //   2.0 * cost_param_.r_Vee * (J.transpose() * J);
                                                                             //   2.0 * cost_param_.r_Vee * (Jv.transpose() * Tangent) * (Tangent.transpose() * Jv);
             hess->f_uu(si_index.dVs,si_index.dVs) = 2.0 * cost_param_.r_dVs;
-            // hess->f_xu.block(si_index.s,si_index.dq1,1,PANDA_DOF) = 2.0 * cost_param_.r_Vee * (NJq * (Tangent.transpose() * Jv) + vel_error * (Normal.transpose() * Jv));
-            // hess->f_xu.block(si_index.vs,si_index.dq1,1,PANDA_DOF) = 2.0 * cost_param_.r_Vee * (-1) * Tangent.transpose() * Jv;
+            // hess->f_xu.block(si_index.s,si_index.dq1,1,TOCABI_DOF) = 2.0 * cost_param_.r_Vee * (NJq * (Tangent.transpose() * Jv) + vel_error * (Normal.transpose() * Jv));
+            // hess->f_xu.block(si_index.vs,si_index.dq1,1,TOCABI_DOF) = 2.0 * cost_param_.r_Vee * (-1) * Tangent.transpose() * Jv;
         }
     }
 

@@ -21,6 +21,8 @@ if(USE_LIBTORCH)
         include_directories(${TORCH_INCLUDE_DIRS})
 endif()
 
+list(APPEND CMAKE_MODULE_PATH
+"${PROJECT_SOURCE_DIR}/cmake")
 find_package(Eigen3 REQUIRED)
 find_package(RBDL REQUIRED)
 find_package(OsqpEigen REQUIRED)
@@ -61,6 +63,7 @@ if(USE_LIBTORCH)
 endif()
 target_link_libraries(MPCC_LIB PUBLIC
         ${RBDL_LIBRARY} 
+        ${RBDL_URDFReader_LIBRARY}
         OsqpEigen::OsqpEigen 
 )
 if(USE_LIBTORCH)

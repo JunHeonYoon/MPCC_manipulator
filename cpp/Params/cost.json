@@ -7,6 +7,7 @@
   "qOri": 10,
 
   "rdq"  : 0.01,
+  "rdqWmult": 10.0,
   "rdVs" : 0.2,
   "rVee" : 0.1,
 

@@ -27,8 +27,12 @@ StateVector stateToVector(const State &x)
     xk(4) = x.q5;
     xk(5) = x.q6;
     xk(6) = x.q7;
-    xk(7) = x.s;
-    xk(8) = x.vs;
+    xk(7) = x.q8;
+    xk(8) = x.q9;
+    xk(9) = x.q10;
+    xk(10) = x.q11;
+    xk(11) = x.s;
+    xk(12) = x.vs;
     return xk;
 }
 
@@ -42,6 +46,10 @@ JointVector stateToJointVector(const State &x)
     xk(4) = x.q5;
     xk(5) = x.q6;
     xk(6) = x.q7;
+    xk(7) = x.q8;
+    xk(8) = x.q9;
+    xk(9) = x.q10;
+    xk(10) = x.q11;
     return xk;
 }
 
@@ -55,6 +63,10 @@ dJointVector inputTodJointVector(const Input &u)
     uk(4) = u.dq5;
     uk(5) = u.dq6;
     uk(6) = u.dq7;
+    uk(7) = u.dq8;
+    uk(8) = u.dq9;
+    uk(9) = u.dq10;
+    uk(10) = u.dq11;
     return uk;
 }
 
@@ -68,7 +80,11 @@ InputVector inputToVector(const Input &u)
     uk(4) = u.dq5;
     uk(5) = u.dq6;
     uk(6) = u.dq7;
-    uk(7) = u.dVs;
+    uk(7) = u.dq8;
+    uk(8) = u.dq9;
+    uk(9) = u.dq10;
+    uk(10) = u.dq11;
+    uk(11) = u.dVs;
     return uk;
 }
 
@@ -82,8 +98,12 @@ State vectorToState(const StateVector &xk)
     x.q5 = xk(4);
     x.q6 = xk(5);
     x.q7 = xk(6);
-    x.s  = xk(7);
-    x.vs = xk(8);
+    x.q8 = xk(7);
+    x.q9 = xk(8);
+    x.q10 = xk(9);
+    x.q11 = xk(10);
+    x.s  = xk(11);
+    x.vs = xk(12);
 
     return x;
 }
@@ -98,7 +118,11 @@ Input vectorToInput(const InputVector &uk)
     u.dq5 = uk(4);
     u.dq6 = uk(5);
     u.dq7 = uk(6);
-    u.dVs = uk(7);
+    u.dq8 = uk(7);
+    u.dq9 = uk(8);
+    u.dq10 = uk(9);
+    u.dq11 = uk(10);
+    u.dVs = uk(11);
 
     return u;
 }
@@ -113,8 +137,12 @@ State arrayToState(double *xk)
     x.q5 = xk[4];
     x.q6 = xk[5];
     x.q7 = xk[6];
-    x.s  = xk[7];
-    x.vs = xk[8];
+    x.q8 = xk[7];
+    x.q9 = xk[8];
+    x.q10 = xk[9];
+    x.q11 = xk[10];
+    x.s  = xk[11];
+    x.vs = xk[12];
 
     return x;
 }
@@ -129,7 +157,11 @@ Input arrayToInput(double *uk)
     u.dq5 = uk[4];
     u.dq6 = uk[5];
     u.dq7 = uk[6];
-    u.dVs = uk[7];
+    u.dq8 = uk[7];
+    u.dq9 = uk[8];
+    u.dq10 = uk[9];
+    u.dq11 = uk[10];
+    u.dVs = uk[11];
 
     return u;
 }

@@ -31,8 +31,12 @@ param_(param)
     l_bounds_x_(4) = bounds_param.lower_state_bounds.q5_l;
     l_bounds_x_(5) = bounds_param.lower_state_bounds.q6_l;
     l_bounds_x_(6) = bounds_param.lower_state_bounds.q7_l;
-    l_bounds_x_(7) = bounds_param.lower_state_bounds.s_l;
-    l_bounds_x_(8) = bounds_param.lower_state_bounds.vs_l;
+    l_bounds_x_(7) = bounds_param.lower_state_bounds.q8_l;
+    l_bounds_x_(8) = bounds_param.lower_state_bounds.q9_l;
+    l_bounds_x_(9) = bounds_param.lower_state_bounds.q10_l;
+    l_bounds_x_(10) = bounds_param.lower_state_bounds.q11_l;
+    l_bounds_x_(11) = bounds_param.lower_state_bounds.s_l;
+    l_bounds_x_(12) = bounds_param.lower_state_bounds.vs_l;
 
     u_bounds_x_(0) = bounds_param.upper_state_bounds.q1_u;
     u_bounds_x_(1) = bounds_param.upper_state_bounds.q2_u;
@@ -41,8 +45,12 @@ param_(param)
     u_bounds_x_(4) = bounds_param.upper_state_bounds.q5_u;
     u_bounds_x_(5) = bounds_param.upper_state_bounds.q6_u;
     u_bounds_x_(6) = bounds_param.upper_state_bounds.q7_u;
-    u_bounds_x_(7) = bounds_param.upper_state_bounds.s_u;
-    u_bounds_x_(8) = bounds_param.upper_state_bounds.vs_u;
+    u_bounds_x_(7) = bounds_param.upper_state_bounds.q8_u;
+    u_bounds_x_(8) = bounds_param.upper_state_bounds.q9_u;
+    u_bounds_x_(9) = bounds_param.upper_state_bounds.q10_u;
+    u_bounds_x_(10) = bounds_param.upper_state_bounds.q11_u;
+    u_bounds_x_(11) = bounds_param.upper_state_bounds.s_u;
+    u_bounds_x_(12) = bounds_param.upper_state_bounds.vs_u;
 
     l_bounds_u_(0) = bounds_param.lower_input_bounds.dq1_l;
     l_bounds_u_(1) = bounds_param.lower_input_bounds.dq2_l;
@@ -51,7 +59,11 @@ param_(param)
     l_bounds_u_(4) = bounds_param.lower_input_bounds.dq5_l;
     l_bounds_u_(5) = bounds_param.lower_input_bounds.dq6_l;
     l_bounds_u_(6) = bounds_param.lower_input_bounds.dq7_l;
-    l_bounds_u_(7) = bounds_param.lower_input_bounds.dVs_l;
+    l_bounds_u_(7) = bounds_param.lower_input_bounds.dq8_l;
+    l_bounds_u_(8) = bounds_param.lower_input_bounds.dq9_l;
+    l_bounds_u_(9) = bounds_param.lower_input_bounds.dq10_l;
+    l_bounds_u_(10) = bounds_param.lower_input_bounds.dq11_l;
+    l_bounds_u_(11) = bounds_param.lower_input_bounds.dVs_l;
 
     u_bounds_u_(0) = bounds_param.upper_input_bounds.dq1_u;
     u_bounds_u_(1) = bounds_param.upper_input_bounds.dq2_u;
@@ -60,7 +72,11 @@ param_(param)
     u_bounds_u_(4) = bounds_param.upper_input_bounds.dq5_u;
     u_bounds_u_(5) = bounds_param.upper_input_bounds.dq6_u;
     u_bounds_u_(6) = bounds_param.upper_input_bounds.dq7_u;
-    u_bounds_u_(7) = bounds_param.upper_input_bounds.dVs_u;
+    u_bounds_u_(7) = bounds_param.upper_input_bounds.dq8_u;
+    u_bounds_u_(8) = bounds_param.upper_input_bounds.dq9_u;
+    u_bounds_u_(9) = bounds_param.upper_input_bounds.dq10_u;
+    u_bounds_u_(10) = bounds_param.upper_input_bounds.dq11_u;
+    u_bounds_u_(11) = bounds_param.upper_input_bounds.dVs_u;
 
 
     std::cout << "bounds initialized" << std::endl;

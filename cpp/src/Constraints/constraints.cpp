@@ -85,10 +85,10 @@ void Constraints::getSelcollConstraint(const State &x,const Input &u,const Robot
         Jac->setZero();
         if(k != N)
         {
-            Eigen::Matrix<double, PANDA_DOF, PANDA_DOF> dd_min_dist = d_min_dist * d_min_dist.transpose(); // hessian matrix (approximation)
+            Eigen::Matrix<double, TOCABI_DOF, TOCABI_DOF> dd_min_dist = d_min_dist * d_min_dist.transpose(); // hessian matrix (approximation)
             double d_RBF = getDRBF(delta, min_dist - r);
-            Jac->c_x_i.block(0,si_index.q1,1,PANDA_DOF) = (-dd_min_dist*dq + d_RBF*d_min_dist).transpose();
-            Jac->c_u_i.block(0,si_index.dq1,1,PANDA_DOF) = -d_min_dist.transpose();
+            Jac->c_x_i.block(0,si_index.q1,1,TOCABI_DOF) = (-dd_min_dist*dq + d_RBF*d_min_dist).transpose();
+            Jac->c_u_i.block(0,si_index.dq1,1,TOCABI_DOF) = -d_min_dist.transpose();
         }
     }
     return;
@@ -125,10 +125,10 @@ void Constraints::getSingularConstraint(const State &x,const Input &u,const Robo
         Jac->setZero();
         if(k!=N)
         {
-            Eigen::Matrix<double, PANDA_DOF, PANDA_DOF> dd_manipulability = d_manipulability * d_manipulability.transpose(); // hessian matrix (approximation)
+            Eigen::Matrix<double, TOCABI_DOF, TOCABI_DOF> dd_manipulability = d_manipulability * d_manipulability.transpose(); // hessian matrix (approximation)
             double d_RBF = getDRBF(delta, manipulability - eps);
-            Jac->c_x_i.block(0,si_index.q1,1,PANDA_DOF) = (-dd_manipulability*dq + d_RBF*d_manipulability).transpose();
-            Jac->c_u_i.block(0,si_index.dq1,1,PANDA_DOF) = -d_manipulability.transpose();
+            Jac->c_x_i.block(0,si_index.q1,1,TOCABI_DOF) = (-dd_manipulability*dq + d_RBF*d_manipulability).transpose();
+            Jac->c_u_i.block(0,si_index.dq1,1,TOCABI_DOF) = -d_manipulability.transpose();
         }
     }
     return;
@@ -166,10 +166,10 @@ void Constraints::getEnvcollConstraint(const State &x,const Input &u,const Robot
         Jac->setZero();
         if(k != N)
         {
-            Eigen::Matrix<double, PANDA_DOF, PANDA_DOF> dd_min_dist = d_min_dist * d_min_dist.transpose(); // hessian matrix (approximation)
+            Eigen::Matrix<double, TOCABI_DOF, TOCABI_DOF> dd_min_dist = d_min_dist * d_min_dist.transpose(); // hessian matrix (approximation)
             double d_RBF = getDRBF(delta, min_dist - r);
-            Jac->c_x_i.block(0,si_index.q1,1,PANDA_DOF) = (-dd_min_dist*dq + d_RBF*d_min_dist).transpose();
-            Jac->c_u_i.block(0,si_index.dq1,1,PANDA_DOF) = -d_min_dist.transpose();
+            Jac->c_x_i.block(0,si_index.q1,1,TOCABI_DOF) = (-dd_min_dist*dq + d_RBF*d_min_dist).transpose();
+            Jac->c_u_i.block(0,si_index.dq1,1,TOCABI_DOF) = -d_min_dist.transpose();
         }
     }
     return;
@@ -187,13 +187,13 @@ void Constraints::getConstraints(const State &x,const Input &u,const RobotData &
     {
         getSelcollConstraint(x, u, rb, k, &constraint_selcol, &jac_selcol);
         getSingularConstraint(x, u, rb, k, &constraint_sing, &jac_sing);
-        getEnvcollConstraint(x, u, rb, k, &constraint_envcol, &jac_envcol);
+        // getEnvcollConstraint(x, u, rb, k, &constraint_envcol, &jac_envcol);
     }
     else
     {
         getSelcollConstraint(x, u, rb, k, &constraint_selcol, NULL);
         getSingularConstraint(x, u, rb, k, &constraint_sing, NULL);
-        getEnvcollConstraint(x, u, rb, k, &constraint_envcol, NULL);
+        // getEnvcollConstraint(x, u, rb, k, &constraint_envcol, NULL);
     }
 
     if(constraint)

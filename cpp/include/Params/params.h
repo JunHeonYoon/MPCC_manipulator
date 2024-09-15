@@ -58,9 +58,10 @@ public:
     double q_ori; // weight for heading cost
 
     // Input cost
-    double r_dq;     // weight for joint velocity
-    double r_Vee;    // weight for end-effector velocity
-    double r_dVs;    // weight for accelerate of path parameter
+    double r_dq;         // weight for joint velocity
+    double r_dq_W_mult;  // weight multiplication for waist joint velocity
+    double r_Vee;        // weight for end-effector velocity
+    double r_dVs;        // weight for accelerate of path parameter
 
     // Reduction and Increase ratio
     double q_c_red_ratio;    // reduction ratio of weight for contouring error
@@ -84,6 +85,10 @@ public:
     /// @param q5_l (double) lower bound of q5
     /// @param q6_l (double) lower bound of q6
     /// @param q7_l (double) lower bound of q7
+    /// @param q8_l (double) lower bound of q8
+    /// @param q9_l (double) lower bound of q9
+    /// @param q10_l (double) lower bound of q10
+    /// @param q11_l (double) lower bound of q11
     /// @param s_l  (double) lower bound of s
     /// @param vs_l (double) lower bound of vs
     struct LowerStateBounds{
@@ -94,6 +99,10 @@ public:
         double q5_l;
         double q6_l;
         double q7_l;
+        double q8_l;
+        double q9_l;
+        double q10_l;
+        double q11_l;
         double s_l;
         double vs_l;
     };
@@ -106,6 +115,10 @@ public:
     /// @param q5_u (double) upper bound of q5
     /// @param q6_u (double) upper bound of q6
     /// @param q7_u (double) upper bound of q7
+    /// @param q8_u (double) upper bound of q8
+    /// @param q9_u (double) upper bound of q9
+    /// @param q10_u (double) upper bound of q10
+    /// @param q11_u (double) upper bound of q11
     /// @param s_u  (double) upper bound of s
     /// @param vs_u (double) upper bound of vs
     struct UpperStateBounds{
@@ -116,18 +129,26 @@ public:
         double q5_u;
         double q6_u;
         double q7_u;
+        double q8_u;
+        double q9_u;
+        double q10_u;
+        double q11_u;
         double s_u;
         double vs_u;
     };
 
     /// @brief  Lower bound of control input
-    /// @param dq1_l (double) lower bound of ddq1
-    /// @param dq2_l (double) lower bound of ddq2
-    /// @param dq3_l (double) lower bound of ddq3
-    /// @param dq4_l (double) lower bound of ddq4
-    /// @param dq5_l (double) lower bound of ddq5
-    /// @param dq6_l (double) lower bound of ddq6
-    /// @param dq7_l (double) lower bound of ddq7
+    /// @param dq1_l (double) lower bound of dq1
+    /// @param dq2_l (double) lower bound of dq2
+    /// @param dq3_l (double) lower bound of dq3
+    /// @param dq4_l (double) lower bound of dq4
+    /// @param dq5_l (double) lower bound of dq5
+    /// @param dq6_l (double) lower bound of dq6
+    /// @param dq7_l (double) lower bound of dq7
+    /// @param dq8_l (double) lower bound of dq8
+    /// @param dq9_l (double) lower bound of dq9
+    /// @param dq10_l (double) lower bound of dq10
+    /// @param dq11_l (double) lower bound of dq11
     /// @param dVs_l  (double) lower bound of dVs
     struct LowerInputBounds{
         double dq1_l;
@@ -137,17 +158,25 @@ public:
         double dq5_l;
         double dq6_l;
         double dq7_l;
+        double dq8_l;
+        double dq9_l;
+        double dq10_l;
+        double dq11_l;
         double dVs_l;
     };
 
     /// @brief  Upper bound of control input
-    /// @param dq1_u (double) upper bound of ddq1
-    /// @param dq2_u (double) upper bound of ddq2
-    /// @param dq3_u (double) upper bound of ddq3
-    /// @param dq4_u (double) upper bound of ddq4
-    /// @param dq5_u (double) upper bound of ddq5
-    /// @param dq6_u (double) upper bound of ddq6
-    /// @param dq7_u (double) upper bound of ddq7
+    /// @param dq1_u (double) upper bound of dq1
+    /// @param dq2_u (double) upper bound of dq2
+    /// @param dq3_u (double) upper bound of dq3
+    /// @param dq4_u (double) upper bound of dq4
+    /// @param dq5_u (double) upper bound of dq5
+    /// @param dq6_u (double) upper bound of dq6
+    /// @param dq7_u (double) upper bound of dq7
+    /// @param dq8_u (double) upper bound of dq8
+    /// @param dq9_u (double) upper bound of dq9
+    /// @param dq10_u (double) upper bound of dq10
+    /// @param dq11_u (double) upper bound of dq11
     /// @param dVs_u  (double) upper bound of dVs
     struct UpperInputBounds{
         double dq1_u;
@@ -157,6 +186,10 @@ public:
         double dq5_u;
         double dq6_u;
         double dq7_u;
+        double dq8_u;
+        double dq9_u;
+        double dq10_u;
+        double dq11_u;
         double dVs_u;
     };
 

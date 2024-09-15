@@ -28,6 +28,10 @@ namespace mpcc{
 /// @param q5  (double) joint angle 
 /// @param q6  (double) joint angle 
 /// @param q7  (double) joint angle 
+/// @param q8  (double) joint angle 
+/// @param q9  (double) joint angle 
+/// @param q10 (double) joint angle 
+/// @param q11 (double) joint angle 
 /// @param s   (double) path parameter, arc length 
 /// @param vs  (double) velocity of path parameter 
 struct State{ 
@@ -38,6 +42,10 @@ struct State{
     double q5;  // joint angle
     double q6;  // joint angle
     double q7;  // joint angle
+    double q8;  // joint angle
+    double q9;  // joint angle
+    double q10; // joint angle
+    double q11; // joint angle
     double s;   // path parameter (arc length)
     double vs;  // velocity of path parameter
 
@@ -50,16 +58,16 @@ struct State{
         q5 = 0.0;
         q6 = 0.0;
         q7 = 0.0;
+        q8 = 0.0;
+        q9 = 0.0;
+        q10 = 0.0;
+        q11 = 0.0;
         s = 0.0;
         vs = 0.0;
     }
     /// @brief mapping s to [0, track_length]
     void unwrap(double track_length)
     {
-        // if (s > track_length)
-        //     s -= track_length;
-        // if (s < 0)
-        //     s += track_length;
         s = std::max(0.,std::min(track_length,s));
     }
 
@@ -72,6 +80,10 @@ struct State{
             && q5 == other.q5
             && q6 == other.q6
             && q7 == other.q7
+            && q8 == other.q8
+            && q9 == other.q9
+            && q10 == other.q10
+            && q11 == other.q11
             && s == other.s
             && vs == other.vs;
     }
@@ -85,6 +97,10 @@ struct State{
 /// @param dq5 (double) velocity of joint angle
 /// @param dq6 (double) velocity of joint angle
 /// @param dq7 (double) velocity of joint angle
+/// @param dq8 (double) velocity of joint angle
+/// @param dq9 (double) velocity of joint angle
+/// @param dq10(double) velocity of joint angle
+/// @param dq11(double) velocity of joint angle
 /// @param dVs (double) change of velocity of path parameter 
 struct Input{
     double dq1;
@@ -94,6 +110,10 @@ struct Input{
     double dq5;
     double dq6;
     double dq7;
+    double dq8;
+    double dq9;
+    double dq10;
+    double dq11;
     double dVs;
 
     void setZero()
@@ -105,6 +125,10 @@ struct Input{
         dq5 = 0.0;
         dq6 = 0.0;
         dq7 = 0.0;
+        dq8 = 0.0;
+        dq9 = 0.0;
+        dq10 = 0.0;
+        dq11 = 0.0;
         dVs = 0.0;
     }
 
@@ -117,6 +141,10 @@ struct Input{
             && dq5 == other.dq5
             && dq6 == other.dq6
             && dq7 == other.dq7
+            && dq8 == other.dq7
+            && dq9 == other.dq7
+            && dq10 == other.dq7
+            && dq11 == other.dq7
             && dVs == other.dVs;
     }
 };
@@ -154,8 +182,8 @@ struct ParamValue{
 };
 
 typedef Eigen::Matrix<double,NX,1> StateVector;
-typedef Eigen::Matrix<double,PANDA_DOF,1> JointVector;
-typedef Eigen::Matrix<double,PANDA_DOF,1> dJointVector;
+typedef Eigen::Matrix<double,TOCABI_DOF,1> JointVector;
+typedef Eigen::Matrix<double,TOCABI_DOF,1> dJointVector;
 typedef Eigen::Matrix<double,NU,1> InputVector;
 
 // x_(k+1) = Ax + Bu + g

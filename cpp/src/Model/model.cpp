@@ -23,7 +23,6 @@ Model::Model()
 }
 
 Model::Model(double Ts,const PathToJson &path)
-// :Ts_(Ts),param_(Param(path.param_path))
 :Ts_(Ts)
 {
 }
@@ -38,8 +37,12 @@ StateVector Model::getF(const State &x,const Input &u) const
     f(4) = u.dq5;
     f(5) = u.dq6;
     f(6) = u.dq7;
-    f(7) = x.vs;
-    f(8) = u.dVs;
+    f(7) = u.dq8;
+    f(8) = u.dq9;
+    f(9) = u.dq10;
+    f(10) = u.dq11;
+    f(11) = x.vs;
+    f(12) = u.dVs;
 
     return f;
 }
@@ -58,7 +61,7 @@ LinModelMatrix Model::getModelJacobian(const State &x, const Input &u) const
     A_c(si_index.s,si_index.vs) = 1.0;
 
     // Matrix B
-    B_c.block(si_index.q1,si_index.dq1,PANDA_DOF,PANDA_DOF).setIdentity();
+    B_c.block(si_index.q1,si_index.dq1,TOCABI_DOF,TOCABI_DOF).setIdentity();
     B_c(si_index.vs,si_index.dVs) = 1.0;
 
     return {A_c,B_c,g_c};
@@ -89,31 +92,6 @@ LinModelMatrix Model::discretizeModel(const LinModelMatrix &lin_model_c) const
 
     return {A_d,B_d,g_d};
 }
-
-//LinModelMatrix Model::discretizeModel(const LinModelMatrix &lin_model_c) const
-//{
-//    // disctetize the continuous time linear model \dot x = A x + B u + g using ZHO
-//    Eigen::Matrix<double,NX+NU+1,NX+NU+1> temp = Eigen::Matrix<double,NX+NU+1,NX+NU+1>::Zero();
-//    // building matrix necessary for expm
-//    // temp = Ts*[A,B,g;zeros]
-//    temp.block<NX,NX>(0,0) = lin_model_c.A;
-//    temp.block<NX,NU>(0,NX) = lin_model_c.B;
-//    temp.block<NX,1>(0,NX+NU) = lin_model_c.g;
-//    temp = temp*TS;
-//    Eigen::Matrix<double,NX+NU+1,NX+NU+1> eye;
-//    eye.setIdentity();
-//    const Eigen::Matrix<double,NX+NU+1,NX+NU+1> temp_mult = temp * temp;
-//
-//    const Eigen::Matrix<double,NX+NU+1,NX+NU+1> temp_res = eye + temp + 1./2.0 * temp_mult + 1./6.0 * temp_mult * temp;
-//
-//    // x_{k+1} = Ad x_k + Bd u_k + gd
-//    const A_MPC A_d = temp_res.block<NX,NX>(0,0);
-//    const B_MPC B_d = temp_res.block<NX,NU>(0,NX);
-//    const g_MPC g_d = temp_res.block<NX,1>(0,NX+NU);
-//
-//    return {A_d,B_d,g_d};
-//
-//}
 
 LinModelMatrix Model::getLinModel(const State &x, const Input &u) const
 {

@@ -22,7 +22,7 @@
 #include "Params/params.h"
 namespace mpcc{
 
-/// @brief Linear model of car: x_(k+1) = A * x_k + B * u_k + g
+/// @brief Linear model of robot: x_(k+1) = A * x_k + B * u_k + g
 /// @param A (Eigen::Matrix<double, NX, NX>) Linear part of state
 /// @param B (Eigen::Matrix<double, NX, NU>) Linear part of control input
 /// @param g (Eigen::Matrix<double, NX, 1>) Constant part

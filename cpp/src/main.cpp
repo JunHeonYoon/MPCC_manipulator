@@ -51,15 +51,15 @@ int main() {
     Integrator integrator = Integrator(jsonConfig["Ts"],json_paths);
     RobotModel robot = RobotModel();
     SelCollNNmodel selcolNN = SelCollNNmodel();
-    selcolNN.setNeuralNetwork(PANDA_DOF, 1,(Eigen::VectorXd(2) << 256 , 64).finished(), true);
+    selcolNN.setNeuralNetwork(TOCABI_DOF, 1,(Eigen::VectorXd(2) << 256 , 64).finished(), true);
 
     std::vector<MPCReturn> log;
     MPC mpc(jsonConfig["Ts"],json_paths);
     // MPC mpc(jsonConfig["Ts"],json_paths,param_value);
 
-    State x0 = {0., 0., 0., -M_PI/2, 0, M_PI/2, M_PI/4,
+    State x0 = {0., 0., 0., -0.3, -0.3, -1.5, 1.27, 1.0, 0.0, 1.0, 0.0,
                 0., 0.};
-    Input u0 = {0., 0., 0., 0., 0., 0., 0.,
+    Input u0 = {0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
                 0.};
     Eigen::Vector3d ee_pos = robot.getEEPosition(stateToJointVector(x0));
     Eigen::Matrix3d ee_ori = robot.getEEOrientation(stateToJointVector(x0));
@@ -97,14 +97,11 @@ int main() {
                           << quaternion.z() << " "
                           << quaternion.w() << std::endl;
     }
+    // mpc.setParam(param_value);
 
     for(int i = 0; i < jsonConfig["n_sim"]; i++)
     {
         MPCReturn mpc_sol;
-        if(i == 200)
-        {
-            mpc.setParam(param_value);
-        }
         bool mpc_status = mpc.runMPC(mpc_sol, x0, u0);
         if(mpc_status == false)
         {

@@ -126,7 +126,7 @@ BOOST_PYTHON_MODULE(MPCC_WRAPPER)
     // =================== config.h ====================
     // =================================================
     // Binding constants
-    scope().attr("PANDA_DOF") = PANDA_DOF;
+    scope().attr("TOCABI_DOF") = TOCABI_DOF;
     scope().attr("NX") = NX;
     scope().attr("NU") = NU;
     scope().attr("NPC") = NPC;
@@ -143,6 +143,10 @@ BOOST_PYTHON_MODULE(MPCC_WRAPPER)
         .def_readonly("q5", &StateInputIndex::q5)
         .def_readonly("q6", &StateInputIndex::q6)
         .def_readonly("q7", &StateInputIndex::q7)
+        .def_readonly("q8", &StateInputIndex::q8)
+        .def_readonly("q9", &StateInputIndex::q9)
+        .def_readonly("q10", &StateInputIndex::q10)
+        .def_readonly("q11", &StateInputIndex::q11)
         .def_readonly("s", &StateInputIndex::s)
         .def_readonly("vs", &StateInputIndex::vs)
         .def_readonly("dq1", &StateInputIndex::dq1)
@@ -152,6 +156,10 @@ BOOST_PYTHON_MODULE(MPCC_WRAPPER)
         .def_readonly("dq5", &StateInputIndex::dq5)
         .def_readonly("dq6", &StateInputIndex::dq6)
         .def_readonly("dq7", &StateInputIndex::dq7)
+        .def_readonly("dq8", &StateInputIndex::dq8)
+        .def_readonly("dq9", &StateInputIndex::dq9)
+        .def_readonly("dq10", &StateInputIndex::dq10)
+        .def_readonly("dq11", &StateInputIndex::dq11)
         .def_readonly("dVs", &StateInputIndex::dVs)
         .def_readonly("con_selcol", &StateInputIndex::con_selcol)
         .def_readonly("con_sing", &StateInputIndex::con_sing)
@@ -175,6 +183,10 @@ BOOST_PYTHON_MODULE(MPCC_WRAPPER)
         .def_readwrite("q5", &State::q5)
         .def_readwrite("q6", &State::q6)
         .def_readwrite("q7", &State::q7)
+        .def_readwrite("q8", &State::q8)
+        .def_readwrite("q9", &State::q9)
+        .def_readwrite("q10", &State::q10)
+        .def_readwrite("q11", &State::q11)
         .def_readwrite("s", &State::s)
         .def_readwrite("vs", &State::vs)
         .def("setZero", &State::setZero)
@@ -189,6 +201,10 @@ BOOST_PYTHON_MODULE(MPCC_WRAPPER)
         .def_readwrite("dq5", &Input::dq5)
         .def_readwrite("dq6", &Input::dq6)
         .def_readwrite("dq7", &Input::dq7)
+        .def_readwrite("dq8", &Input::dq8)
+        .def_readwrite("dq9", &Input::dq9)
+        .def_readwrite("dq10", &Input::dq10)
+        .def_readwrite("dq11", &Input::dq11)
         .def_readwrite("dVs", &Input::dVs)
         .def("setZero", &Input::setZero)
     ;
@@ -214,7 +230,7 @@ BOOST_PYTHON_MODULE(MPCC_WRAPPER)
     ;
 
     eigenpy::enableEigenPySpecific<Eigen::Matrix<double, NX, 1>>();        // For StateVector
-    eigenpy::enableEigenPySpecific<Eigen::Matrix<double, PANDA_DOF, 1>>(); // For JointVector, dJointVector
+    eigenpy::enableEigenPySpecific<Eigen::Matrix<double, TOCABI_DOF, 1>>(); // For JointVector, dJointVector
     eigenpy::enableEigenPySpecific<Eigen::Matrix<double, NU, 1>>();        // For InputVector
     eigenpy::enableEigenPySpecific<Eigen::Matrix<double, NX, NX>>();       // For A_MPC, Q_MPC, TX_MPC
     eigenpy::enableEigenPySpecific<Eigen::Matrix<double, NX, NU>>();       // For B_MPC, S_MPC

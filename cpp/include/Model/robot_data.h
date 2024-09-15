@@ -9,24 +9,24 @@ namespace mpcc
 // Data containing kinematic of robot wrt given joint angle
 struct RobotData
 {
-    Eigen::Matrix<double,PANDA_DOF,1> q_;           // joint angle
-    // Eigen::Matrix<double,PANDA_DOF,1> q_dot;       // joint velocity
+    Eigen::Matrix<double,TOCABI_DOF,1> q_;           // joint angle
+    // Eigen::Matrix<double,TOCABI_DOF,1> q_dot;       // joint velocity
     
     Eigen::Vector3d EE_position_;                   // End-Effector position
     Eigen::Matrix3d EE_orientation_;                // End-Effector orientation
 
-    Eigen::Matrix<double,6,PANDA_DOF> J_;           // End-Effector Jacobian
-    Eigen::Matrix<double,3,PANDA_DOF> Jv_;          // End-Effector translation Jacobian
-    Eigen::Matrix<double,3,PANDA_DOF> Jw_;          // End-Effector rotation Jacobian
+    Eigen::Matrix<double,6,TOCABI_DOF> J_;           // End-Effector Jacobian
+    Eigen::Matrix<double,3,TOCABI_DOF> Jv_;          // End-Effector translation Jacobian
+    Eigen::Matrix<double,3,TOCABI_DOF> Jw_;          // End-Effector rotation Jacobian
 
     double manipul_;                                // Manipullabilty
-    Eigen::Matrix<double,PANDA_DOF,1> d_manipul_;   // Gradient of Manipullabilty wrt q
+    Eigen::Matrix<double,TOCABI_DOF,1> d_manipul_;   // Gradient of Manipullabilty wrt q
 
     double sel_min_dist_;                               // Minimum distance between robot links
-    Eigen::Matrix<double,PANDA_DOF,1> d_sel_min_dist_;  // Jacobian of minimum distance between robot links
+    Eigen::Matrix<double,TOCABI_DOF,1> d_sel_min_dist_;  // Jacobian of minimum distance between robot links
 
     double env_min_dist_;                               // Minimum distance between robot links and enviornment
-    Eigen::Matrix<double,PANDA_DOF,1> d_env_min_dist_;  // Jacobian of minimum distance between robot links and enviornment
+    Eigen::Matrix<double,TOCABI_DOF,1> d_env_min_dist_;  // Jacobian of minimum distance between robot links and enviornment
 
     bool is_data_valid;
     bool is_env_data_valid;
@@ -50,14 +50,14 @@ struct RobotData
         is_env_data_valid = false;
     }
 
-    void update(Eigen::Matrix<double,PANDA_DOF,1> q_input, const std::unique_ptr<RobotModel> &robot_model, const std::unique_ptr<SelCollNNmodel> &selcol_model)
+    void update(Eigen::Matrix<double,TOCABI_DOF,1> q_input, const std::unique_ptr<RobotModel> &robot_model, const std::unique_ptr<SelCollNNmodel> &selcol_model)
     {
         q_ = q_input;
         EE_position_ = robot_model->getEEPosition(q_);
         EE_orientation_ = robot_model->getEEOrientation(q_);
         J_ = robot_model->getJacobian(q_);
-        Jv_ = J_.block(0,0,3,PANDA_DOF);
-        Jw_ = J_.block(3,0,3,PANDA_DOF);
+        Jv_ = J_.block(0,0,3,TOCABI_DOF);
+        Jw_ = J_.block(3,0,3,TOCABI_DOF);
         manipul_ = robot_model->getManipulability(q_);
         d_manipul_ = robot_model->getDManipulability(q_);
 
@@ -68,7 +68,7 @@ struct RobotData
         is_data_valid = true;
     }
 
-    void updateEnv(double env_min_dist, Eigen::Matrix<double,PANDA_DOF,1> d_env_min_dist)
+    void updateEnv(double env_min_dist, Eigen::Matrix<double,TOCABI_DOF,1> d_env_min_dist)
     {
         env_min_dist_ = env_min_dist;
         d_env_min_dist_ = d_env_min_dist;

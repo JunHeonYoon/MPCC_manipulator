@@ -34,11 +34,11 @@ Ts_(Ts)
     selcolNN_ = std::make_unique<SelCollNNmodel>();
     Eigen::VectorXd sel_col_n_hidden(2);
     sel_col_n_hidden << 256, 64;
-    selcolNN_->setNeuralNetwork(PANDA_DOF, 1, sel_col_n_hidden, true);
+    selcolNN_->setNeuralNetwork(TOCABI_DOF, 1, sel_col_n_hidden, true);
 
     // envcolNN_ = std::make_unique<EnvCollNNmodel>();
-    // envcolNN_->setNeuralNetwork(std::vector<int>{36, 36, 36}, PANDA_DOF);
-    // envcolNN_.setNeuralNetwork(std::vector<int>{36, 36, 36}, PANDA_DOF);
+    // envcolNN_->setNeuralNetwork(std::vector<int>{36, 36, 36}, TOCABI_DOF);
+    // envcolNN_.setNeuralNetwork(std::vector<int>{36, 36, 36}, TOCABI_DOF);
     // env_model_ = torch::jit::load(pkg_path + "NNmodel/env_collision.pt");
     // env_model_.to(device_);
 
@@ -63,11 +63,11 @@ Ts_(Ts)
     selcolNN_ = std::make_unique<SelCollNNmodel>();
     Eigen::VectorXd sel_col_n_hidden(2);
     sel_col_n_hidden << 256, 64;
-    selcolNN_->setNeuralNetwork(PANDA_DOF, 1, sel_col_n_hidden, true);
+    selcolNN_->setNeuralNetwork(TOCABI_DOF, 1, sel_col_n_hidden, true);
 
     // envcolNN_ = std::make_unique<EnvCollNNmodel>();
-    // envcolNN_->setNeuralNetwork(std::vector<int>{36, 36, 36}, PANDA_DOF);
-    // envcolNN_.setNeuralNetwork(std::vector<int>{36, 36, 36}, PANDA_DOF);
+    // envcolNN_->setNeuralNetwork(std::vector<int>{36, 36, 36}, TOCABI_DOF);
+    // envcolNN_.setNeuralNetwork(std::vector<int>{36, 36, 36}, TOCABI_DOF);
     // env_model_ = torch::jit::load(pkg_path + "NNmodel/env_collision.pt");
     // env_model_.to(device_);
 
@@ -95,7 +95,7 @@ void OsqpInterface::setEnvData(const std::vector<float> &voxel)
     // std::vector<float> x_q;
 
     // x_occ.resize(voxel.size()*(N+1));
-    // x_q.resize(PANDA_DOF*(N+1));
+    // x_q.resize(TOCABI_DOF*(N+1));
     // for(size_t i=0; i<=N; i++)
     // {
     //     assert(rb_[i].is_data_valid == true);
@@ -108,7 +108,7 @@ void OsqpInterface::setEnvData(const std::vector<float> &voxel)
     // // auto env_pred = envcolNN_.forward(x_occ, x_q);
 
 
-    // at::Tensor x_q_ten = torch::from_blob(x_q.data(), {N+1, PANDA_DOF}, torch::kFloat32).clone().to(device_);
+    // at::Tensor x_q_ten = torch::from_blob(x_q.data(), {N+1, TOCABI_DOF}, torch::kFloat32).clone().to(device_);
     // at::Tensor x_occ_ten = torch::from_blob(x_occ.data(), {N+1, 1, 36,36,36}, torch::kFloat32).clone().to(device_);
     // // std::cout << x_q << std::endl;
     // // std::cout << x_occ << std::endl;
@@ -159,7 +159,7 @@ void OsqpInterface::setEnvData(const std::vector<float> &voxel)
     for(size_t i=0; i<=N; i++)
     {
         // rb_[i].updateEnv(env_pred.first(i), env_pred.second.row(i).transpose());
-        rb_[i].updateEnv(0., Eigen::MatrixXd::Zero(PANDA_DOF,1));
+        rb_[i].updateEnv(0., Eigen::MatrixXd::Zero(TOCABI_DOF,1));
     }
 }
 
