@@ -25,8 +25,8 @@ y = 0*r * np.sin(2 * t)
 z = 2.5*r * np.cos(t)
 # z = 0*r * np.cos(t)
 
-rot = R.from_matrix([[0, 1, 0],
-                     [1, 0, 0],
+rot = R.from_matrix([[1, 0, 0],
+                     [0, -1, 0],
                      [0, 0, -1]])
 quat = rot.as_quat()
 quat_list = np.tile(quat, (x.size, 1))

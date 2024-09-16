@@ -63,7 +63,7 @@ void mpcc::RobotModel::setRobot(const std::string &urdf_file_path = pkg_path+"/u
 	std::vector<std::string> links_name;
 	links_name = {"Pelvis_Link", "Waist1_Link", "Waist2_Link", "Upperbody_Link", "R_Shoulder1_Link",
 				  "R_Shoulder2_Link", "R_Shoulder3_Link", "R_Armlink_Link", "R_Elbow_Link", 
-				  "R_Forearm_Link", "R_Wrist1_Link", "R_Wrist2_Link", "palm"};
+				  "R_Forearm_Link", "R_Wrist1_Link", "R_Wrist2_Link", "palm", "virtual_palm"};
 	for(size_t i=0; i<links_name.size(); i++)
 	{
 		body_id_[i] = model_->GetBodyId(links_name[i].c_str());

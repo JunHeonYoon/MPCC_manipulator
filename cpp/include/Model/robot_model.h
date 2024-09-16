@@ -10,7 +10,7 @@ using namespace RigidBodyDynamics;
 using namespace Eigen;
 using namespace std;
 
-#define TOCABI_NUM_LINKS 13 // 12 for arm 1 for palm
+#define TOCABI_NUM_LINKS 14 // 12 for arm 2 for palm
 
 namespace mpcc
 {   

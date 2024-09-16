@@ -2418,6 +2418,12 @@
       </geometry>
     </collision>
   </link>
+  <link name="virtual_palm"/>
+  <joint name="virtual_palm_joint" type="fixed">
+    <parent link="palm"/>
+    <child link="virtual_palm"/>
+    <origin rpy="0 0 1.5707963"/>
+  </joint>
   <joint name="R_Wrist_2_Hand_Joint" type="fixed">
     <parent link="R_Wrist2_Link"/>
     <child link="palm"/>
