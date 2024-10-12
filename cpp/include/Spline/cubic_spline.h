@@ -14,13 +14,13 @@
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 
-#ifndef MPCC_CUBIC_SPLINE_H
-#define MPCC_CUBIC_SPLINE_H
+#ifndef MPC_CUBIC_SPLINE_H
+#define MPC_CUBIC_SPLINE_H
 
 #include "config.h"
 #include <map>
 
-namespace mpcc{
+namespace mpc{
 /// @brief spline parameter struct y = a + b dx + c dx^2 + d dx^3, caution: x, y is not path, but function param
 /// @param a (Eigen::VectorXd) constant
 /// @param b (Eigen::VectorXd) first order

@@ -14,30 +14,25 @@
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 
-#ifndef MPCC_BOUNDS_H
-#define MPCC_BOUNDS_H
+#ifndef MPC_BOUNDS_H
+#define MPC_BOUNDS_H
 
 #include "config.h"
 #include "types.h"
 #include "Params/params.h"
 
-namespace mpcc{
+namespace mpc{
 class Bounds {
 public:
     Bounds();
     Bounds(BoundsParam bounds_param, Param param);
 
     /// @brief get lower bound for state
-    /// @param x (State) current state
     /// @return (Eigen::VectorXd) lower bound for state
-    Bounds_x getBoundsLX(const State &x) const;
     Bounds_x getBoundsLX() const;
 
     /// @brief get upper bound for state
-    /// @param x (State) current state
-    /// @param track_length (double) track length
     /// @return (Eigen::VectorXd) upper bound for state
-    Bounds_x getBoundsUX(const State &x,const double &track_length) const;
     Bounds_x getBoundsUX() const;
 
     /// @brief get lower bound for control input

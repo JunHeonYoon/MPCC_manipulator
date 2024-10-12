@@ -14,8 +14,8 @@
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 
-#ifndef MPCC_TRACK_H
-#define MPCC_TRACK_H
+#ifndef MPC_TRACK_H
+#define MPC_TRACK_H
 
 #include "config.h"
 
@@ -24,7 +24,7 @@
 #include <vector>
 #include <nlohmann/json.hpp>
 
-namespace mpcc {
+namespace mpc {
 //used namespace
 using json = nlohmann::json;
 

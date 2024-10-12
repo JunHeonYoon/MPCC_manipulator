@@ -14,8 +14,8 @@
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 
-#ifndef MPCC_SPLINE_TEST_H
-#define MPCC_SPLINE_TEST_H
+#ifndef MPC_SPLINE_TEST_H
+#define MPC_SPLINE_TEST_H
 
 
 #include "config.h"
@@ -33,7 +33,7 @@ TEST(TestSpilne, TestSpline)
     //Fit spline to a cos and test if the spine interpolation is accurate
     //Also test if first and second derivatives are accurate
 
-    mpcc::CubicSpline spline;
+    mpc::CubicSpline spline;
 
     Eigen::VectorXd x;
     Eigen::VectorXd y;
@@ -91,7 +91,7 @@ TEST(TestSpilne, TestSpline)
 
 TEST(TestSpline, TestSplineRot)
 {
-    mpcc::CubicSplineRot spline_rot;
+    mpc::CubicSplineRot spline_rot;
 
     // generate sample rotation
     Eigen::VectorXd x(7);
@@ -156,8 +156,8 @@ TEST(TestSpline, TestSplineRot)
     {
         Rt_real[i] = spline_rot.getPoint(xt(i)+d_xt);
         d_Rt[i] = spline_rot.getDerivative(xt(i));
-        Rt_est[i] = mpcc::ExpMatrix(mpcc::getSkewMatrix(d_Rt[i]*d_xt))*spline_rot.getPoint(xt(i));
-        error += mpcc::getInverseSkewVector(mpcc::LogMatrix(Rt_real[i].transpose()* Rt_est[i])).norm();
+        Rt_est[i] = mpc::ExpMatrix(mpc::getSkewMatrix(d_Rt[i]*d_xt))*spline_rot.getPoint(xt(i));
+        error += mpc::getInverseSkewVector(mpc::LogMatrix(Rt_real[i].transpose()* Rt_est[i])).norm();
     }
     std::cout << "start: \n"<<Rt[3]<<std::endl;
     std::cout << "real:  \n"<<Rt_real[3]<<std::endl;
@@ -171,20 +171,20 @@ TEST(TestSpline, TestSplineRot)
 
 TEST(TestSpline, TestArcLengthSpline)
 {
-    std::ifstream iConfig(mpcc::pkg_path + "Params/config.json");
+    std::ifstream iConfig(mpc::pkg_path + "Params/config.json");
     json jsonConfig;
     iConfig >> jsonConfig;
 
-    mpcc::PathToJson json_paths {mpcc::pkg_path + std::string(jsonConfig["model_path"]),
-                                 mpcc::pkg_path + std::string(jsonConfig["cost_path"]),
-                                 mpcc::pkg_path + std::string(jsonConfig["bounds_path"]),
-                                 mpcc::pkg_path + std::string(jsonConfig["track_path"]),
-                                 mpcc::pkg_path + std::string(jsonConfig["normalization_path"]),
-                                 mpcc::pkg_path + std::string(jsonConfig["sqp_path"])};
+    mpc::PathToJson json_paths {mpc::pkg_path + std::string(jsonConfig["model_path"]),
+                                 mpc::pkg_path + std::string(jsonConfig["cost_path"]),
+                                 mpc::pkg_path + std::string(jsonConfig["bounds_path"]),
+                                 mpc::pkg_path + std::string(jsonConfig["track_path"]),
+                                 mpc::pkg_path + std::string(jsonConfig["normalization_path"]),
+                                 mpc::pkg_path + std::string(jsonConfig["sqp_path"])};
 
     // test 6-D arc length spline approach
     // given a circle with randomly distributed points
-    mpcc::ArcLengthSpline sixDspline = mpcc::ArcLengthSpline(json_paths);
+    mpc::ArcLengthSpline sixDspline = mpc::ArcLengthSpline(json_paths);
 
     int NT = 50;    //number of "training" points
     int NV = 200;   //number of validation points points
@@ -217,7 +217,7 @@ TEST(TestSpline, TestArcLengthSpline)
     }
 
     // give points to arc length based 3-D curve fitting
-    sixDspline.gen6DSpline(X,Y,Z,R);
+    sixDspline.gen6DSpline(X,Y,Z,R,0.01);
     //validation points
     Eigen::VectorXd phiv;
     //error between true circle and spline approximation

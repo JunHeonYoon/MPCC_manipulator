@@ -14,8 +14,8 @@
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 
-#ifndef MPCC_CUBIC_SPLINE_ROT_H
-#define MPCC_CUBIC_SPLINE_ROT_H
+#ifndef MPC_CUBIC_SPLINE_ROT_H
+#define MPC_CUBIC_SPLINE_ROT_H
 
 #include "config.h"
 #include <map>
@@ -25,7 +25,7 @@
 // Kang, I. G., and F. C. Park.
 // "Cubic spline algorithms for orientation interpolation."
 
-namespace mpcc{
+namespace mpc{
 
 /// @brief spline parameter struct R = R_i*ExpMatrix(LogMatrix(R_i^T * R_i+1))[a + b dx + c dx^2 + d dx^3]), caution: x, R is not path, but function param
 /// @param a (Eigen::VectorXd) constant
@@ -75,6 +75,16 @@ Eigen::Matrix3d LogMatrix(const Eigen::Matrix3d &R);
 /// @param v (Eigen::Matrix3d) input matrix; skew symmetric matrix
 /// @return (Eigen::Matrix3d) exp(Matrix); rotation matrix
 Eigen::Matrix3d ExpMatrix(const Eigen::Matrix3d &sk);
+
+/// @brief calculate Logarithm operator
+/// @param R (Eigen::Matrix3d) input matrix; rotation matrix
+/// @return (Eigen::Vector3d) Log(Matrix)
+Eigen::Vector3d Log(const Eigen::Matrix3d &R);
+
+/// @brief calculate Exponential operator
+/// @param v (Eigen::Vector3d) input vector
+/// @return (Eigen::Matrix3d) Exp(Matrix)
+Eigen::Matrix3d Exp(const Eigen::Vector3d &v);
 
 class CubicSplineRot {
 public:

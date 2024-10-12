@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(MPCC)
+project(MPC)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "-O2")
@@ -30,7 +30,7 @@ include_directories(
 )
 
 
-add_library(MPCC_LIB SHARED
+add_library(MPC_LIB SHARED
         src/types.cpp
         src/Model/robot_model.cpp
         src/Constraints/SelfCollision/SelfCollisionModel.cpp
@@ -54,32 +54,32 @@ add_library(MPCC_LIB SHARED
         include/Params/track.h
         )
 if(USE_LIBTORCH)
-        add_library(MPCC_LIB SHARED
+        add_library(MPC_LIB SHARED
         src/Constraints/EnvCollision/EnvCollisionModel.cpp
         include/Constraints/EnvCollision/EnvCollisionModel.h
         )
 endif()
-target_link_libraries(MPCC_LIB PUBLIC
+target_link_libraries(MPC_LIB PUBLIC
         ${RBDL_LIBRARY} 
         OsqpEigen::OsqpEigen 
 )
 if(USE_LIBTORCH)
-        target_link_libraries(MPCC_LIB PUBLIC "${TORCH_LIBRARIES}")
+        target_link_libraries(MPC_LIB PUBLIC "${TORCH_LIBRARIES}")
 endif()
 
-add_executable(MPCC_EXE src/main.cpp)
+add_executable(MPC_EXE src/main.cpp)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
-target_link_libraries(MPCC_EXE MPCC_LIB)
+target_link_libraries(MPC_EXE MPC_LIB)
 
 if(USE_CVPLOT)
         find_package (OpenCV REQUIRED)
         include_directories(${OpenCV_INCLUDE_DIRS})
         include_directories(External/cv-plot/lib/include)
-        target_link_libraries(MPCC_EXE ${OpenCV_LIBS} ${CMAKE_SOURCE_DIR}/External/cv-plot/lib/lib/libCvPlot.so)
-        target_compile_definitions(MPCC_EXE PRIVATE USE_CVPLOT)
+        target_link_libraries(MPC_EXE ${OpenCV_LIBS} ${CMAKE_SOURCE_DIR}/External/cv-plot/lib/lib/libCvPlot.so)
+        target_compile_definitions(MPC_EXE PRIVATE USE_CVPLOT)
 endif()
 
-add_executable(MPCC_TEST
+add_executable(MPC_TEST
         src/Tests/main_test.cpp
         include/Tests/model_integrator_test.h
         include/Tests/robot_model_test.h
@@ -90,8 +90,8 @@ add_executable(MPCC_TEST
 )
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 find_package(Python COMPONENTS Development)
-target_include_directories(MPCC_TEST PRIVATE ${Python_INCLUDE_DIRS})
-target_link_libraries(MPCC_TEST PRIVATE MPCC_LIB gtest gtest_main pthread ${Python_LIBRARIES})
+target_include_directories(MPC_TEST PRIVATE ${Python_INCLUDE_DIRS})
+target_link_libraries(MPC_TEST PRIVATE MPC_LIB gtest gtest_main pthread ${Python_LIBRARIES})
 
 
 
@@ -106,12 +106,12 @@ include_directories(
         ${eigenpy_INCLUDE_DIRS}
 )
 
-add_library(MPCC_WRAPPER SHARED src/MPCC_wrapper.cpp)
-target_link_libraries(MPCC_WRAPPER 
+add_library(MPC_WRAPPER SHARED src/MPC_wrapper.cpp)
+target_link_libraries(MPC_WRAPPER 
         ${Boost_LIBRARIES} 
         ${PYTHON_LIBRARIES} 
         ${eigenpy_LIBRARIES}
         Eigen3::Eigen 
-        MPCC_LIB
+        MPC_LIB
 )
-set_target_properties(MPCC_WRAPPER PROPERTIES PREFIX "")
+set_target_properties(MPC_WRAPPER PROPERTIES PREFIX "")

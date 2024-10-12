@@ -17,7 +17,7 @@
 #include "MPC/mpc.h"
 
 using namespace boost::python;
-using namespace mpcc;
+using namespace mpc;
 
 // Converter for std::vector<Eigen::Matrix3d>
 struct VectorEigenMatrix3d_to_python
@@ -59,6 +59,52 @@ struct VectorEigenMatrix3d_from_python
         for (int i = 0; i < len; ++i)
         {
             vec.push_back(extract<Eigen::Matrix3d>(PySequence_GetItem(obj_ptr, i)));
+        }
+
+        data->convertible = storage;
+    }
+};
+
+// Converter for std::vector<Eigen::Vector3d>
+struct VectorEigenVector3d_to_python
+{
+    static PyObject* convert(const std::vector<Eigen::Vector3d>& vec)
+    {
+        boost::python::list py_list;
+        for (const auto& mat : vec)
+        {
+            py_list.append(mat);
+        }
+        return incref(py_list.ptr());
+    }
+};
+
+struct VectorEigenVector3d_from_python
+{
+    VectorEigenVector3d_from_python()
+    {
+        converter::registry::push_back(&convertible, &construct, boost::python::type_id<std::vector<Eigen::Vector3d>>());
+    }
+
+    static void* convertible(PyObject* obj_ptr)
+    {
+        if (!PySequence_Check(obj_ptr)) return nullptr;
+        return obj_ptr;
+    }
+
+    static void construct(PyObject* obj_ptr, converter::rvalue_from_python_stage1_data* data)
+    {
+        void* storage = ((converter::rvalue_from_python_storage<std::vector<Eigen::Vector3d>>*)data)->storage.bytes;
+        new (storage) std::vector<Eigen::Vector3d>();
+        std::vector<Eigen::Vector3d>& vec = *(std::vector<Eigen::Vector3d>*)(storage);
+
+        int len = PySequence_Size(obj_ptr);
+        if (len < 0) throw_error_already_set();
+        vec.reserve(len);
+
+        for (int i = 0; i < len; ++i)
+        {
+            vec.push_back(extract<Eigen::Vector3d>(PySequence_GetItem(obj_ptr, i)));
         }
 
         data->convertible = storage;
@@ -113,11 +159,13 @@ struct Numpy_to_VectorFloat
 };
 
 
-BOOST_PYTHON_MODULE(MPCC_WRAPPER)
+BOOST_PYTHON_MODULE(MPC_WRAPPER)
 {
     eigenpy::enableEigenPy();
     to_python_converter<std::vector<Eigen::Matrix3d>, VectorEigenMatrix3d_to_python>();
     VectorEigenMatrix3d_from_python();
+    to_python_converter<std::vector<Eigen::Vector3d>, VectorEigenVector3d_to_python>();
+    VectorEigenVector3d_from_python();
     to_python_converter<std::pair<Eigen::VectorXd, Eigen::MatrixXd>, PairConverter>();
     to_python_converter<std::vector<float>, VectorFloat_to_numpy>();
     Numpy_to_VectorFloat();
@@ -143,8 +191,6 @@ BOOST_PYTHON_MODULE(MPCC_WRAPPER)
         .def_readonly("q5", &StateInputIndex::q5)
         .def_readonly("q6", &StateInputIndex::q6)
         .def_readonly("q7", &StateInputIndex::q7)
-        .def_readonly("s", &StateInputIndex::s)
-        .def_readonly("vs", &StateInputIndex::vs)
         .def_readonly("dq1", &StateInputIndex::dq1)
         .def_readonly("dq2", &StateInputIndex::dq2)
         .def_readonly("dq3", &StateInputIndex::dq3)
@@ -152,7 +198,6 @@ BOOST_PYTHON_MODULE(MPCC_WRAPPER)
         .def_readonly("dq5", &StateInputIndex::dq5)
         .def_readonly("dq6", &StateInputIndex::dq6)
         .def_readonly("dq7", &StateInputIndex::dq7)
-        .def_readonly("dVs", &StateInputIndex::dVs)
         .def_readonly("con_selcol", &StateInputIndex::con_selcol)
         .def_readonly("con_sing", &StateInputIndex::con_sing)
         .def_readonly("con_envcol", &StateInputIndex::con_envcol)
@@ -175,10 +220,7 @@ BOOST_PYTHON_MODULE(MPCC_WRAPPER)
         .def_readwrite("q5", &State::q5)
         .def_readwrite("q6", &State::q6)
         .def_readwrite("q7", &State::q7)
-        .def_readwrite("s", &State::s)
-        .def_readwrite("vs", &State::vs)
         .def("setZero", &State::setZero)
-        .def("unwrap", &State::unwrap)
     ;
 
     class_<Input>("Input")
@@ -189,7 +231,6 @@ BOOST_PYTHON_MODULE(MPCC_WRAPPER)
         .def_readwrite("dq5", &Input::dq5)
         .def_readwrite("dq6", &Input::dq6)
         .def_readwrite("dq7", &Input::dq7)
-        .def_readwrite("dVs", &Input::dVs)
         .def("setZero", &Input::setZero)
     ;
 
@@ -331,15 +372,11 @@ BOOST_PYTHON_MODULE(MPCC_WRAPPER)
     // =================================================
     // ============== arc_length_spline.h ==============
     // =================================================
-    // PathData binding
-    class_<PathData>("PathData")
-        .def_readwrite("X", &PathData::X)
-        .def_readwrite("Y", &PathData::Y)
-        .def_readwrite("Z", &PathData::Z)
-        .add_property("R", make_getter(&PathData::R, return_value_policy<copy_non_const_reference>()))
-        // .def_readwrite("R", &PathData::R)
-        .def_readwrite("s", &PathData::s)
-        .def_readwrite("n_points", &PathData::n_points)
+    class_<Traj>("Traj")
+        // .def_readwrite("P", &Traj::P)
+        // .def_readwrite("R", &Traj::R)
+        .add_property("P", make_getter(&Traj::P, return_value_policy<copy_non_const_reference>()))
+        .add_property("R", make_getter(&Traj::R, return_value_policy<copy_non_const_reference>()))
     ;
 
     // ArcLengthSpline binding
@@ -349,12 +386,9 @@ BOOST_PYTHON_MODULE(MPCC_WRAPPER)
         .def("gen6DSpline", &ArcLengthSpline::gen6DSpline)
         .def("getPosition", &ArcLengthSpline::getPosition)
         .def("getOrientation", &ArcLengthSpline::getOrientation)
-        .def("getDerivative", &ArcLengthSpline::getDerivative)
-        .def("getOrientationDerivative", &ArcLengthSpline::getOrientationDerivative)
-        .def("getSecondDerivative", &ArcLengthSpline::getSecondDerivative)
-        .def("getLength", &ArcLengthSpline::getLength)
+        .def("getTrajectory", &ArcLengthSpline::getTrajectroy)
+        .def("getNTrajectory", &ArcLengthSpline::getNTrajectroy)
         .def("projectOnSpline", &ArcLengthSpline::projectOnSpline)
-        .def("getPathData", &ArcLengthSpline::getPathData)
     ;
 
     // =================================================
@@ -367,7 +401,7 @@ BOOST_PYTHON_MODULE(MPCC_WRAPPER)
         .def("runMPC", &MPC::runMPC)
         .def("runMPC_", &MPC::runMPC_)
         .def("setTrack", &MPC::setTrack)
-        .def("getTrackLength", &MPC::getTrackLength)
+        .def("getTrack", &MPC::getTrack)
         .def("setParam", &MPC::setParam)
     ;
 

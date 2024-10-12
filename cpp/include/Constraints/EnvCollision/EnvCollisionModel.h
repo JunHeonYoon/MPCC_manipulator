@@ -1,5 +1,5 @@
-#ifndef MPCC_ENV_COLLISION_H
-#define MPCC_ENV_COLLISION_H
+#ifndef MPC_ENV_COLLISION_H
+#define MPC_ENV_COLLISION_H
 
 #include <config.h>
 #include <iostream>
@@ -10,7 +10,7 @@
 #include <filesystem>
 #include <cassert>
 
-namespace mpcc
+namespace mpc
 {
     class EnvCollNNmodel
     {

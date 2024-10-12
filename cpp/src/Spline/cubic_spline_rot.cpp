@@ -16,7 +16,7 @@
 
 #include "Spline/cubic_spline_rot.h"
 
-namespace mpcc{
+namespace mpc{
 CubicSplineRot::CubicSplineRot()
 : data_set_(false)
 {
@@ -94,7 +94,18 @@ Eigen::Matrix3d ExpMatrix(const Eigen::Matrix3d &sk)
     return Eigen::Matrix3d::Identity() + sin(vn)/vn*sk + (1-cos(vn))/pow(vn,2)*sk*sk;
 }
 
-void CubicSplineRot::setRegularData(const Eigen::VectorXd &x_in,const std::vector<Eigen::Matrix3d> &R_in,const double delta_x) {
+Eigen::Vector3d Log(const Eigen::Matrix3d &R)
+{
+    return getInverseSkewVector(LogMatrix(R));
+}
+
+Eigen::Matrix3d Exp(const Eigen::Vector3d &v)
+{
+    return ExpMatrix(getSkewMatrix(v));
+}
+
+void CubicSplineRot::setRegularData(const Eigen::VectorXd &x_in, const std::vector<Eigen::Matrix3d> &R_in, const double delta_x)
+{
     //if x and y have same length, store given data in spline data struct
     if(x_in.size() == R_in.size())
     {

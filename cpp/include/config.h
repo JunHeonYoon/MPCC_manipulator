@@ -14,8 +14,8 @@
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 
-#ifndef MPCC_CONFIG_H
-#define MPCC_CONFIG_H
+#ifndef MPC_CONFIG_H
+#define MPC_CONFIG_H
 
 #include <math.h>
 #include <iostream>
@@ -24,14 +24,13 @@
 #include <Eigen/Dense>
 #include <unsupported/Eigen/MatrixFunctions>
 
-namespace mpcc{
+namespace mpc{
 
 static const int PANDA_DOF = 7;
 
-static const int NX = 9;  // [joint angle, s(path param), vs]
-static const int NU = 8;  // [djoint angle, dVs]
+static const int NX = 7;  // [joint angle]
+static const int NU = 7;  // [djoint angle]
 
-// static const int NPC = 2; // number of polytopic constraints: Self collision, Singularity
 static const int NPC = 3; // number of polytopic constraints: Self collision, Singularity, Env collision
 
 static constexpr int N = 10;
@@ -48,8 +47,6 @@ struct StateInputIndex{
     int q5 = 4;
     int q6 = 5;
     int q7 = 6;
-    int s  = 7;
-    int vs = 8;
 
     // Index of control input
     int dq1 = 0;
@@ -59,7 +56,6 @@ struct StateInputIndex{
     int dq5 = 4;
     int dq6 = 5;
     int dq7 = 6;
-    int dVs = 7;
 
     // Index of constraints
     int con_selcol = 0; // self collision 
@@ -73,4 +69,4 @@ static const std::string pkg_path =  std::string(BUILD_DIRECTORY) + "/";
 
 
 }
-#endif //MPCC_CONFIG_H
+#endif //MPC_CONFIG_H

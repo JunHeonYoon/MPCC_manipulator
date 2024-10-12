@@ -16,7 +16,7 @@
 
 #include "Spline/cubic_spline.h"
 
-namespace mpcc{
+namespace mpc{
 CubicSpline::CubicSpline()
 : data_set_(false)
 {

@@ -1,21 +1,21 @@
 #include "Constraints/EnvCollision/EnvCollisionModel.h"
 
-namespace mpcc
+namespace mpc
 {
 
-mpcc::EnvCollNNmodel::EnvCollNNmodel()
+EnvCollNNmodel::EnvCollNNmodel()
 : device_(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
 {
     EnvCollNNmodel(pkg_path + "NNmodel/env_collision.pt");
 }
 
-mpcc::EnvCollNNmodel::EnvCollNNmodel(const std::string& file_path)
+EnvCollNNmodel::EnvCollNNmodel(const std::string& file_path)
 : file_path_(file_path), device_(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
 {
     is_loaded = loadNetwork();
 }
 
-mpcc::EnvCollNNmodel::~EnvCollNNmodel()
+EnvCollNNmodel::~EnvCollNNmodel()
 {
     std::cout<<"Env NN model terminate" <<std::endl;
 }

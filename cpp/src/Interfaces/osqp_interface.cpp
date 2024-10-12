@@ -17,7 +17,7 @@
 #include "Interfaces/osqp_interface.h"
 #include <chrono>
 
-namespace mpcc{
+namespace mpc{
 OsqpInterface::OsqpInterface(double Ts,const PathToJson &path)
 :cost_(path),
 model_(Ts,path),
@@ -25,6 +25,7 @@ constraints_(Ts,path),
 bounds_(BoundsParam(path.bounds_path),Param(path.param_path)),
 normalization_param_(path.normalization_path),
 sqp_param_(path.sqp_path),
+param_(path.param_path),
 path_(path),
 Ts_(Ts)
 // device_(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
@@ -54,6 +55,7 @@ constraints_(Ts,path,param_value),
 bounds_(BoundsParam(path.bounds_path),Param(path.param_path,param_value.param)),
 normalization_param_(path.normalization_path,param_value.normalization),
 sqp_param_(path.sqp_path,param_value.sqp),
+param_(path.param_path),
 path_(path),
 Ts_(Ts)
 // device_(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
@@ -163,7 +165,7 @@ void OsqpInterface::setEnvData(const std::vector<float> &voxel)
     }
 }
 
-void OsqpInterface::setInitialGuess(const std::vector<OptVariables> &initial_guess)
+void OsqpInterface::setInitialGuess(const std::vector<OptVariables> &initial_guess, const int &time_idx)
 {
     for(size_t i=0; i<rb_.size(); i++) rb_[i].setZero();
     initial_guess_ = initial_guess;
@@ -175,6 +177,7 @@ void OsqpInterface::setInitialGuess(const std::vector<OptVariables> &initial_gue
 
         rb_[i].update(stateToJointVector(initial_guess[i].xk), robot_, selcolNN_);
     }
+    current_time_idx_ = time_idx;
 }
 
 void OsqpInterface::setCost(const std::vector<OptVariables> &initial_guess, 
@@ -189,6 +192,8 @@ void OsqpInterface::setCost(const std::vector<OptVariables> &initial_guess,
         // rbk.update(stateToJointVector(initial_guess[i].xk), robot_, selcolNN_);
         assert(rb_[i].isUpdated() == true);
 
+        Traj ref_traj = track_.getNTrajectroy(current_time_idx_);
+
         double obj_k;
         CostGrad grad_cost_k;
         CostHess hess_cost_k;
@@ -196,17 +201,17 @@ void OsqpInterface::setCost(const std::vector<OptVariables> &initial_guess,
         if(obj && !grad_obj && !hess_obj)
         {
             // cost_.getCost(track_,initial_guess[i].xk,initial_guess[i].uk,rbk,i, &obj_k, NULL,NULL);
-            cost_.getCost(track_,initial_guess[i].xk,initial_guess[i].uk,rb_[i],i, &obj_k, NULL,NULL);
+            cost_.getCost(ref_traj.P[i],ref_traj.R[i],initial_guess[i].xk,initial_guess[i].uk,rb_[i],i, &obj_k, NULL,NULL);
         }
         else if(obj && grad_obj && !hess_obj)
         {
             // cost_.getCost(track_,initial_guess[i].xk,initial_guess[i].uk,rbk,i, &obj_k, &grad_cost_k,NULL);
-            cost_.getCost(track_,initial_guess[i].xk,initial_guess[i].uk,rb_[i],i, &obj_k, &grad_cost_k,NULL);
+            cost_.getCost(ref_traj.P[i],ref_traj.R[i],initial_guess[i].xk,initial_guess[i].uk,rb_[i],i, &obj_k, &grad_cost_k,NULL);
         }
         else if(obj && grad_obj && hess_obj)
         {
             // cost_.getCost(track_,initial_guess[i].xk,initial_guess[i].uk,rbk,i, &obj_k, &grad_cost_k,&hess_cost_k);
-            cost_.getCost(track_,initial_guess[i].xk,initial_guess[i].uk,rb_[i],i, &obj_k, &grad_cost_k,&hess_cost_k);
+            cost_.getCost(ref_traj.P[i],ref_traj.R[i],initial_guess[i].xk,initial_guess[i].uk,rb_[i],i, &obj_k, &grad_cost_k,&hess_cost_k);
         }
         if(obj) (*obj) += obj_k;
         if(grad_obj) grad_obj->segment(NX*i, NX) = normalization_param_.T_x*grad_cost_k.f_x;
@@ -266,8 +271,8 @@ void OsqpInterface::setBounds(const std::vector<OptVariables> &initial_guess,
     {
         if(jac_constr_ineqb) jac_constr_ineqb->block(NX*i, NX*i, NX, NX).setIdentity();
         if(constr_ineqb) constr_ineqb->segment(NX*i, NX) = normalization_param_.T_x_inv*stateToVector(initial_guess[i].xk);
-        if(l_ineqb) l_ineqb->segment(NX*i, NX) = normalization_param_.T_x_inv*bounds_.getBoundsLX(initial_guess[i].xk);
-        if(u_ineqb) u_ineqb->segment(NX*i, NX) = normalization_param_.T_x_inv*bounds_.getBoundsUX(initial_guess[i].xk,track_.getLength());
+        if(l_ineqb) l_ineqb->segment(NX*i, NX) = normalization_param_.T_x_inv*bounds_.getBoundsLX();
+        if(u_ineqb) u_ineqb->segment(NX*i, NX) = normalization_param_.T_x_inv*bounds_.getBoundsUX();
         if(i != N)
         {
             if(jac_constr_ineqb) jac_constr_ineqb->block(NX*(N+1) + NU*i, NU*i, NU, NU).setIdentity();
@@ -844,15 +849,12 @@ void OsqpInterface::printOptVar(std::vector<OptVariables> opt_var)
     {
         std::cout << "State[" << i << "]: " << std::endl;; 
         std::cout << "\tq    : " << stateToJointVector(opt_var[i].xk).transpose() << std::endl;
-        std::cout << "\ts    : " << opt_var[i].xk.s << std::endl;
-        std::cout << "\ts dot: " << opt_var[i].xk.vs << std::endl;
     }
     std::cout <<" \n";
     for(size_t i=0;i<N;i++)
     {
         std::cout << "Input[" << i << "]: " << std::endl;; 
         std::cout << "\tqdot: " << inputTodJointVector(opt_var[i].uk).transpose() << std::endl;; 
-        std::cout << "\tdVs  : " << opt_var[i].uk.dVs << std::endl;; 
     }
 }
 }

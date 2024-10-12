@@ -14,8 +14,8 @@
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 
-#ifndef MPCC_ARC_LENGTH_SPLINE_H
-#define MPCC_ARC_LENGTH_SPLINE_H
+#ifndef MPC_ARC_LENGTH_SPLINE_H
+#define MPC_ARC_LENGTH_SPLINE_H
 
 #include "cubic_spline.h"
 #include "cubic_spline_rot.h"
@@ -25,7 +25,7 @@
 #include <map>
 #include <vector>
 
-namespace mpcc{
+namespace mpc{
 
 /// @brief raw path data
 /// @param X (Eigen::VectorXd) X position data
@@ -55,6 +55,14 @@ struct PathData{
     int n_points;
 };
 
+/// @brief trajectory data
+/// @param P (std::vector<Eigen::Vector3d>) position data
+/// @param R (std::vector<Eigen::Matrix3d>) Rotation matrix data
+struct Traj{
+    std::vector<Eigen::Vector3d> P;
+    std::vector<Eigen::Matrix3d> R;
+};
+
 class ArcLengthSpline {
 public:
     ArcLengthSpline();
@@ -66,7 +74,8 @@ public:
     /// @param Y (Eigen::VectorXd) Y position data
     /// @param Z (Eigen::VectorXd) Z position data
     /// @param R (std::vector<Eigen::Matrix3d>) Rotation matrix data
-    void gen6DSpline(const Eigen::VectorXd &X,const Eigen::VectorXd &Y,const Eigen::VectorXd &Z,const std::vector<Eigen::Matrix3d> &R);
+    /// @param Ts (double) Sampling time
+    void gen6DSpline(const Eigen::VectorXd &X,const Eigen::VectorXd &Y,const Eigen::VectorXd &Z,const std::vector<Eigen::Matrix3d> &R, const double Ts);
 
     /// @brief get X-Y-Z position data given arc length (s)
     /// @param s (double) arc length 
@@ -78,24 +87,15 @@ public:
     /// @return (Eigen::Matrix3d) Orientation data
     Eigen::Matrix3d getOrientation(double) const;
 
-    /// @brief get X'(s)-Y'(s)-Z'(s) position data derivatived by arc length (s) given arc length (s)
-    /// @param  (double) arc length 
-    /// @return (Eigen::Vector3d) X'(s)-Y'(s)-Z'(s) position data
-    Eigen::Vector3d getDerivative(double) const;
 
-    /// @brief get orientation first derivative data by arc length (s) given arc length (s)
-    /// @param  (double) arc length 
-    /// @return (Eigen::Vector3d) orientation first derivative data
-    Eigen::Vector3d getOrientationDerivative(double) const;
+    /// @brief get N reference trajectory w.r.t current time
+    /// @param time_idx (int) current time_index
+    /// @return (Traj) N reference trajectory
+    Traj getNTrajectroy(const int &time_idx);
 
-    /// @brief get X''(s)-Y''(s)-Z''(s) position data twice derivatived by arc length (s) given arc length (s)
-    /// @param  (double) arc length 
-    /// @return (Eigen::Vector3d) X''(s)-Y''(s)-Z''(s) position data
-    Eigen::Vector3d getSecondDerivative(double) const;
-
-    /// @brief get total arc length of splined path 
-    /// @return (double) total arc length
-    double getLength() const;
+    /// @brief get whole reference trajectory
+    /// @return (Traj) total reference trajectory
+    Traj getTrajectroy();
 
     /// @brief compute arc length of projected on splined path which calculated by Newton-Euler method given current state
     /// @param s (double) current path parameter
@@ -103,9 +103,6 @@ public:
     /// @return (double) projected arc lenth
     double projectOnSpline(const double &s, const Eigen::Vector3d ee_pos) const;
 
-    /// @brief get splined path data
-    /// @return (PathData) splined path data
-    PathData getPathData(){return path_data_;}
 
 private:
     /// @brief set irregular path point data to make path data (PathData)
@@ -159,6 +156,25 @@ private:
     /// @return (double) unwrapped arc length (s) data
     double unwrapInput(double x) const;
 
+    /// @brief compute total end-effector task trajectory considering desired end-effector velocity and sampling time
+    void computeTrajectory(const double Ts);
+
+    /// @brief get total arc length of splined path 
+    /// @return (double) total arc length
+    double getLength() const;
+
+    /// @brief get X'(s)-Y'(s)-Z'(s) position data derivatived by arc length (s) given arc length (s)
+    /// @param  (double) arc length 
+    /// @return (Eigen::Vector3d) X'(s)-Y'(s)-Z'(s) position data
+    Eigen::Vector3d getDerivative(double) const;
+
+    /// @brief get X''(s)-Y''(s)-Z''(s) position data twice derivatived by arc length (s) given arc length (s)
+    /// @param  (double) arc length 
+    /// @return (Eigen::Vector3d) X''(s)-Y''(s)-Z''(s) position data
+    Eigen::Vector3d getSecondDerivative(double) const;
+
+    Traj traj_;
+
     PathData path_data_;
     CubicSpline spline_x_;
     CubicSpline spline_y_;
@@ -167,4 +183,4 @@ private:
     Param param_;
 };
 }
-#endif //MPCC_ARC_LENGTH_SPLINE_H
+#endif //MPC_ARC_LENGTH_SPLINE_H

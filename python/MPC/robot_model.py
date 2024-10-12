@@ -2,7 +2,7 @@ import sys
 sys.path.append('../cpp/build')
 import numpy as np
 
-from MPCC_WRAPPER import RobotModel as RobotModel_CPP
+from MPC_WRAPPER import RobotModel as RobotModel_CPP
 
 class RobotModel():
     def __init__(self):

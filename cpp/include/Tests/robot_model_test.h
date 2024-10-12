@@ -1,5 +1,5 @@
-#ifndef MPCC_ROBOT_MODEL_TEST_H
-#define MPCC_ROBOT_MODEL_TEST_H
+#ifndef MPC_ROBOT_MODEL_TEST_H
+#define MPC_ROBOT_MODEL_TEST_H
 
 #include "Model/robot_model.h"
 #include <iostream>
@@ -13,9 +13,9 @@ std::chrono::time_point<hd_clock> beg_;
 
 TEST(TestRobotModel, TestGetEEPosition)
 {
-    std::unique_ptr<mpcc::RobotModel> robot;
-    robot = std::make_unique<mpcc::RobotModel>();
-    mpcc::JointVector q0;
+    std::unique_ptr<mpc::RobotModel> robot;
+    robot = std::make_unique<mpc::RobotModel>();
+    mpc::JointVector q0;
     // q0 <<  -0.002, -0.001,  0.002, -1.574,  0.006,  1.584,  0.789;
     q0 << 0, 0, 0, -M_PI/2, 0, M_PI/2, M_PI/4;
     Vector3d x0 = Vector3d::Zero();
@@ -40,9 +40,9 @@ TEST(TestRobotModel, TestGetEEPosition)
 
 TEST(TestRobotModel, TestGetEEOrientation)
 {
-    std::unique_ptr<mpcc::RobotModel> robot;
-    robot = std::make_unique<mpcc::RobotModel>();
-    mpcc::JointVector q0;
+    std::unique_ptr<mpc::RobotModel> robot;
+    robot = std::make_unique<mpc::RobotModel>();
+    mpc::JointVector q0;
     q0.setZero();
     q0 << 0, 0, 0, -M_PI/2, 0, M_PI/2, M_PI/4;
     Matrix3d r0 = Matrix3d::Zero();
@@ -64,11 +64,11 @@ TEST(TestRobotModel, TestGetEEOrientation)
 
 TEST(TestRobotModel, TestGetJacobianv)
 {
-    std::unique_ptr<mpcc::RobotModel> robot;
-    robot = std::make_unique<mpcc::RobotModel>();
-    mpcc::JointVector q0;
+    std::unique_ptr<mpc::RobotModel> robot;
+    robot = std::make_unique<mpc::RobotModel>();
+    mpc::JointVector q0;
     q0 <<  -0.002, -0.001,  0.002, -1.574,  0.006,  1.584,  0.789;
-    Matrix<double, 3, mpcc::PANDA_DOF> J0;
+    Matrix<double, 3, mpc::PANDA_DOF> J0;
     J0.setZero();
     bool result;
     try
@@ -92,14 +92,14 @@ TEST(TestRobotModel, TestGetJacobianv)
 
 TEST(TestRobotModel, TestManipulability)
 {
-    std::unique_ptr<mpcc::RobotModel> robot;
-    robot = std::make_unique<mpcc::RobotModel>();
-    mpcc::JointVector q0, dq, q1;
+    std::unique_ptr<mpc::RobotModel> robot;
+    robot = std::make_unique<mpc::RobotModel>();
+    mpc::JointVector q0, dq, q1;
     q0 <<  0, 0, 0, 0.1, 0, M_PI/2, M_PI/4;
-    dq = mpcc::JointVector::Ones()*0.01;
+    dq = mpc::JointVector::Ones()*0.01;
     q1 = q0 + dq;
     double mani0 = 0, mani1 = 0, mani_est = 0;
-    VectorXd d_mani = VectorXd::Zero(mpcc::PANDA_DOF);
+    VectorXd d_mani = VectorXd::Zero(mpc::PANDA_DOF);
     bool result;
     try
     {

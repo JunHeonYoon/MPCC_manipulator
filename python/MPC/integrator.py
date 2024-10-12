@@ -4,9 +4,9 @@ import json
 import os
 import numpy as np
 
-from MPCC_WRAPPER import Integrator as Integrator_CPP
-from MPCC_WRAPPER import NX, NU, vectorToState, vectorToInput, stateToVector
-from MPCC_WRAPPER import pkg_path, PathToJson
+from MPC_WRAPPER import Integrator as Integrator_CPP
+from MPC_WRAPPER import NX, NU, vectorToState, vectorToInput, stateToVector
+from MPC_WRAPPER import pkg_path, PathToJson
 
 class Integrator():
     def __init__(self) -> None:

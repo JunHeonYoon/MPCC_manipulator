@@ -3,10 +3,10 @@ sys.path.append('../cpp/build')
 import numpy as np
 from scipy.spatial.transform import Rotation
 
-from MPCC_WRAPPER import getSkewMatrix as getSkewMatrix_CPP
-from MPCC_WRAPPER import getInverseSkewVector as getInverseSkewVector_CPP
-from MPCC_WRAPPER import LogMatrix as LogMatrix_CPP
-from MPCC_WRAPPER import ExpMatrix as ExpMatrix_CPP
+from MPC_WRAPPER import getSkewMatrix as getSkewMatrix_CPP
+from MPC_WRAPPER import getInverseSkewVector as getInverseSkewVector_CPP
+from MPC_WRAPPER import LogMatrix as LogMatrix_CPP
+from MPC_WRAPPER import ExpMatrix as ExpMatrix_CPP
 
 def getSkewMatrix(input_vec: np.array) -> np.array:
     assert input_vec.size == 3, f"Input vector size {input_vec.size} does not match expected size {3}"

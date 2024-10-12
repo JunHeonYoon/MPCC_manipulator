@@ -1,5 +1,5 @@
 #include "Constraints/SelfCollision/SelfCollisionModel.h"
-namespace mpcc
+namespace mpc
 {
     SelCollNNmodel::SelCollNNmodel()
     {

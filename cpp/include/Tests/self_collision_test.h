@@ -1,5 +1,5 @@
-#ifndef MPCC_SELF_COLLISION_TEST_H
-#define MPCC_SELF_COLLISION_TEST_H
+#ifndef MPC_SELF_COLLISION_TEST_H
+#define MPC_SELF_COLLISION_TEST_H
 
 #include "Constraints/SelfCollision/SelfCollisionModel.h"
 #include "types.h"
@@ -13,18 +13,18 @@ typedef std::chrono::duration<double, std::ratio<1> > second;
 TEST(TestSelfCollision, TestCalculateMLPOutput)
 {
     std::chrono::time_point<hd_clock> beg;
-    std::unique_ptr<mpcc::SelCollNNmodel> selcol;
-    selcol = std::make_unique<mpcc::SelCollNNmodel>();
-    mpcc::JointVector q0, dq, q1;
+    std::unique_ptr<mpc::SelCollNNmodel> selcol;
+    selcol = std::make_unique<mpc::SelCollNNmodel>();
+    mpc::JointVector q0, dq, q1;
     q0 <<  0, 0, 0, -M_PI/2, 0,  M_PI/2,  M_PI/4;
-    dq = mpcc::JointVector::Ones()*0.01;
+    dq = mpc::JointVector::Ones()*0.01;
     q1 = q0 + dq;
     bool result;
     try
     {
         Eigen::VectorXd n_hidden(2);
         n_hidden << 256, 64;
-        selcol->setNeuralNetwork(mpcc::PANDA_DOF, 1, n_hidden, true);
+        selcol->setNeuralNetwork(mpc::PANDA_DOF, 1, n_hidden, true);
         beg = hd_clock::now();
         auto pred0 = selcol->calculateMlpOutput(q0, false);
         double min_dist0 = pred0.first.value();

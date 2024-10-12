@@ -30,7 +30,7 @@ using json = nlohmann::json;
 
 int main() {
 
-    using namespace mpcc;
+    using namespace mpc;
     std::ifstream iConfig(pkg_path + "Params/config.json");
     json jsonConfig;
     iConfig >> jsonConfig;
@@ -42,10 +42,10 @@ int main() {
                            pkg_path + std::string(jsonConfig["normalization_path"]),
                            pkg_path + std::string(jsonConfig["sqp_path"])};
 
-    std::map<std::string, double> param, cost_param;
-    param["desired_ee_velocity"] = 0.2;
-    cost_param["qOri_reduction_ratio"] = 0.1;
-    ParamValue param_value = {param, cost_param};
+    // std::map<std::string, double> param, cost_param;
+    // param["desired_ee_velocity"] = 0.2;
+    // cost_param["qOri_reduction_ratio"] = 0.1;
+    // ParamValue param_value = {param, cost_param};
 
 
     Integrator integrator = Integrator(jsonConfig["Ts"],json_paths);
@@ -57,10 +57,8 @@ int main() {
     MPC mpc(jsonConfig["Ts"],json_paths);
     // MPC mpc(jsonConfig["Ts"],json_paths,param_value);
 
-    State x0 = {0., 0., 0., -M_PI/2, 0, M_PI/2, M_PI/4,
-                0., 0.};
-    Input u0 = {0., 0., 0., 0., 0., 0., 0.,
-                0.};
+    State x0 = {0., 0., 0., -M_PI/2, 0, M_PI/2, M_PI/4};
+    Input u0 = {0., 0., 0., 0., 0., 0., 0.};
     Eigen::Vector3d ee_pos = robot.getEEPosition(stateToJointVector(x0));
     Eigen::Matrix3d ee_ori = robot.getEEOrientation(stateToJointVector(x0));
 
@@ -70,28 +68,25 @@ int main() {
 
     Eigen::Vector3d end_point;
     Eigen::Matrix3d end_ori;
-    double end_s;
     end_point(0) = track_xyzr.X(track_xyzr.X.size() - 1); 
     end_point(1) = track_xyzr.Y(track_xyzr.Y.size() - 1);
     end_point(2) = track_xyzr.Z(track_xyzr.Z.size() - 1);
     end_ori = track_xyzr.R[track_xyzr.R.size() - 1];
-    end_s = mpc.getTrackLength();
     std::cout<<"end posi: "<<end_point.transpose()<<std::endl;
     
-    mpcc::ArcLengthSpline spline_track;
-    spline_track.gen6DSpline(track_xyzr.X,track_xyzr.Y,track_xyzr.Z,track_xyzr.R);
-    mpcc::PathData spline_path = spline_track.getPathData();
+    ArcLengthSpline spline_track(json_paths);
+    spline_track.gen6DSpline(track_xyzr.X,track_xyzr.Y,track_xyzr.Z,track_xyzr.R,jsonConfig["Ts"]);
+    Traj ref_traj = spline_track.getTrajectroy();
+    int end_time_idx = ref_traj.P.size();
 
     ofstream debug_file, splined_path_file;
     debug_file.open("debug.txt");
     splined_path_file.open("splined_path.txt");
 
-    for(size_t i=0; i<spline_path.n_points; i++)
+    for(size_t i=0; i<end_time_idx; i++)
     {
-        Eigen::Quaterniond quaternion(spline_path.R[i]);
-        splined_path_file << spline_path.X(i) << " "
-                          << spline_path.Y(i) << " "
-                          << spline_path.Z(i) << " "
+        Eigen::Quaterniond quaternion(ref_traj.R[i]);
+        splined_path_file << ref_traj.P[i].transpose() << " "
                           << quaternion.x() << " "
                           << quaternion.y() << " "
                           << quaternion.z() << " "
@@ -101,11 +96,11 @@ int main() {
     for(int i = 0; i < jsonConfig["n_sim"]; i++)
     {
         MPCReturn mpc_sol;
-        if(i == 200)
-        {
-            mpc.setParam(param_value);
-        }
-        bool mpc_status = mpc.runMPC(mpc_sol, x0, u0);
+        // if(i == 200)
+        // {
+        //     mpc.setParam(param_value);
+        // }
+        bool mpc_status = mpc.runMPC(mpc_sol, x0, u0, i);
         if(mpc_status == false)
         {
             std::cout<<"MPC did not solved properly!!"<<std::endl;
@@ -133,12 +128,6 @@ int main() {
         std::cout << std::fixed << std::setprecision(6) << robot.getManipulability(stateToJointVector(x0)) << std::endl;
         std::cout << "min distance[cm]:\t";
         std::cout << std::fixed << std::setprecision(6) << (selcolNN.calculateMlpOutput(stateToJointVector(x0),false)).first << std::endl;
-        std::cout << "s               :";
-        std::cout << std::fixed << std::setprecision(6) << x0.s << std::endl;
-        std::cout << "vs              :";
-        std::cout << std::fixed << std::setprecision(6) << x0.vs << std::endl;
-        std::cout << "dVs              :";
-        std::cout << std::fixed << std::setprecision(6) << u0.dVs << std::endl;
         std::cout << "x_error         :";
         std::cout << std::fixed << std::setprecision(6) << (end_point - ee_pos).transpose() << std::endl;
         std::cout << "R error         :";
@@ -160,10 +149,11 @@ int main() {
             debug_file << pred_ee_pos.transpose() << " ";
             debug_file << pred_ee_quat.coeffs().transpose() << " ";
         }
+        Traj ref_n_traj = spline_track.getNTrajectroy(i);
         for(size_t j=0;j<N; j++)
         {
-            auto ref_ee_pos = spline_track.getPosition(mpc_sol.mpc_horizon[j].xk.s);
-            auto ref_ee_rot = spline_track.getOrientation(mpc_sol.mpc_horizon[j].xk.s);
+            auto ref_ee_pos = ref_n_traj.P[j];
+            auto ref_ee_rot = ref_n_traj.R[j];
             Eigen::Quaterniond ref_ee_quat(ref_ee_rot);
             debug_file << ref_ee_pos.transpose() << " ";
             debug_file << ref_ee_quat.coeffs().transpose() << " ";
@@ -172,7 +162,7 @@ int main() {
 
         log.push_back(mpc_sol);
 
-        if((end_point - ee_pos).norm() < 1e-2 && (getInverseSkewVector(LogMatrix(end_ori.transpose()*ee_ori))).norm() < 1e-3 && fabs(x0.s - end_s) < 1e-2)
+        if((end_point - ee_pos).norm() < 1e-2 && (getInverseSkewVector(LogMatrix(end_ori.transpose()*ee_ori))).norm() < 1e-3 && (i > end_time_idx))
         {
             std::cout << "End point reached!!!"<< std::endl;
             break;

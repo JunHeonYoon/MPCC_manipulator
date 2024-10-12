@@ -14,8 +14,8 @@
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 
-#ifndef MPCC_MPC_H
-#define MPCC_MPC_H
+#ifndef MPC_MPC_H
+#define MPC_MPC_H
 
 #include "config.h"
 #include "types.h"
@@ -37,7 +37,7 @@
 #include <chrono>
 #include <vector>
 
-namespace mpcc{
+namespace mpc{
 /// @brief output of MPC
 /// @param u0 (Input) optimal control input
 /// @param mpc_horizon (std::vector<OptVariables>) total horizon results (state and control input)
@@ -65,16 +65,18 @@ public:
     /// @param (MPCReturn) log for MPC; optimal control input, total horizon results, time to run MPC
     /// @param x0 (State) current state
     /// @param u0 (Input) current control input
+    /// @param time_idx (int) current time index
     /// @return (bool) whether mpc is solved or not
-    bool runMPC(MPCReturn &mpc_return, State &x0, Input &u0);
+    bool runMPC(MPCReturn &mpc_return, State &x0, Input &u0, const int &time_idx);
 
     /// @brief run MPC by sqp given current state
     /// @param (MPCReturn) log for MPC; optimal control input, total horizon results, time to run MPC
     /// @param x0 (State) current state
     /// @param u0 (Input) current control input
     /// @param voxel (std::vector<float>) Voxel Occupancy grid map
+    /// @param time_idx (int) current time index
     /// @return (bool) whether mpc is solved or not
-    bool runMPC_(MPCReturn &mpc_return, State &x0, Input &u0, const std::vector<float> &voxel);
+    bool runMPC_(MPCReturn &mpc_return, State &x0, Input &u0, const std::vector<float> &voxel, const int &time_idx);
 
     /// @brief set track given X-Y-Z-R path data
     /// @param X (Eigen::VectorXd) X path data
@@ -83,9 +85,7 @@ public:
     /// @param R (std::vector<Eigen::Matrix3d>) R orientation data
     void setTrack(const Eigen::VectorXd &X, const Eigen::VectorXd &Y,const Eigen::VectorXd &Z,const std::vector<Eigen::Matrix3d> &R);
 
-    /// @brief get total length of track
-    /// @return (double) total length of track
-    double getTrackLength();
+    ArcLengthSpline getTrack() {return track_;}
 
     /// @brief set parameter value
     /// @param param_value (ParamValue) parameter value
@@ -96,9 +96,6 @@ public:
     std::unique_ptr<RobotModel> robot_;
 
 private:
-    /// @brief unwrapping for initial variables which have phi(yaw) and arc length(s) 
-    void unwrapInitialGuess();
-
     /// @brief to be warmstart, update initial variables for MPC
     /// @param x0 (State) solution of MPC before time step
     void updateInitialGuess(const State &x0);
@@ -110,6 +107,11 @@ private:
     /// @brief print parameter value
     /// @param param_value (ParamValue) parameter value
     void printParamValue(const ParamValue& param_value);
+
+    Eigen::VectorXd track_X_;
+    Eigen::VectorXd track_Y_;
+    Eigen::VectorXd track_Z_;
+    std::vector<Eigen::Matrix3d> track_R_;
 
     ArcLengthSpline track_;
     bool valid_initial_guess_;

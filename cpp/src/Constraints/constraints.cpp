@@ -15,7 +15,7 @@
 ///////////////////////////////////////////////////////////////////////////
 
 #include "Constraints/constraints.h"
-namespace mpcc{
+namespace mpc{
 Constraints::Constraints()
 {   
     std::cout << "default constructor, not everything is initialized properly" << std::endl;

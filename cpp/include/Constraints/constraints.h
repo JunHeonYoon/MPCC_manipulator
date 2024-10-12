@@ -14,14 +14,14 @@
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 
-#ifndef MPCC_CONSTRAINTS_H
-#define MPCC_CONSTRAINTS_H
+#ifndef MPC_CONSTRAINTS_H
+#define MPC_CONSTRAINTS_H
 
 #include "config.h"
 #include "Spline/arc_length_spline.h"
 #include "Model/model.h"
 #include "Model/robot_data.h"
-namespace mpcc{
+namespace mpc{
 
 /// @brief Constraint Information
 /// @param c_vec (Eigen::Matrix<double,NPC,1>) c(x,u) value; l < c(x,u) < u

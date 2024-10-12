@@ -2,7 +2,9 @@
 #include <iomanip>
 #include <iostream>
 
-mpcc::RobotModel::RobotModel()
+namespace mpc
+{
+RobotModel::RobotModel()
 {
 
 	nq_ = PANDA_DOF; 
@@ -48,12 +50,12 @@ mpcc::RobotModel::RobotModel()
    std::cout << "Franka Panda Robot Model is loaded!" << std::endl;
 }
 
-mpcc::RobotModel::~RobotModel()
+RobotModel::~RobotModel()
 {
 	std::cout << "Franka Panda Robot Model is removed!" << std::endl;
 }
 
-void mpcc::RobotModel::setRobot()
+void RobotModel::setRobot()
 {
 	model_ = std::make_shared<Model>();    
     model_->gravity = Math::Vector3d(0., 0, -9.81);
@@ -65,7 +67,7 @@ void mpcc::RobotModel::setRobot()
 	
 }
 
-void mpcc::RobotModel::setPanda(unsigned int base_id, Vector3d base_position, Matrix3d base_rotataion)
+void RobotModel::setPanda(unsigned int base_id, Vector3d base_position, Matrix3d base_rotataion)
 {
 	Math::Vector3d com_position[13];
 	com_position[0] = Vector3d(-0.041018, -0.00014, 0.049974);        // panda_link0
@@ -333,7 +335,7 @@ void mpcc::RobotModel::setPanda(unsigned int base_id, Vector3d base_position, Ma
 	body_id_[PANDA_NUM_LINKS-1] = model_->GetBodyId("panda_hand_tcp");
 }
 
-void mpcc::RobotModel::setHusky()
+void RobotModel::setHusky()
 {
 	// for base_footprint
 	Body virtual_body[5];
@@ -366,7 +368,7 @@ void mpcc::RobotModel::setHusky()
 	model_->AddBody(base_id_, Math::Xtrans(Math::Vector3d(0.0, -0.25, 0.165)), virtual_joint[4], virtual_body[4], "husky_rightwheel");
 }
 
-void mpcc::RobotModel::Jacobian(const int &frame_id)
+void RobotModel::Jacobian(const int &frame_id)
 {
 	j_tmp_.setZero();
 
@@ -378,7 +380,7 @@ void mpcc::RobotModel::Jacobian(const int &frame_id)
 	j_ << j_v_, j_w_;
 }
 
-void mpcc::RobotModel::Jacobian(const int &frame_id, const VectorXd &q)
+void RobotModel::Jacobian(const int &frame_id, const VectorXd &q)
 {
 	j_tmp_.setZero();
 
@@ -391,28 +393,28 @@ void mpcc::RobotModel::Jacobian(const int &frame_id, const VectorXd &q)
 
 }
 
-void mpcc::RobotModel::Position(const int &frame_id)
+void RobotModel::Position(const int &frame_id)
 {
 	x_ = CalcBodyToBaseCoordinates(*model_, q_rbdl_, body_id_[frame_id - 1], Math::Vector3d::Zero(), true);
 }
 
-void mpcc::RobotModel::Position(const int &frame_id, const VectorXd &q)
+void RobotModel::Position(const int &frame_id, const VectorXd &q)
 {
 	x_ = CalcBodyToBaseCoordinates(*model_, q, body_id_[frame_id - 1], Math::Vector3d::Zero(), true);
 }
 
-void mpcc::RobotModel::Orientation(const int &frame_id)
+void RobotModel::Orientation(const int &frame_id)
 {
 	rotation_ = CalcBodyWorldOrientation(*model_, q_rbdl_, body_id_[frame_id - 1], true).transpose();
 }
 
-void mpcc::RobotModel::Orientation(const int &frame_id, const VectorXd &q)
+void RobotModel::Orientation(const int &frame_id, const VectorXd &q)
 {
 	// std::cout<<"body name: " << model_->GetBodyName(body_id_[frame_id - 1]) <<std::endl;
 	rotation_ = CalcBodyWorldOrientation(*model_, q, body_id_[frame_id - 1], true).transpose();
 }
 
-void mpcc::RobotModel::Transformation(const int &frame_id)
+void RobotModel::Transformation(const int &frame_id)
 {
 	Position(frame_id);
 	Orientation(frame_id);
@@ -420,7 +422,7 @@ void mpcc::RobotModel::Transformation(const int &frame_id)
 	trans_.translation() = x_;
 }
 
-void mpcc::RobotModel::Transformation(const int &frame_id, const VectorXd &q)
+void RobotModel::Transformation(const int &frame_id, const VectorXd &q)
 {
 	Position(frame_id, q);
 	Orientation(frame_id, q);
@@ -428,14 +430,14 @@ void mpcc::RobotModel::Transformation(const int &frame_id, const VectorXd &q)
 	trans_.translation() = x_;
 }
 
-void mpcc::RobotModel::MassMatrix()
+void RobotModel::MassMatrix()
 {
 	m_tmp_.setZero();
 	CompositeRigidBodyAlgorithm(*model_, q_rbdl_, m_tmp_, true);
 	m_ = m_tmp_;
 }
 
-void mpcc::RobotModel::NonlinearEffect()
+void RobotModel::NonlinearEffect()
 {
 	nle_tmp_.setZero();
 	MassMatrix();
@@ -443,13 +445,13 @@ void mpcc::RobotModel::NonlinearEffect()
 	nle_ = nle_tmp_;
 }
 
-void mpcc::RobotModel::Manipulability(const int &frame_id, const VectorXd &q)
+void RobotModel::Manipulability(const int &frame_id, const VectorXd &q)
 {
 	Jacobian(frame_id, q);
 	mani_ = sqrt((j_*j_.transpose()).determinant());
 }
 
-void mpcc::RobotModel::dManipulability(const int &frame_id, const VectorXd &q)
+void RobotModel::dManipulability(const int &frame_id, const VectorXd &q)
 {
 	double delta = 1e-4;
 	for(size_t i=0;i<nq_;i++)
@@ -464,10 +466,11 @@ void mpcc::RobotModel::dManipulability(const int &frame_id, const VectorXd &q)
 	}
 }
 
-void mpcc::RobotModel::getUpdateKinematics(const VectorXd &q, const VectorXd &qdot)
+void RobotModel::getUpdateKinematics(const VectorXd &q, const VectorXd &qdot)
 {
 	q_rbdl_ = q;
 	qdot_rbdl_ = qdot;
 	UpdateKinematicsCustom(*model_, &q_rbdl_, &qdot_rbdl_, NULL);
 
+}
 }

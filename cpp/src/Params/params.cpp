@@ -15,7 +15,7 @@
 ///////////////////////////////////////////////////////////////////////////
 
 #include "Params/params.h"
-namespace mpcc{
+namespace mpc{
     
 Param::Param(){
     std::cout << "Default initialization of model params" << std::endl;
@@ -33,10 +33,6 @@ Param::Param(std::string file){
 
     max_dist_proj = jsonModel["max_dist_proj"];
     desired_ee_velocity = jsonModel["desired_ee_velocity"];
-    deacc_ratio = jsonModel["deaccelerate_ratio"];
-
-    // initial warm start and trust region (model dependent)
-    s_trust_region = jsonModel["s_trust_region"];
 
     tol_sing = jsonModel["tol_sing"];
     tol_selcol = jsonModel["tol_selcol"];
@@ -67,8 +63,6 @@ Param::Param(std::string file, std::map<std::string, double> param){
 
     get_param_value("max_dist_proj", max_dist_proj);
     get_param_value("desired_ee_velocity", desired_ee_velocity);
-    get_param_value("deaccelerate_ratio", deacc_ratio);
-    get_param_value("s_trust_region", s_trust_region);
     get_param_value("tol_sing", tol_sing);
     get_param_value("tol_selcol", tol_selcol);
     get_param_value("tol_envcol", tol_envcol);
@@ -95,20 +89,16 @@ CostParam::CostParam(std::string file){
     json jsonCost;
     iCost >> jsonCost;
 
-    q_c = jsonCost["qC"];
-    q_c_N_mult = jsonCost["qCNmult"];
-    q_l = jsonCost["qL"];
-    q_vs = jsonCost["qVs"];
+    q_e = jsonCost["qE"];
+    q_e_N_mult = jsonCost["qENmult"];
 
     q_ori = jsonCost["qOri"];
 
     r_dq = jsonCost["rdq"];
-    r_Vee = jsonCost["rVee"];
-    r_dVs = jsonCost["rdVs"];
 
-    q_c_red_ratio = jsonCost["qC_reduction_ratio"];
-    q_l_inc_ratio = jsonCost["qL_increase_ratio"];
-    q_ori_red_ratio = jsonCost["qOri_reduction_ratio"];
+    // q_c_red_ratio = jsonCost["qC_reduction_ratio"];
+    // q_l_inc_ratio = jsonCost["qL_increase_ratio"];
+    // q_ori_red_ratio = jsonCost["qOri_reduction_ratio"];
 
     // std::cout << "q_c = " << q_c << std::endl;
     // std::cout << "q_c_N_mult = " << q_c_N_mult << std::endl;
@@ -138,20 +128,16 @@ CostParam::CostParam(std::string file, std::map<std::string, double> cost_param)
         else cost_var = cost_param[key];
     };
 
-    get_cost_value("qC", q_c);
-    get_cost_value("qCNmult", q_c_N_mult);
-    get_cost_value("qL", q_l);
-    get_cost_value("qVs", q_vs);
+    get_cost_value("qE", q_e);
+    get_cost_value("qENmult", q_e_N_mult);
 
     get_cost_value("qOri", q_ori);
 
     get_cost_value("rdq", r_dq);
-    get_cost_value("rVee", r_Vee);
-    get_cost_value("rdVs", r_dVs);
 
-    get_cost_value("qC_reduction_ratio", q_c_red_ratio);
-    get_cost_value("qL_increase_ratio", q_l_inc_ratio);
-    get_cost_value("qOri_reduction_ratio", q_ori_red_ratio);
+    // get_cost_value("qC_reduction_ratio", q_c_red_ratio);
+    // get_cost_value("qL_increase_ratio", q_l_inc_ratio);
+    // get_cost_value("qOri_reduction_ratio", q_ori_red_ratio);
     
     // std::cout << "q_c = " << q_c << std::endl;
     // std::cout << "q_c_N_mult = " << q_c_N_mult << std::endl;
@@ -188,8 +174,6 @@ BoundsParam::BoundsParam(std::string file) {
     lower_state_bounds.q5_l = jsonBounds["q5l"];
     lower_state_bounds.q6_l = jsonBounds["q6l"];
     lower_state_bounds.q7_l = jsonBounds["q7l"];
-    lower_state_bounds.s_l  = jsonBounds["sl"];
-    lower_state_bounds.vs_l = jsonBounds["vsl"];
 
     upper_state_bounds.q1_u = jsonBounds["q1u"];
     upper_state_bounds.q2_u = jsonBounds["q2u"];
@@ -198,8 +182,6 @@ BoundsParam::BoundsParam(std::string file) {
     upper_state_bounds.q5_u = jsonBounds["q5u"];
     upper_state_bounds.q6_u = jsonBounds["q6u"];
     upper_state_bounds.q7_u = jsonBounds["q7u"];
-    upper_state_bounds.s_u  = jsonBounds["su"];
-    upper_state_bounds.vs_u = jsonBounds["vsu"];
 
     lower_input_bounds.dq1_l = jsonBounds["dq1l"];
     lower_input_bounds.dq2_l = jsonBounds["dq2l"];
@@ -208,7 +190,6 @@ BoundsParam::BoundsParam(std::string file) {
     lower_input_bounds.dq5_l = jsonBounds["dq5l"];
     lower_input_bounds.dq6_l = jsonBounds["dq6l"];
     lower_input_bounds.dq7_l = jsonBounds["dq7l"];
-    lower_input_bounds.dVs_l = jsonBounds["dVsl"];
 
     upper_input_bounds.dq1_u = jsonBounds["dq1u"];
     upper_input_bounds.dq2_u = jsonBounds["dq2u"];
@@ -217,7 +198,6 @@ BoundsParam::BoundsParam(std::string file) {
     upper_input_bounds.dq5_u = jsonBounds["dq5u"];
     upper_input_bounds.dq6_u = jsonBounds["dq6u"];
     upper_input_bounds.dq7_u = jsonBounds["dq7u"];
-    upper_input_bounds.dVs_u = jsonBounds["dVsu"];
 }
 
 BoundsParam::BoundsParam(std::string file, std::map<std::string, double> bounds_param) {
@@ -237,8 +217,6 @@ BoundsParam::BoundsParam(std::string file, std::map<std::string, double> bounds_
     get_bound_value("q5l", lower_state_bounds.q5_l);
     get_bound_value("q6l", lower_state_bounds.q6_l);
     get_bound_value("q7l", lower_state_bounds.q7_l);
-    get_bound_value("sl", lower_state_bounds.s_l);
-    get_bound_value("vsl", lower_state_bounds.vs_l);
 
     get_bound_value("q1u", upper_state_bounds.q1_u);
     get_bound_value("q2u", upper_state_bounds.q2_u);
@@ -247,8 +225,6 @@ BoundsParam::BoundsParam(std::string file, std::map<std::string, double> bounds_
     get_bound_value("q5u", upper_state_bounds.q5_u);
     get_bound_value("q6u", upper_state_bounds.q6_u);
     get_bound_value("q7u", upper_state_bounds.q7_u);
-    get_bound_value("su", upper_state_bounds.s_u);
-    get_bound_value("vsu", upper_state_bounds.vs_u);
 
     get_bound_value("dq1l", lower_input_bounds.dq1_l);
     get_bound_value("dq2l", lower_input_bounds.dq2_l);
@@ -257,7 +233,6 @@ BoundsParam::BoundsParam(std::string file, std::map<std::string, double> bounds_
     get_bound_value("dq5l", lower_input_bounds.dq5_l);
     get_bound_value("dq6l", lower_input_bounds.dq6_l);
     get_bound_value("dq7l", lower_input_bounds.dq7_l);
-    get_bound_value("dVsl", lower_input_bounds.dVs_l);
 
     get_bound_value("dq1u", upper_input_bounds.dq1_u);
     get_bound_value("dq2u", upper_input_bounds.dq2_u);
@@ -266,7 +241,6 @@ BoundsParam::BoundsParam(std::string file, std::map<std::string, double> bounds_
     get_bound_value("dq5u", upper_input_bounds.dq5_u);
     get_bound_value("dq6u", upper_input_bounds.dq6_u);
     get_bound_value("dq7u", upper_input_bounds.dq7_u);
-    get_bound_value("dVsu", upper_input_bounds.dVs_u);
 }
 
 NormalizationParam::NormalizationParam(){
@@ -292,8 +266,6 @@ NormalizationParam::NormalizationParam(std::string file)
     T_x(si_index.q5,si_index.q5) = jsonNorm["q5"];
     T_x(si_index.q6,si_index.q6) = jsonNorm["q6"];
     T_x(si_index.q7,si_index.q7) = jsonNorm["q7"];
-    T_x(si_index.s,si_index.s) = jsonNorm["s"];
-    T_x(si_index.vs,si_index.vs) = jsonNorm["vs"];
 
 
     T_x_inv.setIdentity();
@@ -310,7 +282,6 @@ NormalizationParam::NormalizationParam(std::string file)
     T_u(si_index.dq5,si_index.dq5) = jsonNorm["dq5"];
     T_u(si_index.dq6,si_index.dq6) = jsonNorm["dq6"];
     T_u(si_index.dq7,si_index.dq7) = jsonNorm["dq7"];
-    T_u(si_index.dVs,si_index.dVs) = jsonNorm["dVs"];
 
     T_u_inv.setIdentity();
     for(int i = 0;i<NU;i++)
@@ -337,8 +308,6 @@ NormalizationParam::NormalizationParam(std::string file, std::map<std::string, d
     get_norm_value("q5", T_x(si_index.q5, si_index.q5));
     get_norm_value("q6", T_x(si_index.q6, si_index.q6));
     get_norm_value("q7", T_x(si_index.q7, si_index.q7));
-    get_norm_value("s", T_x(si_index.s, si_index.s));
-    get_norm_value("vs", T_x(si_index.vs, si_index.vs));
 
     T_u_inv.setIdentity();
     for(int i = 0; i < NX; i++) {
@@ -353,7 +322,6 @@ NormalizationParam::NormalizationParam(std::string file, std::map<std::string, d
     get_norm_value("dq5", T_u(si_index.dq5, si_index.dq5));
     get_norm_value("dq6", T_u(si_index.dq6, si_index.dq6));
     get_norm_value("dq7", T_u(si_index.dq7, si_index.dq7));
-    get_norm_value("dVs", T_u(si_index.dVs, si_index.dVs));
 
     T_u_inv.setIdentity();
     for(int i = 0; i < NU; i++) {

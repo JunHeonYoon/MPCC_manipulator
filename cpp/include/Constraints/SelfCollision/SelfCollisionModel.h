@@ -1,5 +1,5 @@
-#ifndef MPCC_SELF_COLLISION_H
-#define MPCC_SELF_COLLISION_H
+#ifndef MPC_SELF_COLLISION_H
+#define MPC_SELF_COLLISION_H
 
 #include <config.h>
 #include <iostream>
@@ -10,7 +10,7 @@
 #include <iomanip>
 #include <Eigen/Dense>
 
-namespace mpcc
+namespace mpc
 {
     class SelCollNNmodel
     {

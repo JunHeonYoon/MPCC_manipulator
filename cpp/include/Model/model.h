@@ -20,7 +20,7 @@
 #include "config.h"
 #include "types.h"
 #include "Params/params.h"
-namespace mpcc{
+namespace mpc{
 
 /// @brief Linear model of car: x_(k+1) = A * x_k + B * u_k + g
 /// @param A (Eigen::Matrix<double, NX, NX>) Linear part of state

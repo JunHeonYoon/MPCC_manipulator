@@ -14,14 +14,14 @@
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 
-#ifndef MPCC_INTEGRATOR_H
-#define MPCC_INTEGRATOR_H
+#ifndef MPC_INTEGRATOR_H
+#define MPC_INTEGRATOR_H
 
 #include "config.h"
 #include "model.h"
 #include "types.h"
 
-namespace mpcc{
+namespace mpc{
 class Integrator {
 public:
     Integrator();

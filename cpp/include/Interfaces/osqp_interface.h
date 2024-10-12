@@ -14,8 +14,8 @@
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 
-#ifndef MPCC_OSQP_INTERFACE_H
-#define MPCC_OSQP_INTERFACE_H
+#ifndef MPC_OSQP_INTERFACE_H
+#define MPC_OSQP_INTERFACE_H
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -44,7 +44,7 @@
 #include <torch/torch.h>
 #endif
 
-namespace mpcc{
+namespace mpc{
 
 /// @brief parameters for optimization, state and control input of MPC
 /// @param xk  (State) state
@@ -89,7 +89,7 @@ public:
     void setTrack(const ArcLengthSpline track);
     void setParam(const ParamValue &param_value);
     void setEnvData(const std::vector<float> &voxel);
-    void setInitialGuess(const std::vector<OptVariables> &initial_guess);
+    void setInitialGuess(const std::vector<OptVariables> &initial_guess, const int &time_idx);
     bool solveOCP(std::vector<OptVariables> &opt_sol, Status *status, ComputeTime *mpc_time);
     ~OsqpInterface(){ std::cout << "Deleting Osqp Interface" << std::endl;}
 
@@ -113,6 +113,7 @@ private:
     Bounds bounds_;
     NormalizationParam normalization_param_;
     SQPParam sqp_param_;
+    Param param_;
     double Ts_;
 
     std::vector<RobotData> rb_;
@@ -122,6 +123,8 @@ private:
     static const int N_ineqb = N_var;
     static const int N_ineqp = (N+1)*NPC;
     static const int N_constr = N_eq + N_ineqb + N_ineqp;
+
+    int current_time_idx_;
 
     std::vector<OptVariables> initial_guess_;
     Eigen::VectorXd initial_guess_vec_;

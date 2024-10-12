@@ -2,7 +2,7 @@ import sys
 sys.path.append('../cpp/build')
 import numpy as np
 
-from MPCC_WRAPPER import SelCollNNmodel as SelCollNNmodel_CPP
+from MPC_WRAPPER import SelCollNNmodel as SelCollNNmodel_CPP
 
 class SelfCollisionNN():
     def __init__(self, model_path:str = None):

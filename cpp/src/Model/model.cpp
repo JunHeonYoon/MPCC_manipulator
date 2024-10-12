@@ -15,7 +15,7 @@
 ///////////////////////////////////////////////////////////////////////////
 
 #include "Model/model.h"
-namespace mpcc{
+namespace mpc{
 Model::Model()
 :Ts_(1.0)
 {
@@ -38,8 +38,6 @@ StateVector Model::getF(const State &x,const Input &u) const
     f(4) = u.dq5;
     f(5) = u.dq6;
     f(6) = u.dq7;
-    f(7) = x.vs;
-    f(8) = u.dVs;
 
     return f;
 }
@@ -55,11 +53,9 @@ LinModelMatrix Model::getModelJacobian(const State &x, const Input &u) const
 
     // Jacobians
     // Matrix A
-    A_c(si_index.s,si_index.vs) = 1.0;
 
     // Matrix B
     B_c.block(si_index.q1,si_index.dq1,PANDA_DOF,PANDA_DOF).setIdentity();
-    B_c(si_index.vs,si_index.dVs) = 1.0;
 
     return {A_c,B_c,g_c};
 }

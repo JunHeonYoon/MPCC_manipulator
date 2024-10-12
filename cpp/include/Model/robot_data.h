@@ -1,10 +1,10 @@
-#ifndef MPCC_ROBOT_DATA_H
-#define MPCC_ROBOT_DATA_H
+#ifndef MPC_ROBOT_DATA_H
+#define MPC_ROBOT_DATA_H
 
 #include "Model/robot_model.h"
 #include "Constraints/SelfCollision/SelfCollisionModel.h"
 
-namespace mpcc
+namespace mpc
 {
 // Data containing kinematic of robot wrt given joint angle
 struct RobotData

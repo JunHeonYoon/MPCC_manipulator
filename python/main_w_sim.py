@@ -1,4 +1,4 @@
-import mpcc
+import MPC
 import numpy as np
 from math import pi
 
@@ -16,10 +16,6 @@ import rospy
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import Header
-
-N = 10
-SLECOL_BUFFER = 1.0
-MANI_BUFFER = 0.01
 
 
 np.set_printoptions(suppress=True, precision=3)
@@ -64,7 +60,7 @@ def create_path_message2(track_pos, track_ori):
     initial_z = track_pos[0,2] - 0.
 
     for pos, ori in zip(track_pos, track_ori):
-        quat = mpcc.RotToQuat(ori)
+        quat = MPC.RotToQuat(ori)
         pose = PoseStamped()
         pose.header = path.header
         pose.pose.position.x = pos[0] - initial_x + 0.55450 
@@ -88,7 +84,7 @@ def create_pred_path_message(track_pos, track_ori):
 
     for pos, ori in zip(track_pos, track_ori):
         if(ori.shape == (3,3)):
-            quat = mpcc.RotToQuat(ori)
+            quat = mpc.RotToQuat(ori)
         else:
             quat = track_ori.flatten()
             
@@ -107,7 +103,8 @@ def create_pred_path_message(track_pos, track_ori):
 
 def plt_func(fig, selcol_ax, mani_ax, 
              min_dist_true_line, min_dist_pred_line, mani_line, 
-             time_data, min_dist_real_data, min_dist_pred_data, mani_data):
+             time_data, min_dist_real_data, min_dist_pred_data, mani_data,
+             SLECOL_BUFFER, MANI_BUFFER):
 
     min_dist_true_line.set_data(time_data, min_dist_real_data)
     min_dist_pred_line.set_data(time_data, min_dist_pred_data)
@@ -157,6 +154,67 @@ def main(args):
     local_path_pub = rospy.Publisher('/mpcc/local_path', Path, queue_size=10)
     ref_local_path_pub = rospy.Publisher('/mpcc/ref_local_path', Path, queue_size=10)
 
+
+
+    with open('../cpp/Params/track.json', 'r') as f:
+        track_data = json.load(f)
+
+    integrator = MPC.Integrator()
+    robot = MPC.RobotModel()
+    robot_dof = robot.num_q
+    selcolNN = MPC.SelfCollisionNN()
+    selcolNN.setNeuralNetwork(input_size=robot_dof, output_size=1, hidden_layer_size=np.array([256, 64]), is_nerf=True)
+
+    mpc = MPC.MPC()
+
+    N = mpc.pred_horizon
+
+    state = np.array([0., 0., 0., -pi/2, 0., pi/2, pi/4])
+    input = np.array([0., 0., 0., 0., 0., 0., 0.])
+    mpc.setTrack(state)
+    total_ref_traj_posi, total_ref_traj_ori = mpc.getTotalTrajectory()
+
+    # global_path_msg = create_path_message1(track_data, pred_ee_posi_set[0,0:3])
+    total_traj_msg = create_path_message2(total_ref_traj_posi, total_ref_traj_ori)
+
+
+    debug_data = {}
+    debug_data["q"] = []
+    debug_data["qdot"] = []
+    debug_data["s"] = []
+    debug_data["vs"] = []
+    debug_data["ee_speed"] = []
+    debug_data["min_dist"] = []
+    debug_data["mani"] = []
+    debug_data["Ec"] = []
+    debug_data["pred_ee_pose"] = [] # (x, y, z, q_x, q_y, q_z, q_w) * (N+1)
+    debug_data["ref_ee_pose"] = []  # (x, y, z, q_x, q_y, q_z, q_w) * (N+1)
+
+    time_data = {}
+    time_data["total"] = []
+    time_data["set_qp"] = []
+    time_data["solve_qp"] = []
+    time_data["get_alpha"] = []
+
+    param_value = {'cost': {
+                            "qE" : 300.0,
+                            "qENmult": 10,
+
+                            "qOri": 10,
+
+                            "rdq"  : 0.01
+                            },
+                    'param': {
+                            "desired_ee_velocity" : 0.15,
+
+                            "tol_sing": 0.01,
+                            "tol_selcol": 1.0,
+                    }}
+
+    mpc.setParam(param_value)
+    SLECOL_BUFFER = param_value["param"]["tol_selcol"]
+    MANI_BUFFER = param_value["param"]["tol_sing"]
+
     if(args.plot):
         # Animated plotter
         plt.ion()
@@ -179,65 +237,11 @@ def main(args):
     min_dist_real_data = np.zeros((1))
     min_dist_pred_data = np.zeros((1))
     mani_data = np.zeros((1))
-
-
-    with open('../cpp/Params/track.json', 'r') as f:
-        track_data = json.load(f)
-
-    integrator = mpcc.Integrator()
-    robot = mpcc.RobotModel()
-    robot_dof = robot.num_q
-    selcolNN = mpcc.SelfCollisionNN()
-    selcolNN.setNeuralNetwork(input_size=robot_dof, output_size=1, hidden_layer_size=np.array([256, 64]), is_nerf=True)
-
-    mpc = mpcc.MPCC()
-
-    state = np.array([0., 0., 0., -pi/2, 0., pi/2, pi/4, 0., 0.])
-    input = np.array([0., 0., 0., 0., 0., 0., 0., 0.])
-    mpc.setTrack(state)
-    spline_pos, spline_ori, spline_arc_length = mpc.getSplinePath()
-
-
-    # global_path_msg = create_path_message1(track_data, pred_ee_posi_set[0,0:3])
-    splined_path_msg = create_path_message2(spline_pos, spline_ori)
-
-
-    debug_data = {}
-    debug_data["q"] = []
-    debug_data["qdot"] = []
-    debug_data["min_dist"] = []
-    debug_data["mani"] = []
-    debug_data["pred_ee_pose"] = [] # x, y, z, q_x, q_y, q_z, q_w
-    debug_data["ref_ee_pose"] = []  # x, y, z, q_x, q_y, q_z, q_w
-
-    time_data = {}
-    time_data["total"] = []
-    time_data["set_qp"] = []
-    time_data["solve_qp"] = []
-    time_data["get_alpha"] = []
-
-    param_value = {'cost': {'qC': 500.34952437742376, 
-                            'qCNmult': 9.608598867805625, 
-                            'qL': 100.215373616038, 
-                            'qVs': 8.857749970111477, 
-                            # 'qVs': 2.0, 
-                            'qOri': 8.530613025311919, 
-                            # 'qC_reduction_ratio': 0.14511793559277225, 
-                            'qC_reduction_ratio': 1, 
-                            # 'qL_increase_ratio': 3.609714386084117, 
-                            'qL_increase_ratio': 1, 
-                            # 'qOri_reduction_ratio': 0.7380133441510759,
-                            'qOri_reduction_ratio': 1,
-                            }}
-
-    # mpc.setParam(param_value)
-
     
     time_idx=0
     rate = rospy.Rate(1./mpc.Ts)
     while not rospy.is_shutdown():
-        start = time()
-        status, state, input, mpc_horizon, compute_time = mpc.runMPC(state, input)
+        status, state, input, mpc_horizon, compute_time = mpc.runMPC(state, input, time_idx)
         if status == False:
             print("MPC did not solve properly!!")
             break
@@ -246,27 +250,24 @@ def main(args):
         pc.display(state[:robot_dof])
         real_min_dist = pc.min_distance(state[:robot_dof])*100
 
-        ee_pos = robot.getEEPosition(state[:robot_dof])
+        ee_posi = robot.getEEPosition(state[:robot_dof])
         ee_ori = robot.getEEOrientation(state[:robot_dof])
         ee_vel = robot.getEEJacobianv(state[:robot_dof]) @ input[:robot_dof]
         min_dist, _ = selcolNN.calculateMlpOutput(state[:robot_dof])
         mani = robot.getEEManipulability(state[:robot_dof])
-
+        s_opt, contour_error = mpc.getContourError(time_idx * mpc.Ts * param_value["param"]["desired_ee_velocity"], ee_posi)
 
         print("===============================================================")
         print("time step   : ",time_idx)
         # print("state       : ", state)
         print("q           : ", state[:robot_dof])
         print("qdot        : ", input[:robot_dof])
-        print("x           : ", ee_pos)
+        print("x           : ", ee_posi)
         print("xdot        : {:0.5f}".format(np.linalg.norm(ee_vel)))
         print("xdot        : ", ee_vel)
         print("R           :\n", ee_ori)
         print("mani        : {:0.5f}".format(mani))
         print("min dist[cm]: {:0.5f}".format(min_dist[0]))
-        print("s           : {:0.6f}".format(state[-2]))
-        print("vs          : {:0.6f}".format(state[-1]))
-        print("dVs         : {:0.5f}".format(input[-1]))
         print("MPC time    : {:0.5f}".format(compute_time["total"]))
         print("===============================================================")
 
@@ -282,28 +283,32 @@ def main(args):
             mani_data = mani_data[-10:]
 
         if(args.plot):
-            plt_func(fig, selcol_ax, mani_ax, min_dist_true_line, min_dist_pred_line, mani_line, sim_time_data, min_dist_real_data, min_dist_pred_data, mani_data)
+            plt_func(fig, selcol_ax, mani_ax, min_dist_true_line, min_dist_pred_line, mani_line, sim_time_data, min_dist_real_data, min_dist_pred_data, mani_data, SLECOL_BUFFER, MANI_BUFFER)
 
         debug_data["q"].append(state[:robot_dof]) 
         debug_data["qdot"].append(input[:robot_dof])
+        debug_data["s"].append(s_opt)
+        debug_data["vs"].append(param_value["param"]["desired_ee_velocity"])
+        debug_data["ee_speed"].append(np.linalg.norm(ee_vel))
         debug_data["min_dist"].append(min_dist[0])
         debug_data["mani"].append(mani)
+        debug_data["Ec"].append(contour_error)
 
         pred_ee_pose = np.zeros([mpc.pred_horizon + 1, 7])
         ref_ee_pose  = np.zeros([mpc.pred_horizon + 1, 7])
+        ref_n_traj_posi, ref_n_traj_ori = mpc.getNTrajectory(time_idx)
         for i in range(mpc.pred_horizon + 1):
             pred_ee_pose[i,:3] = robot.getEEPosition(mpc_horizon[i]["state"][:robot_dof])
-            pred_ee_pose[i,3:] = mpcc.RotToQuat(robot.getEEOrientation(mpc_horizon[i]["state"][:robot_dof]))
-            ref_pos, ref_ori = mpc.getRefPose(mpc_horizon[i]["state"][-2])
-            ref_ee_pose[i,:3] = ref_pos
-            ref_ee_pose[i,3:] = mpcc.RotToQuat(ref_ori)
+            pred_ee_pose[i,3:] = MPC.RotToQuat(robot.getEEOrientation(mpc_horizon[i]["state"][:robot_dof]))
+            ref_ee_pose[i,:3] = ref_n_traj_posi[i]
+            ref_ee_pose[i,3:] = MPC.RotToQuat(ref_n_traj_ori[i])
 
         local_path_msg = create_pred_path_message(pred_ee_pose[:,:3], pred_ee_pose[:,3:])
-        ref_local_path_msg = create_pred_path_message(ref_ee_pose[:,:3], ref_ee_pose[:,3:])
+        ref_local_traj_msg = create_pred_path_message(ref_ee_pose[:,:3], ref_ee_pose[:,3:])
         # global_path_pub.publish(global_path_msg)
-        splined_path_pub.publish(splined_path_msg)
+        splined_path_pub.publish(total_traj_msg)
         local_path_pub.publish(local_path_msg)
-        ref_local_path_pub.publish(ref_local_path_msg)
+        ref_local_path_pub.publish(ref_local_traj_msg)
 
 
         debug_data["pred_ee_pose"].append(pred_ee_pose)
@@ -314,21 +319,17 @@ def main(args):
         time_data["solve_qp"].append(compute_time["solve_qp"])
         time_data["get_alpha"].append(compute_time["get_alpha"])
 
-        if np.linalg.norm((spline_pos[-1] - ee_pos), 2) < 1E-2 and np.linalg.norm(mpcc.Log(spline_ori[-1].T @ ee_ori), 2) and abs(state[-2] - spline_arc_length[-1]) < 1E-2:
+        if np.linalg.norm((total_ref_traj_posi[-1] - ee_posi), 2) < 1E-2 and np.linalg.norm(MPC.Log(total_ref_traj_ori[-1].T @ ee_ori), 2) < 1E-2 and (time_idx > total_ref_traj_posi.shape[0]):
             print("End point reached!!!")
             break
         
-        end = time()
-        # elapsed = end - start
-        # if elapsed < mpc.Ts:
-        #     sleep(mpc.Ts - elapsed)
         rate.sleep()
         
         time_idx += 1
 
     with open('splined_path.txt', 'w') as splined_path_file:
-        for pos, ori in zip(spline_pos, spline_ori):
-            quaternion = mpcc.RotToQuat(ori)
+        for pos, ori in zip(total_ref_traj_posi, total_ref_traj_ori):
+            quaternion = MPC.RotToQuat(ori)
             data_to_write = np.concatenate([pos, quaternion], axis=0)
             splined_path_file.write(" ".join(map(str, data_to_write)) + "\n")
     print("Data written to splined_path.txt")
@@ -364,8 +365,65 @@ def main(args):
     plt.xlim(0, len(time_data["total"]))
     plt.legend()
     plt.grid(True)
-    plt.show()
+    
+    # Plotting the s/vs, ee_speed
+    fig=plt.figure(figsize=(14, 8))
+    fig.subplots_adjust(hspace=1)
+    plt.subplot(411)
+    plt.plot("s", "ee_speed", data=debug_data, label="ee_speed", color='r')
+    plt.axhline(y=param_value["param"]["desired_ee_velocity"], color='black', linestyle='--', label="desired")
 
+    plt.xlabel("s (m)")
+    plt.ylabel("Speed (m/s)")
+    plt.title("EE Speed per Arc length")
+    plt.ylim(-0.01, max(max(debug_data["ee_speed"]),param_value["param"]["desired_ee_velocity"])*1.2)  
+    plt.xlim(0, debug_data["s"][-1])
+    plt.legend()
+    plt.grid(True)
+
+    # Plotting the s/min_dist
+    # plt.figure(figsize=(14, 8))
+    plt.subplot(412)
+
+    plt.plot("s", "min_dist", data=debug_data, label="minimum distance", color='b')
+    plt.axhline(y=SLECOL_BUFFER, color='black', linestyle='--', label="buffer")
+
+    plt.xlabel("s (m)")
+    plt.ylabel("distance (cm)")
+    plt.title("Minimum distance per Arc length")
+    plt.ylim(-0.01, max(debug_data["min_dist"])*1.2)  
+    plt.xlim(0, debug_data["s"][-1])
+    plt.legend()
+    plt.grid(True)
+
+    # Plotting the s/manipulability
+    # plt.figure(figsize=(14, 8))
+    plt.subplot(413)
+
+    plt.plot("s", "mani", data=debug_data, label="manip", color='b')
+    plt.axhline(y=MANI_BUFFER, color='black', linestyle='--', label="buffer")
+
+    plt.xlabel("s (m)")
+    plt.ylabel("Manipulability")
+    plt.title("Manipulability per Arc length")
+    plt.ylim(-0.01, max(debug_data["mani"])*1.2)  
+    plt.xlim(0, debug_data["s"][-1])
+    plt.legend()
+    plt.grid(True)
+
+    plt.subplot(414)
+
+    plt.plot("s", "Ec", data=debug_data, label="Contour Error", color='b')
+
+    plt.xlabel("s (m)")
+    plt.ylabel("Error (m)")
+    plt.title("Contouring Error per Arc length")
+    plt.ylim(-max(debug_data["Ec"])*0.3, max(debug_data["Ec"])*1.2)  
+    plt.xlim(0, debug_data["s"][-1])
+    plt.legend()
+    plt.grid(True)
+
+    plt.show()
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--plot", type=bool, default=False)

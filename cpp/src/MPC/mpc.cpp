@@ -16,7 +16,7 @@
 
 #include "MPC/mpc.h"
 
-namespace mpcc{
+namespace mpc{
 MPC::MPC()
 :Ts_(1.0)
 {
@@ -63,17 +63,6 @@ void MPC::updateInitialGuess(const State &x0)
 
     initial_guess_[N].xk = integrator_.RK4(initial_guess_[N-1].xk,initial_guess_[N-1].uk,Ts_);
     initial_guess_[N].uk.setZero();
-
-    unwrapInitialGuess();
-}
-
-void MPC::unwrapInitialGuess()
-{
-    double L = track_.getLength();
-    for(int i=1;i<=N;i++)
-    {
-        initial_guess_[i].xk.s = std::min(initial_guess_[i].xk.s,L);
-    }
 }
 
 void MPC::generateNewInitialGuess(const State &x0)
@@ -84,108 +73,27 @@ void MPC::generateNewInitialGuess(const State &x0)
         initial_guess_[i].xk = x0;
         initial_guess_[i].uk.setZero();
     }
-    unwrapInitialGuess();
     valid_initial_guess_ = true;
 }
 
-bool MPC::runMPC(MPCReturn &mpc_return, State &x0, Input &u0)
+bool MPC::runMPC(MPCReturn &mpc_return, State &x0, Input &u0, const int &time_idx)
 {
-    // double last_s = x0.s;
-    // x0.s = track_.projectOnSpline(last_s, robot_->getEEPosition(stateToJointVector(x0)));
-    // if(fabs(last_s - x0.s) > param_.max_dist_proj) 
-    // {
-    //     valid_initial_guess_ = false;
-    //     num_valid_guess_failed_++;
-    // }
-
-    // if(valid_initial_guess_) updateInitialGuess(x0);
-    // else generateNewInitialGuess(x0);
-
-    // solver_interface_->setInitialGuess(initial_guess_);
-
-    // Status sqp_status;
-    // ComputeTime time_nmpc;
-
-    // solver_interface_->solveOCP(initial_guess_, &sqp_status, &time_nmpc);
-   
-    // if(sqp_status == SOLVED)
-    // {
-    //     valid_initial_guess_ = true;
-    //     num_valid_guess_failed_ = 0;
-    // }
-    // else
-    // {
-    //     std::cout << "===================================================" << std::endl;
-    //     std::cout << "================ QP did not solved ================" << std::endl;
-    //     switch (sqp_status)
-    //     {
-    //     case MAX_ITER_EXCEEDED:
-    //         std::cout << "============== SQP Max Iter reached ==============="<< std::endl;
-    //         break;
-    //     case QP_DualInfeasible:
-    //         std::cout << "================= Dual Infeasible ================="<< std::endl;
-    //         break;
-    //     case QP_DualInfeasibleInaccurate:
-    //         std::cout << "============ Dual Infeasible Inaccurate ============"<< std::endl;
-    //         break;
-    //     case QP_MaxIterReached:
-    //         std::cout << "================ Max Iter reached =================="<< std::endl;
-    //         break;
-    //     case QP_PrimalInfeasible:
-    //         std::cout << "================= Primal Infeasible ================"<< std::endl;
-    //         break;
-    //     case QP_PrimalInfeasibleInaccurate:
-    //         std::cout << "=========== Primal Infeasible Inaccurate ============"<< std::endl;
-    //         break;
-    //     case QP_SolvedInaccurate:
-    //         std::cout << "================= Solved Inaccurate ================="<< std::endl;
-    //         break;
-    //     case NAN_HESSIAN:
-    //         std::cout << "==================== Nan Hessian ===================="<< std::endl;
-    //         break;
-    //     case NON_PD_HESSIAN:
-    //         std::cout << "========== Not Possitive Definite Hessian ==========="<< std::endl;
-    //         break;
-    //     }
-    //     std::cout << "===================================================" << std::endl;
-    //     valid_initial_guess_ = false;
-    //     num_valid_guess_failed_++;
-    // }
-
-    // mpc_return = {initial_guess_[0].uk,initial_guess_,time_nmpc};
-    // if(sqp_status == SOLVED || (sqp_status == MAX_ITER_EXCEEDED && num_valid_guess_failed_ < 5)) return true;
-    // else return false;
-
     std::vector<float> free_voxel;
     free_voxel.resize(36*36*36);
     std::fill(free_voxel.begin(), free_voxel.end(), 0.);
 
-    return runMPC_(mpc_return, x0, u0, free_voxel);
+    return runMPC_(mpc_return, x0, u0, free_voxel, time_idx);
 }
 
-bool MPC::runMPC_(MPCReturn &mpc_return, State &x0, Input &u0, const std::vector<float> &voxel)
+bool MPC::runMPC_(MPCReturn &mpc_return, State &x0, Input &u0, const std::vector<float> &voxel, const int &time_idx)
 {
     auto start_mpc = std::chrono::high_resolution_clock::now();
-    double last_s = x0.s;
-    x0.s = track_.projectOnSpline(last_s, robot_->getEEPosition(stateToJointVector(x0)));
-
-    JointVector q = stateToJointVector(x0);
-    dJointVector qdot = inputTodJointVector(u0);
-    Eigen::MatrixXd Jv = robot_->getJacobianv(q);
-    Eigen::Vector3d ee_vel = Jv*qdot;
-    Eigen::Vector3d vs_dir = track_.getDerivative(x0.s);
-    x0.vs = ee_vel.dot(vs_dir);
-
-    if(fabs(last_s - x0.s) > param_.max_dist_proj) 
-    {
-        valid_initial_guess_ = false;
-        num_valid_guess_failed_++;
-    }
+    // double s0 = track_.projectOnSpline(robot_->getEEPosition(stateToJointVector(x0)));
 
     if(valid_initial_guess_) updateInitialGuess(x0);
     else generateNewInitialGuess(x0);
 
-    solver_interface_->setInitialGuess(initial_guess_);
+    solver_interface_->setInitialGuess(initial_guess_, time_idx);
     auto start_env = std::chrono::high_resolution_clock::now();
     solver_interface_->setEnvData(voxel);
     auto end_env = std::chrono::high_resolution_clock::now();
@@ -245,24 +153,28 @@ bool MPC::runMPC_(MPCReturn &mpc_return, State &x0, Input &u0, const std::vector
     auto end_mpc = std::chrono::high_resolution_clock::now();
     mpc_return.compute_time.total = std::chrono::duration_cast<std::chrono::duration<double>>(end_mpc - start_mpc).count();
     mpc_return.compute_time.set_env = std::chrono::duration_cast<std::chrono::duration<double>>(end_env - start_env).count();
-    if(sqp_status == SOLVED || (sqp_status == MAX_ITER_EXCEEDED && num_valid_guess_failed_ < 5)) return true;
+    if(sqp_status == SOLVED || (sqp_status == MAX_ITER_EXCEEDED && num_valid_guess_failed_ < 50)) return true;
     else return false;
 }
 
 void MPC::setTrack(const Eigen::VectorXd &X, const Eigen::VectorXd &Y,const Eigen::VectorXd &Z,const std::vector<Eigen::Matrix3d> &R)
 {
-    track_.gen6DSpline(X,Y,Z,R);
+    track_X_ = X;
+    track_Y_ = Y;
+    track_Z_ = Z;
+    track_R_ = R;
+    track_.gen6DSpline(track_X_,track_Y_,track_Z_,track_R_,Ts_);
     solver_interface_->setTrack(track_);
     valid_initial_guess_ = false;
 }
 
-double MPC::getTrackLength()
-{
-    return track_.getLength();
-}
-
 void MPC::setParam(const ParamValue &param_value)
 {
+    track_ = ArcLengthSpline(path_, param_value);
+    track_.gen6DSpline(track_X_,track_Y_,track_Z_,track_R_,Ts_);
+    solver_interface_->setTrack(track_);
+    valid_initial_guess_ = false;
+    
     param_ = Param(path_.param_path, param_value.param);
     solver_interface_->setParam(param_value);
     printParamValue(param_value);
