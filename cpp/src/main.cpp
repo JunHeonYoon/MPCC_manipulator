@@ -78,8 +78,7 @@ int main() {
     end_s = mpc.getTrackLength();
     std::cout<<"end posi: "<<end_point.transpose()<<std::endl;
     
-    mpcc::ArcLengthSpline spline_track;
-    spline_track.gen6DSpline(track_xyzr.X,track_xyzr.Y,track_xyzr.Z,track_xyzr.R);
+    mpcc::ArcLengthSpline spline_track = mpc.getTrack();
     mpcc::PathData spline_path = spline_track.getPathData();
 
     ofstream debug_file, splined_path_file;

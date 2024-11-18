@@ -90,80 +90,18 @@ void MPC::generateNewInitialGuess(const State &x0)
 
 bool MPC::runMPC(MPCReturn &mpc_return, State &x0, Input &u0)
 {
-    // double last_s = x0.s;
-    // x0.s = track_.projectOnSpline(last_s, robot_->getEEPosition(stateToJointVector(x0)));
-    // if(fabs(last_s - x0.s) > param_.max_dist_proj) 
-    // {
-    //     valid_initial_guess_ = false;
-    //     num_valid_guess_failed_++;
-    // }
-
-    // if(valid_initial_guess_) updateInitialGuess(x0);
-    // else generateNewInitialGuess(x0);
-
-    // solver_interface_->setInitialGuess(initial_guess_);
-
-    // Status sqp_status;
-    // ComputeTime time_nmpc;
-
-    // solver_interface_->solveOCP(initial_guess_, &sqp_status, &time_nmpc);
-   
-    // if(sqp_status == SOLVED)
-    // {
-    //     valid_initial_guess_ = true;
-    //     num_valid_guess_failed_ = 0;
-    // }
-    // else
-    // {
-    //     std::cout << "===================================================" << std::endl;
-    //     std::cout << "================ QP did not solved ================" << std::endl;
-    //     switch (sqp_status)
-    //     {
-    //     case MAX_ITER_EXCEEDED:
-    //         std::cout << "============== SQP Max Iter reached ==============="<< std::endl;
-    //         break;
-    //     case QP_DualInfeasible:
-    //         std::cout << "================= Dual Infeasible ================="<< std::endl;
-    //         break;
-    //     case QP_DualInfeasibleInaccurate:
-    //         std::cout << "============ Dual Infeasible Inaccurate ============"<< std::endl;
-    //         break;
-    //     case QP_MaxIterReached:
-    //         std::cout << "================ Max Iter reached =================="<< std::endl;
-    //         break;
-    //     case QP_PrimalInfeasible:
-    //         std::cout << "================= Primal Infeasible ================"<< std::endl;
-    //         break;
-    //     case QP_PrimalInfeasibleInaccurate:
-    //         std::cout << "=========== Primal Infeasible Inaccurate ============"<< std::endl;
-    //         break;
-    //     case QP_SolvedInaccurate:
-    //         std::cout << "================= Solved Inaccurate ================="<< std::endl;
-    //         break;
-    //     case NAN_HESSIAN:
-    //         std::cout << "==================== Nan Hessian ===================="<< std::endl;
-    //         break;
-    //     case NON_PD_HESSIAN:
-    //         std::cout << "========== Not Possitive Definite Hessian ==========="<< std::endl;
-    //         break;
-    //     }
-    //     std::cout << "===================================================" << std::endl;
-    //     valid_initial_guess_ = false;
-    //     num_valid_guess_failed_++;
-    // }
-
-    // mpc_return = {initial_guess_[0].uk,initial_guess_,time_nmpc};
-    // if(sqp_status == SOLVED || (sqp_status == MAX_ITER_EXCEEDED && num_valid_guess_failed_ < 5)) return true;
-    // else return false;
-
-    std::vector<float> free_voxel;
-    free_voxel.resize(36*36*36);
-    std::fill(free_voxel.begin(), free_voxel.end(), 0.);
-
-    return runMPC_(mpc_return, x0, u0, free_voxel);
+    // std::vector<float> free_voxel;
+    // free_voxel.resize(36*36*36);
+    // std::fill(free_voxel.begin(), free_voxel.end(), 0.);
+    // return runMPC_(mpc_return, x0, u0, free_voxel);
+    Eigen::Vector3d dummy_position;
+    dummy_position << 3,3,3;
+    double dummy_radius = 0.;
+    return runMPC_(mpc_return, x0, u0, dummy_position, dummy_radius);
 }
 
-bool MPC::runMPC_(MPCReturn &mpc_return, State &x0, Input &u0, const std::vector<float> &voxel)
+// bool MPC::runMPC_(MPCReturn &mpc_return, State &x0, Input &u0, const std::vector<float> &voxel)
+bool MPC::runMPC_(MPCReturn &mpc_return, State &x0, Input &u0, const Eigen::Vector3d &obs_position, const double &obs_radius)
 {
     auto start_mpc = std::chrono::high_resolution_clock::now();
     double last_s = x0.s;
@@ -185,9 +123,11 @@ bool MPC::runMPC_(MPCReturn &mpc_return, State &x0, Input &u0, const std::vector
     if(valid_initial_guess_) updateInitialGuess(x0);
     else generateNewInitialGuess(x0);
 
+    solver_interface_->setCurrentInput(u0);
     solver_interface_->setInitialGuess(initial_guess_);
     auto start_env = std::chrono::high_resolution_clock::now();
-    solver_interface_->setEnvData(voxel);
+    // solver_interface_->setEnvData(voxel);
+    solver_interface_->setEnvData(obs_position, obs_radius);
     auto end_env = std::chrono::high_resolution_clock::now();
 
     Status sqp_status;

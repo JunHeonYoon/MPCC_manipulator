@@ -1,4 +1,4 @@
-import mpcc
+import MPCC
 import numpy as np
 from math import pi
 
@@ -68,7 +68,7 @@ def create_path_message2(track_pos, track_ori):
     initial_z = track_pos[0,2] - 0.
 
     for pos, ori in zip(track_pos, track_ori):
-        quat = mpcc.RotToQuat(ori)
+        quat = MPCC.RotToQuat(ori)
         pose = PoseStamped()
         pose.header = path.header
         pose.pose.position.x = pos[0] - initial_x + 0.55450 
@@ -92,7 +92,7 @@ def create_pred_path_message(track_pos, track_ori):
 
     for pos, ori in zip(track_pos, track_ori):
         if(ori.shape == (3,3)):
-            quat = mpcc.RotToQuat(ori)
+            quat = MPCC.RotToQuat(ori)
         else:
             quat = track_ori.flatten()
             
@@ -146,13 +146,13 @@ def main(args):
     with open('../cpp/Params/track.json', 'r') as f:
         track_data = json.load(f)
 
-    integrator = mpcc.Integrator()
-    robot = mpcc.RobotModel()
+    integrator = MPCC.Integrator()
+    robot = MPCC.RobotModel()
     robot_dof = robot.num_q
-    selcolNN = mpcc.SelfCollisionNN()
+    selcolNN = MPCC.SelfCollisionNN()
     selcolNN.setNeuralNetwork(input_size=robot_dof, output_size=1, hidden_layer_size=np.array([256, 64]), is_nerf=True)
 
-    mpc = mpcc.MPCC()
+    mpc = MPCC.MPCC()
 
     state = np.zeros(9)
     input = np.zeros(8)
@@ -272,10 +272,10 @@ def main(args):
         ref_ee_pose  = np.zeros([mpc.pred_horizon + 1, 7])
         for i in range(mpc.pred_horizon + 1):
             pred_ee_pose[i,:3] = robot.getEEPosition(mpc_horizon[i]["state"][:robot_dof])
-            pred_ee_pose[i,3:] = mpcc.RotToQuat(robot.getEEOrientation(mpc_horizon[i]["state"][:robot_dof]))
+            pred_ee_pose[i,3:] = MPCC.RotToQuat(robot.getEEOrientation(mpc_horizon[i]["state"][:robot_dof]))
             ref_pos, ref_ori = mpc.getRefPose(mpc_horizon[i]["state"][-2])
             ref_ee_pose[i,:3] = ref_pos
-            ref_ee_pose[i,3:] = mpcc.RotToQuat(ref_ori)
+            ref_ee_pose[i,3:] = MPCC.RotToQuat(ref_ori)
 
         local_path_msg = create_pred_path_message(pred_ee_pose[:,:3], pred_ee_pose[:,3:])
         ref_local_path_msg = create_pred_path_message(ref_ee_pose[:,:3], ref_ee_pose[:,3:])
@@ -294,7 +294,7 @@ def main(args):
         time_data["get_alpha"].append(compute_time["get_alpha"])
         time_data["set_env"].append(compute_time["set_env"])
 
-        if np.linalg.norm((spline_pos[-1] - ee_pos), 2) < 1E-2 and np.linalg.norm(mpcc.Log(spline_ori[-1].T @ ee_ori), 2) and abs(state[-2] - spline_arc_length[-1]) < 1E-2:
+        if np.linalg.norm((spline_pos[-1] - ee_pos), 2) < 1E-2 and np.linalg.norm(MPCC.Log(spline_ori[-1].T @ ee_ori), 2) and abs(state[-2] - spline_arc_length[-1]) < 1E-2:
             print("End point reached!!!")
             break
         
@@ -302,7 +302,7 @@ def main(args):
 
     with open('splined_path.txt', 'w') as splined_path_file:
         for pos, ori in zip(spline_pos, spline_ori):
-            quaternion = mpcc.RotToQuat(ori)
+            quaternion = MPCC.RotToQuat(ori)
             data_to_write = np.concatenate([pos, quaternion], axis=0)
             splined_path_file.write(" ".join(map(str, data_to_write)) + "\n")
     print("Data written to splined_path.txt")

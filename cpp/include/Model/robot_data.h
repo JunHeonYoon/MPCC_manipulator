@@ -3,6 +3,7 @@
 
 #include "Model/robot_model.h"
 #include "Constraints/SelfCollision/SelfCollisionModel.h"
+#include "Constraints/EnvCollision/EnvCollisionModel.h"
 
 namespace mpcc
 {
@@ -25,8 +26,9 @@ struct RobotData
     double sel_min_dist_;                               // Minimum distance between robot links
     Eigen::Matrix<double,PANDA_DOF,1> d_sel_min_dist_;  // Jacobian of minimum distance between robot links
 
-    double env_min_dist_;                               // Minimum distance between robot links and enviornment
-    Eigen::Matrix<double,PANDA_DOF,1> d_env_min_dist_;  // Jacobian of minimum distance between robot links and enviornment
+    double obs_radius_;                                               // Radius of external sphere obstacle
+    Eigen::Matrix<double, PANDA_NUM_LINKS, 1> env_min_dist_;          // Minimum distance between robot links and enviornment
+    Eigen::Matrix<double,PANDA_NUM_LINKS,PANDA_DOF> d_env_min_dist_;  // Jacobian of minimum distance between robot links and enviornment
 
     bool is_data_valid;
     bool is_env_data_valid;
@@ -44,7 +46,7 @@ struct RobotData
         d_manipul_.setZero();
         sel_min_dist_ = 0;
         d_sel_min_dist_.setZero();
-        env_min_dist_ = 0;
+        env_min_dist_.setZero();
         d_env_min_dist_.setZero();
         is_data_valid = false;
         is_env_data_valid = false;
@@ -68,10 +70,19 @@ struct RobotData
         is_data_valid = true;
     }
 
-    void updateEnv(double env_min_dist, Eigen::Matrix<double,PANDA_DOF,1> d_env_min_dist)
+    // void updateEnv(double env_min_dist, Eigen::Matrix<double,PANDA_DOF,1> d_env_min_dist)
+    void updateEnv(const Eigen::Vector3d &obs_position, const double &obs_radius, const std::unique_ptr<EnvCollNNmodel> &envcol_model)
     {
-        env_min_dist_ = env_min_dist;
-        d_env_min_dist_ = d_env_min_dist;
+        assert(is_data_valid == true);
+
+        obs_radius_ = obs_radius;
+
+        Eigen::VectorXd input(PANDA_DOF + obs_position.size());
+        input << q_, obs_position;
+
+        auto pred = envcol_model->calculateMlpOutput(input, false);
+        env_min_dist_ = pred.first;
+        d_env_min_dist_ = pred.second.block(0, 0, PANDA_NUM_LINKS, PANDA_DOF);
 
         is_env_data_valid = true;
     }
@@ -82,4 +93,4 @@ struct RobotData
     }
 };
 }
-#endif // MPCC_ROBOT_DATA
+#endif // MPCC_ROBOT_DATA_H

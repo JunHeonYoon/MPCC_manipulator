@@ -72,9 +72,12 @@ public:
     /// @param (MPCReturn) log for MPC; optimal control input, total horizon results, time to run MPC
     /// @param x0 (State) current state
     /// @param u0 (Input) current control input
-    /// @param voxel (std::vector<float>) Voxel Occupancy grid map
+    // /// @param voxel (std::vector<float>) Voxel Occupancy grid map
+    /// @param obs_position (Eigen::Vector3d) position of the external obstacle
+    /// @param obs_radius (double) radius of the external obstacle
     /// @return (bool) whether mpc is solved or not
-    bool runMPC_(MPCReturn &mpc_return, State &x0, Input &u0, const std::vector<float> &voxel);
+    // bool runMPC_(MPCReturn &mpc_return, State &x0, Input &u0, const std::vector<float> &voxel);
+    bool runMPC_(MPCReturn &mpc_return, State &x0, Input &u0, const Eigen::Vector3d &obs_position, const double &obs_radius);
 
     /// @brief set track given X-Y-Z-R path data
     /// @param X (Eigen::VectorXd) X path data
@@ -82,6 +85,8 @@ public:
     /// @param Z (Eigen::VectorXd) Z path data
     /// @param R (std::vector<Eigen::Matrix3d>) R orientation data
     void setTrack(const Eigen::VectorXd &X, const Eigen::VectorXd &Y,const Eigen::VectorXd &Z,const std::vector<Eigen::Matrix3d> &R);
+
+    ArcLengthSpline getTrack() {return track_;}
 
     /// @brief get total length of track
     /// @return (double) total length of track

@@ -269,6 +269,24 @@ void Cost::getInputCost(const ArcLengthSpline &track,const State &x,const Input 
     return;
 }
 
+void Cost::getSingularityCost(const ArcLengthSpline &track,const State &x,const RobotData &rb,
+                              double* obj,CostGrad* grad,CostHess* hess)
+{
+    if(obj)
+    {
+        (*obj) = -cost_param_.q_sing * rb.manipul_;
+    }
+    if(grad)
+    {
+        grad->setZero();
+        grad->f_x.segment(si_index.q1, PANDA_DOF) = -cost_param_.q_sing * rb.d_manipul_;
+    }
+    if(hess)
+    {
+        hess->setZero();
+    }
+}
+
 void Cost::getCost(const ArcLengthSpline &track,const State &x,const Input &u,const RobotData &rb,int k,
                    double* obj,CostGrad* grad,CostHess* hess)
 {
@@ -288,15 +306,16 @@ void Cost::getCost(const ArcLengthSpline &track,const State &x,const Input &u,co
         lag_cost_ = cost_param_.q_l;
         heading_cost_ = cost_param_.q_ori;
     }
-    double obj_contouring, obj_heading, obj_input;
-    CostGrad grad_contouring, grad_heading, grad_input;
-    CostHess hess_contouring, hess_heading, hess_input;
+    double obj_contouring, obj_heading, obj_input, obj_sing;
+    CostGrad grad_contouring, grad_heading, grad_input, grad_sing;
+    CostHess hess_contouring, hess_heading, hess_input, hess_sing;
 
     if(obj && !grad && !hess)
     {
         getContouringCost(track, x, rb, k, &obj_contouring, NULL, NULL);
         getHeadingCost(track, x, rb, &obj_heading, NULL, NULL);
         getInputCost(track, x, u, rb, k, &obj_input, NULL, NULL);
+        getSingularityCost(track, x, rb, &obj_sing, NULL, NULL);
 
     }
     else if(obj && grad && !hess)
@@ -304,30 +323,32 @@ void Cost::getCost(const ArcLengthSpline &track,const State &x,const Input &u,co
         getContouringCost(track, x, rb, k, &obj_contouring, &grad_contouring, NULL);
         getHeadingCost(track, x, rb, &obj_heading, &grad_heading, NULL);
         getInputCost(track, x, u, rb, k, &obj_input, &grad_input, NULL);
+        getSingularityCost(track, x, rb, &obj_sing, &grad_sing, NULL);
     }
     else if(obj && grad && hess)
     {
         getContouringCost(track, x, rb, k, &obj_contouring, &grad_contouring, &hess_contouring);
         getHeadingCost(track, x, rb, &obj_heading, &grad_heading, &hess_heading);
         getInputCost(track, x, u, rb, k, &obj_input, &grad_input, &hess_input);
+        getSingularityCost(track, x, rb, &obj_sing, &grad_sing, &hess_sing);
     }
 
     if(obj)
     {
-        (*obj) =  obj_contouring + obj_heading + obj_input;
+        (*obj) =  obj_contouring + obj_heading + obj_input + obj_sing;
     }
 
     if(grad)
     {
-        grad->f_x = grad_contouring.f_x + grad_heading.f_x + grad_input.f_x;
-        grad->f_u = grad_contouring.f_u + grad_heading.f_u + grad_input.f_u;
+        grad->f_x = grad_contouring.f_x + grad_heading.f_x + grad_input.f_x + grad_sing.f_x;
+        grad->f_u = grad_contouring.f_u + grad_heading.f_u + grad_input.f_u + grad_sing.f_u;
     }
 
     if(hess)
     {
-        hess->f_xx = hess_contouring.f_xx + hess_heading.f_xx + hess_input.f_xx;
-        hess->f_uu = hess_contouring.f_uu + hess_heading.f_uu + hess_input.f_uu;
-        hess->f_xu = hess_contouring.f_xu + hess_heading.f_xu + hess_input.f_xu;
+        hess->f_xx = hess_contouring.f_xx + hess_heading.f_xx + hess_input.f_xx + hess_sing.f_xx;
+        hess->f_uu = hess_contouring.f_uu + hess_heading.f_uu + hess_input.f_uu + hess_sing.f_uu;
+        hess->f_xu = hess_contouring.f_xu + hess_heading.f_xu + hess_input.f_xu + hess_sing.f_xu;
 
         hess->f_xx += Q_MPC::Identity()*1e-6;
         hess->f_uu += R_MPC::Identity()*1e-6;
