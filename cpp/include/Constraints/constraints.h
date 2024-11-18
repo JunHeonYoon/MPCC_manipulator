@@ -41,9 +41,9 @@ struct ConstraintsInfo{
 };
 
 /// @brief 1-D Constraint Information
-/// @param c_vec (double) c(x,u) value
-/// @param c_lvec (double) lower value
-/// @param c_uvec (double) upper value
+/// @param c (double) c(x,u) value
+/// @param c_l (double) lower value
+/// @param c_u (double) upper value
 struct OneDConstraintInfo{
     double c;
     double c_l;
@@ -54,6 +54,23 @@ struct OneDConstraintInfo{
         c = 0.0;
         c_l = 0.0;
         c_u = 0.0;
+    }
+};
+
+/// @brief X-D Constraint Information
+/// @param c (Eigen::VectorXd) c(x,u) value
+/// @param c_l (Eigen::VectorXd) lower value
+/// @param c_u (Eigen::VectorXd) upper value
+struct XDConstraintInfo{
+    Eigen::VectorXd c;
+    Eigen::VectorXd c_l;
+    Eigen::VectorXd c_u;
+
+    void setZero(const int &size)
+    {
+        c.setZero(size);
+        c_l.setZero(size);
+        c_u.setZero(size);
     }
 };
 
@@ -85,17 +102,43 @@ struct OneDConstraintsJac{
     }
 };
 
+/// @brief X-D Jacobian of Constraint
+/// @param c_x_i (Eigen::MatrixXd) jacobian of c(x,u) wrt state
+/// @param c_u_i (Eigen::MatrixXd) jacobian of c(x,u) wrt input
+struct XDConstraintsJac{
+    Eigen::MatrixXd c_x_i;
+    Eigen::MatrixXd c_u_i;
+
+    void setZero(const int &size)
+    {
+        c_x_i.setZero(size, NX);
+        c_u_i.setZero(size, NU);
+    }
+};
+
 /// @brief compute Relaxed Barrier Function of h
 /// @param delta (double) switching point from logarithm to quadratic function
-/// @param h(double) input value
+/// @param h (double) input value
 /// @return (double) RBF value
-double getRBF(double delta, double h);
+double getRBF(const double &delta, const double &h);
+
+/// @brief compute Relaxed Barrier Function of h
+/// @param delta (Eigen::VectorXd) switching point from logarithm to quadratic function
+/// @param h (Eigen::VectorXd) input value
+/// @return (Eigen::VectorXd) RBF value
+Eigen::VectorXd getRBF(const Eigen::VectorXd& delta, const Eigen::VectorXd &h);
 
 /// @brief compute derivative ofRelaxed Barrier Function wrt h
 /// @param delta (double) switching point from logarithm to quadratic function
-/// @param h(double) input value
+/// @param h (double) input value
 /// @return (double) derivation RBF value
-double getDRBF(double delta, double h);
+double getDRBF(const double &delta, const double &h);
+
+/// @brief compute derivative ofRelaxed Barrier Function wrt h
+/// @param delta (Eigen::VectorXd) switching point from logarithm to quadratic function
+/// @param h (Eigen::VectorXd) input value
+/// @return (Eigen::VectorXd) derivation RBF value
+Eigen::VectorXd getDRBF(const Eigen::VectorXd &delta, const Eigen::VectorXd &h);
 
 class Constraints {
 public:
@@ -140,10 +183,10 @@ private:
     /// @param u (ControlInput) current control input
     /// @param rb (RobotData) kinemetic information (ex. EE-pose, Jacobian, ...) wrt current state
     /// @param k (int) receding horizon index
-    /// @param constraint (*OneDConstraintInfo) constraint information(c,l,u) wrt state and input 
-    /// @param Jac (*ConstraintsJac) jacobian of constraint value wrt state and input 
+    /// @param constraint (*XDConstraintInfo) constraint information(c,l,u) wrt state and input 
+    /// @param Jac (*XDConstraintsJac) jacobian of constraint value wrt state and input 
     void getEnvcollConstraint(const State &x,const Input &u,const RobotData &rb,int k,
-                              OneDConstraintInfo *constraint, OneDConstraintsJac* Jac);
+                              XDConstraintInfo *constraint, XDConstraintsJac* Jac);
 
 
     Param param_;

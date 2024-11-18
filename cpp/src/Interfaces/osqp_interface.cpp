@@ -37,6 +37,11 @@ Ts_(Ts)
     sel_col_n_hidden << 256, 64;
     selcolNN_->setNeuralNetwork(PANDA_DOF, 1, sel_col_n_hidden, true);
 
+    envcolNN_ = std::make_unique<EnvCollNNmodel>();
+    Eigen::VectorXd env_col_n_hidden(4);
+    env_col_n_hidden << 256, 256, 256, 256;
+    envcolNN_->setNeuralNetwork(PANDA_DOF+3, PANDA_NUM_LINKS, env_col_n_hidden, true);
+
     // envcolNN_ = std::make_unique<EnvCollNNmodel>();
     // envcolNN_->setNeuralNetwork(std::vector<int>{36, 36, 36}, PANDA_DOF);
     // envcolNN_.setNeuralNetwork(std::vector<int>{36, 36, 36}, PANDA_DOF);
@@ -67,6 +72,11 @@ Ts_(Ts)
     sel_col_n_hidden << 256, 64;
     selcolNN_->setNeuralNetwork(PANDA_DOF, 1, sel_col_n_hidden, true);
 
+    envcolNN_ = std::make_unique<EnvCollNNmodel>();
+    Eigen::VectorXd env_col_n_hidden(4);
+    env_col_n_hidden << 256, 256, 256, 256;
+    envcolNN_->setNeuralNetwork(PANDA_DOF+3, PANDA_NUM_LINKS, env_col_n_hidden, true);
+
     // envcolNN_ = std::make_unique<EnvCollNNmodel>();
     // envcolNN_->setNeuralNetwork(std::vector<int>{36, 36, 36}, PANDA_DOF);
     // envcolNN_.setNeuralNetwork(std::vector<int>{36, 36, 36}, PANDA_DOF);
@@ -91,7 +101,8 @@ void OsqpInterface::setParam(const ParamValue &param_value)
     bounds_ = Bounds(BoundsParam(path_.bounds_path),Param(path_.param_path,param_value.param));
 }
 
-void OsqpInterface::setEnvData(const std::vector<float> &voxel)
+// void OsqpInterface::setEnvData(const std::vector<float> &voxel)
+void OsqpInterface::setEnvData(const Eigen::Vector3d &obs_position, const double &obs_radius)
 {
     // std::vector<float> x_occ;
     // std::vector<float> x_q;
@@ -161,7 +172,9 @@ void OsqpInterface::setEnvData(const std::vector<float> &voxel)
     for(size_t i=0; i<=N; i++)
     {
         // rb_[i].updateEnv(env_pred.first(i), env_pred.second.row(i).transpose());
-        rb_[i].updateEnv(0., Eigen::MatrixXd::Zero(PANDA_DOF,1));
+        // rb_[i].updateEnv(0., Eigen::MatrixXd::Zero(PANDA_DOF,1));
+        rb_[i].updateEnv(obs_position, obs_radius, envcolNN_);
+
     }
 }
 
@@ -180,6 +193,11 @@ void OsqpInterface::setInitialGuess(const std::vector<OptVariables> &initial_gue
     current_time_idx_ = time_idx;
 }
 
+void OsqpInterface::setCurrentInput(const Input &current_input)
+{
+    current_u_ = current_input;
+}
+
 void OsqpInterface::setCost(const std::vector<OptVariables> &initial_guess, 
                             double *obj, Eigen::VectorXd *grad_obj, Eigen::MatrixXd *hess_obj)
 {
@@ -188,8 +206,6 @@ void OsqpInterface::setCost(const std::vector<OptVariables> &initial_guess,
     if(hess_obj) hess_obj->setZero(N_var,N_var);
     for(size_t i=0; i<=N; i++)
     {
-        // RobotData rbk;
-        // rbk.update(stateToJointVector(initial_guess[i].xk), robot_, selcolNN_);
         assert(rb_[i].isUpdated() == true);
 
         Traj ref_traj = track_.getNTrajectroy(current_time_idx_);
@@ -200,17 +216,14 @@ void OsqpInterface::setCost(const std::vector<OptVariables> &initial_guess,
         
         if(obj && !grad_obj && !hess_obj)
         {
-            // cost_.getCost(track_,initial_guess[i].xk,initial_guess[i].uk,rbk,i, &obj_k, NULL,NULL);
             cost_.getCost(ref_traj.P[i],ref_traj.R[i],initial_guess[i].xk,initial_guess[i].uk,rb_[i],i, &obj_k, NULL,NULL);
         }
         else if(obj && grad_obj && !hess_obj)
         {
-            // cost_.getCost(track_,initial_guess[i].xk,initial_guess[i].uk,rbk,i, &obj_k, &grad_cost_k,NULL);
             cost_.getCost(ref_traj.P[i],ref_traj.R[i],initial_guess[i].xk,initial_guess[i].uk,rb_[i],i, &obj_k, &grad_cost_k,NULL);
         }
         else if(obj && grad_obj && hess_obj)
         {
-            // cost_.getCost(track_,initial_guess[i].xk,initial_guess[i].uk,rbk,i, &obj_k, &grad_cost_k,&hess_cost_k);
             cost_.getCost(ref_traj.P[i],ref_traj.R[i],initial_guess[i].xk,initial_guess[i].uk,rb_[i],i, &obj_k, &grad_cost_k,&hess_cost_k);
         }
         if(obj) (*obj) += obj_k;
@@ -269,16 +282,52 @@ void OsqpInterface::setBounds(const std::vector<OptVariables> &initial_guess,
 
     for(size_t i=0;i<=N;i++)
     {
-        if(jac_constr_ineqb) jac_constr_ineqb->block(NX*i, NX*i, NX, NX).setIdentity();
-        if(constr_ineqb) constr_ineqb->segment(NX*i, NX) = normalization_param_.T_x_inv*stateToVector(initial_guess[i].xk);
-        if(l_ineqb) l_ineqb->segment(NX*i, NX) = normalization_param_.T_x_inv*bounds_.getBoundsLX();
-        if(u_ineqb) u_ineqb->segment(NX*i, NX) = normalization_param_.T_x_inv*bounds_.getBoundsUX();
+        // if(jac_constr_ineqb) jac_constr_ineqb->block(NX*i, NX*i, NX, NX).setIdentity();
+        // if(constr_ineqb) constr_ineqb->segment(NX*i, NX) = normalization_param_.T_x_inv*stateToVector(initial_guess[i].xk);
+        // if(l_ineqb) l_ineqb->segment(NX*i, NX) = normalization_param_.T_x_inv*bounds_.getBoundsLX();
+        // if(u_ineqb) u_ineqb->segment(NX*i, NX) = normalization_param_.T_x_inv*bounds_.getBoundsUX();
+        // if(i != N)
+        // {
+        //     if(jac_constr_ineqb) jac_constr_ineqb->block(NX*(N+1) + NU*i, NU*i, NU, NU).setIdentity();
+        //     if(constr_ineqb) constr_ineqb->segment(NX*(N+1) + NU*i, NU) = normalization_param_.T_u_inv*inputToVector(initial_guess[i].uk);
+        //     if(l_ineqb) l_ineqb->segment(NX*(N+1) + NU*i, NU) = normalization_param_.T_u_inv*bounds_.getBoundsLU();
+        //     if(u_ineqb) u_ineqb->segment(NX*(N+1) + NU*i, NU) = normalization_param_.T_u_inv*bounds_.getBoundsUU();
+        // }
+
+        // for state bounds
+        if(jac_constr_ineqb) jac_constr_ineqb->block(NX*i, NX*i, NX, NX) = Eigen::MatrixXd::Identity(NX, NX) * normalization_param_.T_x;
+        if(constr_ineqb) constr_ineqb->segment(NX*i, NX) = stateToVector(initial_guess[i].xk);
+        if(l_ineqb) l_ineqb->segment(NX*i, NX) = bounds_.getBoundsLX();
+        if(u_ineqb) u_ineqb->segment(NX*i, NX) = bounds_.getBoundsUX();
+
         if(i != N)
         {
-            if(jac_constr_ineqb) jac_constr_ineqb->block(NX*(N+1) + NU*i, NU*i, NU, NU).setIdentity();
-            if(constr_ineqb) constr_ineqb->segment(NX*(N+1) + NU*i, NU) = normalization_param_.T_u_inv*inputToVector(initial_guess[i].uk);
-            if(l_ineqb) l_ineqb->segment(NX*(N+1) + NU*i, NU) = normalization_param_.T_u_inv*bounds_.getBoundsLU();
-            if(u_ineqb) u_ineqb->segment(NX*(N+1) + NU*i, NU) = normalization_param_.T_u_inv*bounds_.getBoundsUU();
+            // for control input bounds
+            if(jac_constr_ineqb) jac_constr_ineqb->block(NX*(N+1) + NU*i, NU*i, NU, NU) = Eigen::MatrixXd::Identity(NU, NU) * normalization_param_.T_u;
+            if(constr_ineqb) constr_ineqb->segment(NX*(N+1) + NU*i, NU) = inputToVector(initial_guess[i].uk);
+            if(l_ineqb) l_ineqb->segment(NX*(N+1) + NU*i, NU) = bounds_.getBoundsLU();
+            if(u_ineqb) u_ineqb->segment(NX*(N+1) + NU*i, NU) = bounds_.getBoundsUU();
+
+            // for ddjoint bounds
+            if(i==0)
+            {
+                if(jac_constr_ineqb) jac_constr_ineqb->block(NX*(N+1) + NU*N + NU*i, NX*(N+1) + NU*i, PANDA_DOF, PANDA_DOF) = 1./Ts_ * Eigen::MatrixXd::Identity(PANDA_DOF, PANDA_DOF) * normalization_param_.T_u.block(si_index.dq1, si_index.dq1, PANDA_DOF, PANDA_DOF);
+                if(constr_ineqb) constr_ineqb->segment(NX*(N+1) + NU*N + NU*i, PANDA_DOF) = 1./Ts_ *  inputTodJointVector(initial_guess[i].uk);
+                if(l_ineqb) l_ineqb->segment(NX*(N+1) + NU*N + NU*i, PANDA_DOF) = bounds_.getBoundsLddJoint() + 1./Ts_ * inputTodJointVector(current_u_);
+                if(u_ineqb) u_ineqb->segment(NX*(N+1) + NU*N + NU*i, PANDA_DOF) = bounds_.getBoundsUddJoint() + 1./Ts_ * inputTodJointVector(current_u_);
+            }
+            else
+            {
+                if(jac_constr_ineqb)
+                {
+                    jac_constr_ineqb->block(NX*(N+1) + NU*N + NU*i, NX*(N+1) + NU*i,     PANDA_DOF, PANDA_DOF) =  1./Ts_ * Eigen::MatrixXd::Identity(PANDA_DOF, PANDA_DOF) * normalization_param_.T_u.block(si_index.dq1, si_index.dq1, PANDA_DOF, PANDA_DOF);
+                    jac_constr_ineqb->block(NX*(N+1) + NU*N + NU*i, NX*(N+1) + NU*(i-1), PANDA_DOF, PANDA_DOF) = -1./Ts_ * Eigen::MatrixXd::Identity(PANDA_DOF, PANDA_DOF) * normalization_param_.T_u.block(si_index.dq1, si_index.dq1, PANDA_DOF, PANDA_DOF);
+
+                }
+                if(constr_ineqb) constr_ineqb->segment(NX*(N+1) + NU*N + NU*i, PANDA_DOF) = 1./Ts_ * (inputTodJointVector(initial_guess[i].uk) - inputTodJointVector(initial_guess[i-1].uk));
+                if(l_ineqb) l_ineqb->segment(NX*(N+1) + NU*N + NU*i, PANDA_DOF) = bounds_.getBoundsLddJoint();
+                if(u_ineqb) u_ineqb->segment(NX*(N+1) + NU*N + NU*i, PANDA_DOF) = bounds_.getBoundsUddJoint();
+            }
         }
     }
 }
@@ -293,20 +342,16 @@ void OsqpInterface::setPolytopicConstraints(const std::vector<OptVariables> &ini
 
     for(size_t i=0;i<=N;i++)
     {
-        // RobotData rbk;
-        // rbk.update(stateToJointVector(initial_guess[i].xk), robot_, selcolNN_);
         assert(rb_[i].isUpdated() == true);
 
         ConstraintsInfo constr_info_k;
         ConstraintsJac jac_constr_k;
         if(constr_ineqp && !jac_constr_ineqp)
         {
-            // constraints_.getConstraints(initial_guess[i].xk,initial_guess[i].uk,rbk,i,&constr_info_k,NULL);
             constraints_.getConstraints(initial_guess[i].xk,initial_guess[i].uk,rb_[i],i,&constr_info_k,NULL);
         }
         else if(constr_ineqp && jac_constr_ineqp)
         {
-            // constraints_.getConstraints(initial_guess[i].xk,initial_guess[i].uk,rbk,i,&constr_info_k,&jac_constr_k);
             constraints_.getConstraints(initial_guess[i].xk,initial_guess[i].uk,rb_[i],i,&constr_info_k,&jac_constr_k);
             // std:cout << "self collision constraint["<<i<<"]: " << constr_info_k.c_vec(si_index.con_selcol) << " < " << constr_info_k.c_uvec(si_index.con_selcol) <<std::endl;
         }

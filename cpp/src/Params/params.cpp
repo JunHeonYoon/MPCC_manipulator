@@ -198,6 +198,22 @@ BoundsParam::BoundsParam(std::string file) {
     upper_input_bounds.dq5_u = jsonBounds["dq5u"];
     upper_input_bounds.dq6_u = jsonBounds["dq6u"];
     upper_input_bounds.dq7_u = jsonBounds["dq7u"];
+
+    lower_ddjoint_bounds.ddq1_l = jsonBounds["ddq1l"];
+    lower_ddjoint_bounds.ddq2_l = jsonBounds["ddq2l"];
+    lower_ddjoint_bounds.ddq3_l = jsonBounds["ddq3l"];
+    lower_ddjoint_bounds.ddq4_l = jsonBounds["ddq4l"];
+    lower_ddjoint_bounds.ddq5_l = jsonBounds["ddq5l"];
+    lower_ddjoint_bounds.ddq6_l = jsonBounds["ddq6l"];
+    lower_ddjoint_bounds.ddq7_l = jsonBounds["ddq7l"];
+
+    upper_ddjoint_bounds.ddq1_u = jsonBounds["ddq1u"];
+    upper_ddjoint_bounds.ddq2_u = jsonBounds["ddq2u"];
+    upper_ddjoint_bounds.ddq3_u = jsonBounds["ddq3u"];
+    upper_ddjoint_bounds.ddq4_u = jsonBounds["ddq4u"];
+    upper_ddjoint_bounds.ddq5_u = jsonBounds["ddq5u"];
+    upper_ddjoint_bounds.ddq6_u = jsonBounds["ddq6u"];
+    upper_ddjoint_bounds.ddq7_u = jsonBounds["ddq7u"];
 }
 
 BoundsParam::BoundsParam(std::string file, std::map<std::string, double> bounds_param) {
@@ -241,6 +257,22 @@ BoundsParam::BoundsParam(std::string file, std::map<std::string, double> bounds_
     get_bound_value("dq5u", upper_input_bounds.dq5_u);
     get_bound_value("dq6u", upper_input_bounds.dq6_u);
     get_bound_value("dq7u", upper_input_bounds.dq7_u);
+
+    get_bound_value("ddq1l", lower_ddjoint_bounds.ddq1_l);
+    get_bound_value("ddq2l", lower_ddjoint_bounds.ddq2_l);
+    get_bound_value("ddq3l", lower_ddjoint_bounds.ddq3_l);
+    get_bound_value("ddq4l", lower_ddjoint_bounds.ddq4_l);
+    get_bound_value("ddq5l", lower_ddjoint_bounds.ddq5_l);
+    get_bound_value("ddq6l", lower_ddjoint_bounds.ddq6_l);
+    get_bound_value("ddq7l", lower_ddjoint_bounds.ddq7_l);
+
+    get_bound_value("ddq1u", upper_ddjoint_bounds.ddq1_u);
+    get_bound_value("ddq2u", upper_ddjoint_bounds.ddq2_u);
+    get_bound_value("ddq3u", upper_ddjoint_bounds.ddq3_u);
+    get_bound_value("ddq4u", upper_ddjoint_bounds.ddq4_u);
+    get_bound_value("ddq5u", upper_ddjoint_bounds.ddq5_u);
+    get_bound_value("ddq6u", upper_ddjoint_bounds.ddq6_u);
+    get_bound_value("ddq7u", upper_ddjoint_bounds.ddq7_u);
 }
 
 NormalizationParam::NormalizationParam(){

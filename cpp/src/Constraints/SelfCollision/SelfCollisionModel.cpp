@@ -3,7 +3,7 @@ namespace mpc
 {
     SelCollNNmodel::SelCollNNmodel()
     {
-        file_path_ = pkg_path + "NNmodel/parameter/";
+        file_path_ = pkg_path + "NNmodel/self/parameter/";
     }
 
     SelCollNNmodel::SelCollNNmodel(const std::string & file_path)

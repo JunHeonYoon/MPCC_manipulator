@@ -30,7 +30,7 @@
 #include "Constraints/constraints.h"
 #include "Constraints/bounds.h"
 #include "solver_interface.h"
-// #include "Constraints/EnvCollision/EnvCollisionModel.h"
+#include "Constraints/EnvCollision/EnvCollisionModel.h"
 
 #include <config.h>
 #include <iostream>
@@ -88,7 +88,9 @@ public:
     OsqpInterface(double Ts,const PathToJson &path,const ParamValue &param_value);
     void setTrack(const ArcLengthSpline track);
     void setParam(const ParamValue &param_value);
-    void setEnvData(const std::vector<float> &voxel);
+    // void setEnvData(const std::vector<float> &voxel);
+    void setEnvData(const Eigen::Vector3d &obs_position, const double &obs_radius);
+    void setCurrentInput(const Input &cutrent_input);
     void setInitialGuess(const std::vector<OptVariables> &initial_guess, const int &time_idx);
     bool solveOCP(std::vector<OptVariables> &opt_sol, Status *status, ComputeTime *mpc_time);
     ~OsqpInterface(){ std::cout << "Deleting Osqp Interface" << std::endl;}
@@ -98,8 +100,7 @@ private:
     PathToJson path_;
     std::unique_ptr<RobotModel> robot_;
     std::unique_ptr<SelCollNNmodel> selcolNN_;
-    // std::unique_ptr<EnvCollNNmodel> envcolNN_;
-    // EnvCollNNmodel envcolNN_;
+    std::unique_ptr<EnvCollNNmodel> envcolNN_;
 
 
     // torch::jit::script::Module env_model_;
@@ -120,12 +121,13 @@ private:
 
     static const int N_var = (N+1)*NX + N*NU;
     static const int N_eq = (N+1)*NX;
-    static const int N_ineqb = N_var;
+    static const int N_ineqb = N_var + N*NU; // add ddot joint constraint
     static const int N_ineqp = (N+1)*NPC;
     static const int N_constr = N_eq + N_ineqb + N_ineqp;
 
     int current_time_idx_;
 
+    Input current_u_;
     std::vector<OptVariables> initial_guess_;
     Eigen::VectorXd initial_guess_vec_;
     Eigen::VectorXd lambda_;

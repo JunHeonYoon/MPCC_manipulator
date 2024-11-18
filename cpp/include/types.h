@@ -135,6 +135,7 @@ struct ParamValue{
 typedef Eigen::Matrix<double,NX,1> StateVector;
 typedef Eigen::Matrix<double,PANDA_DOF,1> JointVector;
 typedef Eigen::Matrix<double,PANDA_DOF,1> dJointVector;
+typedef Eigen::Matrix<double,PANDA_DOF,1> ddJointVector;
 typedef Eigen::Matrix<double,NU,1> InputVector;
 
 // x_(k+1) = Ax + Bu + g

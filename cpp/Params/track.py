@@ -6,10 +6,10 @@ from scipy.spatial.transform import Rotation as R
 r = 0.1
 t = np.linspace(pi/2, 2*pi+pi/2, 100)
 
-x = 2.6*r * np.sin(t)
+x = 2.2*r * np.sin(t)
 y = 2.2*r * np.sin(2 * t)
-z = 2.5*r * np.cos(t)
-# z = 0*r * np.cos(t)
+# z = 2.5*r * np.cos(t)
+z = 0*r * np.cos(t)
 
 rot = R.from_matrix([[1,  0,  0],
                      [0, -1, 0],

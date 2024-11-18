@@ -1,20 +1,20 @@
-import MPC
+import TTMPC
 import numpy as np
 from math import pi
 np.set_printoptions(suppress=True, precision=3)
 
-integrator = MPC.Integrator()
-robot = MPC.RobotModel()
+integrator = TTMPC.Integrator()
+robot = TTMPC.RobotModel()
 robot_dof = robot.num_q
-selcolNN = MPC.SelfCollisionNN()
+selcolNN = TTMPC.SelfCollisionNN()
 selcolNN.setNeuralNetwork(input_size=robot_dof, output_size=1, hidden_layer_size=np.array([256, 64]), is_nerf=True)
 
-MPC = MPC.MPCC()
+TTMPC = TTMPC.MPCC()
 
 state = np.array([0., 0., 0., -pi/2, 0., pi/2, pi/4, 0., 0.])
 input = np.array([0., 0., 0., 0., 0., 0., 0., 0.])
-MPC.setTrack(state)
-spline_pos, spline_ori, spline_arc_length = MPC.getSplinePath()
+TTMPC.setTrack(state)
+spline_pos, spline_ori, spline_arc_length = TTMPC.getSplinePath()
 
 debug_data = {}
 debug_data["q"] = []
@@ -36,7 +36,7 @@ for time_idx in range(10000):
     # if(time_idx == 100):
     #     mpc.setParam(param_value)
 
-    status, state, input, mpc_horizon, compute_time = MPC.runMPC(state, input)
+    status, state, input, mpc_horizon, compute_time = TTMPC.runMPC(state, input)
     if status == False:
         print("MPC did not solve properly!!")
         break
@@ -70,14 +70,14 @@ for time_idx in range(10000):
     debug_data["min_dist"].append(min_dist[0])
     debug_data["mani"].append(mani)
 
-    pred_ee_pose = np.zeros([MPC.pred_horizon + 1, 7])
-    ref_ee_pose  = np.zeros([MPC.pred_horizon + 1, 7])
-    for i in range(MPC.pred_horizon + 1):
+    pred_ee_pose = np.zeros([TTMPC.pred_horizon + 1, 7])
+    ref_ee_pose  = np.zeros([TTMPC.pred_horizon + 1, 7])
+    for i in range(TTMPC.pred_horizon + 1):
         pred_ee_pose[i,:3] = robot.getEEPosition(mpc_horizon[i]["state"][:robot_dof])
-        pred_ee_pose[i,3:] = MPC.RotToQuat(robot.getEEOrientation(mpc_horizon[i]["state"][:robot_dof]))
-        ref_pos, ref_ori = MPC.getRefPose(mpc_horizon[i]["state"][-2])
+        pred_ee_pose[i,3:] = TTMPC.RotToQuat(robot.getEEOrientation(mpc_horizon[i]["state"][:robot_dof]))
+        ref_pos, ref_ori = TTMPC.getRefPose(mpc_horizon[i]["state"][-2])
         ref_ee_pose[i,:3] = ref_pos
-        ref_ee_pose[i,3:] = MPC.RotToQuat(ref_ori)
+        ref_ee_pose[i,3:] = TTMPC.RotToQuat(ref_ori)
 
     debug_data["pred_ee_pose"].append(pred_ee_pose)
     debug_data["ref_ee_pose"].append(ref_ee_pose)
@@ -87,13 +87,13 @@ for time_idx in range(10000):
     time_data["solve_qp"].append(compute_time["solve_qp"])
     time_data["get_alpha"].append(compute_time["get_alpha"])
 
-    if np.linalg.norm((spline_pos[-1] - ee_pos), 2) < 1E-2 and np.linalg.norm(MPC.Log(spline_ori[-1].T @ ee_ori), 2) and abs(state[-2] - spline_arc_length[-1]) < 1E-2:
+    if np.linalg.norm((spline_pos[-1] - ee_pos), 2) < 1E-2 and np.linalg.norm(TTMPC.Log(spline_ori[-1].T @ ee_ori), 2) and abs(state[-2] - spline_arc_length[-1]) < 1E-2:
         print("End point reached!!!")
         break
 
 with open('splined_path.txt', 'w') as splined_path_file:
     for pos, ori in zip(spline_pos, spline_ori):
-        quaternion = MPC.RotToQuat(ori)
+        quaternion = TTMPC.RotToQuat(ori)
         data_to_write = np.concatenate([pos, quaternion], axis=0)
         splined_path_file.write(" ".join(map(str, data_to_write)) + "\n")
 print("Data written to splined_path.txt")
@@ -122,7 +122,7 @@ plt.plot(time_data["total"], label="Total Time", color='b')
 plt.plot(time_data["set_qp"], label="Set QP Time", color='g')
 plt.plot(time_data["solve_qp"], label="Solve QP Time", color='r')
 plt.plot(time_data["get_alpha"], label="Get Alpha Time", color='c')
-plt.axhline(y=MPC.Ts, color='black', linestyle='--', label="Ts")
+plt.axhline(y=TTMPC.Ts, color='black', linestyle='--', label="Ts")
 
 plt.xlabel("Time Step")
 plt.ylabel("Time (s)")

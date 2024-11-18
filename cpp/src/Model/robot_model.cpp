@@ -69,7 +69,7 @@ void RobotModel::setRobot()
 
 void RobotModel::setPanda(unsigned int base_id, Vector3d base_position, Matrix3d base_rotataion)
 {
-	Math::Vector3d com_position[13];
+	Math::Vector3d com_position[12];
 	com_position[0] = Vector3d(-0.041018, -0.00014, 0.049974);        // panda_link0
 	com_position[1] = Vector3d(0.003875, 0.002081, -0.04762);         // panda_link1
 	com_position[2] = Vector3d(-0.003141, -0.02872, 0.003495);        // panda_link2
@@ -78,14 +78,13 @@ void RobotModel::setPanda(unsigned int base_id, Vector3d base_position, Matrix3d
 	com_position[5] = Vector3d(-1.1953e-02, 4.1065e-02, -3.8437e-02); // panda_link5
 	com_position[6] = Vector3d(6.0149e-02, -1.4117e-02, -1.0517e-02); // panda_link6
 	com_position[7] = Vector3d(1.0517e-02, -4.252e-03, 6.1597e-02);   // panda_link7
-	com_position[8] = Vector3d(0.0, 0.0, 0.0);                        // panda_link8
-	com_position[9] = Vector3d(-0.01, 0.0, 0.03);                     // panda_hand
-	com_position[10] = Vector3d(0.0, 0.0, 0.0);                       // panda_leftfinger
-	com_position[11] = Vector3d(0.0, 0.0, 0.0);                       // panda_rightfinger
-	com_position[12] = Vector3d(0.0, 0.0, 0.0);                       // panda_hand tcp
+	com_position[8] = Vector3d(-0.01, 0.0, 0.03);                     // panda_hand
+	com_position[9] = Vector3d(0.0, 0.0, 0.0);                        // panda_leftfinger
+	com_position[10] = Vector3d(0.0, 0.0, 0.0);                       // panda_rightfinger
+	com_position[11] = Vector3d(0.0, 0.0, 0.0);                       // panda_hand tcp
 
 
-	double mass[13];
+	double mass[12];
 	mass[0] = 0.629769; // link0
 	mass[1] = 4.97068;  // link1
 	mass[2] = 0.646926; // link2
@@ -94,13 +93,12 @@ void RobotModel::setPanda(unsigned int base_id, Vector3d base_position, Matrix3d
 	mass[5] = 1.22595;  // link5
 	mass[6] = 1.66656;  // link6
 	mass[7] = 0.735522; // link7
-	mass[8] = 0.;       // link8
-	mass[9] = 0.73;     // hand
-	mass[10] = 0.015;   // left finger
-	mass[11] = 0.015;   // right finger
+	mass[8] = 0.73;     // hand
+	mass[9] = 0.015;    // left finger
+	mass[10] = 0.015;   // right finger
 	mass[11] = 0.;      // hand tcp
 
-	Math::Matrix3d inertia[13];
+	Math::Matrix3d inertia[12];
 	// link0
 	inertia[0] = (Matrix3d() << 0.00315, 8.2904e-07, 0.00015,
 								8.2904e-07, 0.00388, 8.2299e-06,
@@ -141,26 +139,23 @@ void RobotModel::setPanda(unsigned int base_id, Vector3d base_position, Matrix3d
 								-0.000428, 0.010027, -0.000741,
 								-0.001196, -0.000741, 0.004815).finished();
 
-	// link8
-	inertia[8] = Matrix3d::Zero();
-
 	// hand
-	inertia[9] = (Matrix3d() << 0.001, 0, 0,
+	inertia[8] = (Matrix3d() << 0.001, 0, 0,
 								0, 0.0025, 0,
 								0, 0, 0.0017).finished();
 
 	// left finger
-	inertia[10] = (Matrix3d() << 2.375e-06, 0, 0,
+	inertia[9] = (Matrix3d() << 2.375e-06, 0, 0,
 								0, 2.375e-06, 0,
 								0, 0, 7.5e-07).finished();
 
 	// right finger
-	inertia[11] = inertia[10];
+	inertia[10] = inertia[9];
 
 	// hand-tcp
-	inertia[12] = Matrix3d::Zero();
+	inertia[11] = Matrix3d::Zero();
 
-	Math::Vector3d axis[13];
+	Math::Vector3d axis[12];
 	axis[0] = Vector3d::Zero();    // world to link0 (dummy: fixed)
 	axis[1] = Vector3d::UnitZ();   // link0 to link1
 	axis[2] = Vector3d::UnitZ();   // link1 to link2
@@ -169,13 +164,12 @@ void RobotModel::setPanda(unsigned int base_id, Vector3d base_position, Matrix3d
 	axis[5] = Vector3d::UnitZ();   // link4 to link5
 	axis[6] = Vector3d::UnitZ();   // link5 to link6
 	axis[7] = Vector3d::UnitZ();   // link6 to link7
-	axis[8] = Vector3d::Zero();    // link7 to link8 (dummy: fixed)
-	axis[9] = Vector3d::Zero();    // link8 to hand (dummy: fixed)
-	axis[10] = Vector3d::UnitY();  // hand to left finger
-	axis[11] = -Vector3d::UnitY(); // hand to right finger
-	axis[12] = Vector3d::Zero();   // hand to hand-tcp (dummy: fixed)
+	axis[8] = Vector3d::Zero();    // link7 to hand (dummy: fixed)
+	axis[9] = Vector3d::UnitY();   // hand to left finger
+	axis[10] = -Vector3d::UnitY(); // hand to right finger
+	axis[11] = Vector3d::Zero();   // hand to hand-tcp (dummy: fixed)
 
-	Math::Vector3d joint_position[13];
+	Math::Vector3d joint_position[12];
 	joint_position[0] = base_position;                // world to link0
 	joint_position[1] = Vector3d(0, 0, 0.333);        // link0 to link1
 	joint_position[2] = Vector3d(0, 0, 0);            // link1 to link2
@@ -184,13 +178,12 @@ void RobotModel::setPanda(unsigned int base_id, Vector3d base_position, Matrix3d
 	joint_position[5] = Vector3d(-0.0825, 0.384, 0);  // link4 to link5
 	joint_position[6] = Vector3d(0, 0, 0);            // link5 to link6
 	joint_position[7] = Vector3d(0.088, 0, 0);        // link6 to link7
-	joint_position[8] = Vector3d(0, 0, 0.107);        // link7 to link8
-	joint_position[9] = Vector3d(0, 0, 0);            // link8 to hand
-	joint_position[10] = Vector3d(0, 0, 0.0584);      // hand to leftfinger
-	joint_position[11] = Vector3d(0, 0, 0.0584);      // hand to rightfinger
-	joint_position[12] = Vector3d(0, 0, 0.1034);      // hand to hand-tcp
+	joint_position[8] = Vector3d(0, 0, 0.107);        // link7 to hand
+	joint_position[9] = Vector3d(0, 0, 0.0584);       // hand to leftfinger
+	joint_position[10] = Vector3d(0, 0, 0.0584);      // hand to rightfinger
+	joint_position[11] = Vector3d(0, 0, 0.1034);      // hand to hand-tcp
 
-	Math::Matrix3d joint_rotation[13];
+	Math::Matrix3d joint_rotation[12];
 	// world to link0
 	joint_rotation[0] = base_rotataion;
 
@@ -243,42 +236,35 @@ void RobotModel::setPanda(unsigned int base_id, Vector3d base_position, Matrix3d
 		0., -1., 0.
 	).finished();
 
-	// link7 to link8
+	// link7 to hand
 	joint_rotation[8] = (Matrix3d() <<
-		1., 0., 0.,
-		0., 1., 0.,
-		0., 0., 1.
-	).finished();
-
-	// link8 to hand
-	joint_rotation[9] = (Matrix3d() <<
 		0.707107, -0.707107, 0.,
 	    0.707107, 0.707107, 0.,
 		0., 0., 1.
 	).finished();
 
 	// hand to leftfinger
-	joint_rotation[10] = (Matrix3d() <<
+	joint_rotation[9] = (Matrix3d() <<
 		1., 0., 0.,
 		0., 1., 0.,
 		0., 0., 1.
 	).finished();
 
 	// hand to rightfinger
-	joint_rotation[11] = (Matrix3d() <<
+	joint_rotation[10] = (Matrix3d() <<
 		1., 0., 0.,
 		0., 1., 0.,
 		0., 0., 1.
 	).finished();
 
 	// hand to hand-tcp
-	joint_rotation[12] = (Matrix3d() <<
+	joint_rotation[11] = (Matrix3d() <<
 		1., 0., 0.,
 		0., 1., 0.,
 		0., 0., 1.
 	).finished();
 
-	std::string link_name[13];
+	std::string link_name[12];
 	link_name[0] = "panda_link0";
 	link_name[1] = "panda_link1";
 	link_name[2] = "panda_link2";
@@ -287,16 +273,15 @@ void RobotModel::setPanda(unsigned int base_id, Vector3d base_position, Matrix3d
 	link_name[5] = "panda_link5";
 	link_name[6] = "panda_link6";
 	link_name[7] = "panda_link7";
-	link_name[8] = "panda_link8";
-	link_name[9] = "panda_hand";
-	link_name[10] = "panda_leftfinger";
-	link_name[11] = "panda_rightfinger";
-	link_name[12] = "panda_hand_tcp";
+	link_name[8] = "panda_hand";
+	link_name[9] = "panda_leftfinger";
+	link_name[10] = "panda_rightfinger";
+	link_name[11] = "panda_hand_tcp";
 
-	Body body[13];
-	Joint joint[13];
-	unsigned int body_id[13]; 
-	for(size_t i = 0; i < 13; i++)
+	Body body[12];
+	Joint joint[12];
+	unsigned int body_id[12]; 
+	for(size_t i = 0; i < 12; i++)
 	{
 		body[i] = Body(mass[i], com_position[i], inertia[i]);
 		if(i == 0) // body: link0, joint: world to link0
@@ -304,21 +289,21 @@ void RobotModel::setPanda(unsigned int base_id, Vector3d base_position, Matrix3d
 			joint[i] = Joint(JointTypeFixed);
 			body_id[i] = model_->AddBody(base_id, Math::SpatialTransform(joint_rotation[i], joint_position[i]), joint[i], body[i], link_name[i].c_str());
 		}
-		else if(i == 8 || i == 9) // body: link8, hand, joint: link7 to link8, link8 to hand
+		else if(i == 8) // body: hand, joint: link7 to hand
 		{
 			joint[i] = Joint(JointTypeFixed);
 			body_id[i] = model_->AddBody(body_id[i - 1], Math::SpatialTransform(joint_rotation[i], joint_position[i]), joint[i], body[i], link_name[i].c_str());
 		}
-		else if(i == 10 || i == 11) // body: finger, joint: hand to finger
+		else if(i == 9 || i == 10) // body: finger, joint: hand to finger
 		{
 			// joint[i] = Joint(JointTypePrismatic, axis[i]);
 			joint[i] = Joint(JointTypeFixed);
-			body_id[i] = model_->AddBody(body_id[9], Math::SpatialTransform(joint_rotation[i], joint_position[i]), joint[i], body[i], link_name[i].c_str());
+			body_id[i] = model_->AddBody(body_id[8], Math::SpatialTransform(joint_rotation[i], joint_position[i]), joint[i], body[i], link_name[i].c_str());
 		}
-		else if(i == 12) // body: hand-tcp, joint: hand to hand-tcp
+		else if(i == 11) // body: hand-tcp, joint: hand to hand-tcp
 		{
 			joint[i] = Joint(JointTypeFixed);
-			body_id[i] = model_->AddBody(body_id[9], Math::SpatialTransform(joint_rotation[i], joint_position[i]), joint[i], body[i], link_name[i].c_str());
+			body_id[i] = model_->AddBody(body_id[8], Math::SpatialTransform(joint_rotation[i], joint_position[i]), joint[i], body[i], link_name[i].c_str());
 		}
 		else
 		{

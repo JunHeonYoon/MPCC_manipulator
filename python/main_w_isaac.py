@@ -1,4 +1,4 @@
-import MPC
+import TTMPC
 import numpy as np
 from math import pi
 
@@ -68,7 +68,7 @@ def create_path_message2(track_pos, track_ori):
     initial_z = track_pos[0,2] - 0.
 
     for pos, ori in zip(track_pos, track_ori):
-        quat = MPC.RotToQuat(ori)
+        quat = TTMPC.RotToQuat(ori)
         pose = PoseStamped()
         pose.header = path.header
         pose.pose.position.x = pos[0] - initial_x + 0.55450 
@@ -92,7 +92,7 @@ def create_pred_path_message(track_pos, track_ori):
 
     for pos, ori in zip(track_pos, track_ori):
         if(ori.shape == (3,3)):
-            quat = MPC.RotToQuat(ori)
+            quat = TTMPC.RotToQuat(ori)
         else:
             quat = track_ori.flatten()
             

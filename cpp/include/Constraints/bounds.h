@@ -43,6 +43,15 @@ public:
     /// @return (Eigen::VectorXd) upper bound for control input
     Bounds_u getBoundsUU() const;
 
+    /// @brief get lower bound for ddot joint
+    /// @return (Eigen::VectorXd) lower bound for ddot joint
+    ddJointVector getBoundsLddJoint() const;
+
+    /// @brief get upper bound for ddot joint
+    /// @return (Eigen::VectorXd) lower upper for ddot joint
+    ddJointVector getBoundsUddJoint() const;
+
+
 private:
 
     Bounds_x u_bounds_x_;
@@ -50,6 +59,9 @@ private:
 
     Bounds_u u_bounds_u_;
     Bounds_u l_bounds_u_;
+
+    ddJointVector u_bounds_ddjoint_;
+    ddJointVector l_bounds_ddjoint_;
 
     Param param_;
 };

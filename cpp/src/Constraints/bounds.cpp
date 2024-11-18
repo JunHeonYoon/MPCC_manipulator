@@ -56,6 +56,22 @@ param_(param)
     u_bounds_u_(5) = bounds_param.upper_input_bounds.dq6_u;
     u_bounds_u_(6) = bounds_param.upper_input_bounds.dq7_u;
 
+    l_bounds_ddjoint_(0) = bounds_param.lower_ddjoint_bounds.ddq1_l;
+    l_bounds_ddjoint_(1) = bounds_param.lower_ddjoint_bounds.ddq2_l;
+    l_bounds_ddjoint_(2) = bounds_param.lower_ddjoint_bounds.ddq3_l;
+    l_bounds_ddjoint_(3) = bounds_param.lower_ddjoint_bounds.ddq4_l;
+    l_bounds_ddjoint_(4) = bounds_param.lower_ddjoint_bounds.ddq5_l;
+    l_bounds_ddjoint_(5) = bounds_param.lower_ddjoint_bounds.ddq6_l;
+    l_bounds_ddjoint_(6) = bounds_param.lower_ddjoint_bounds.ddq7_l;
+
+    u_bounds_ddjoint_(0) = bounds_param.upper_ddjoint_bounds.ddq1_u;
+    u_bounds_ddjoint_(1) = bounds_param.upper_ddjoint_bounds.ddq2_u;
+    u_bounds_ddjoint_(2) = bounds_param.upper_ddjoint_bounds.ddq3_u;
+    u_bounds_ddjoint_(3) = bounds_param.upper_ddjoint_bounds.ddq4_u;
+    u_bounds_ddjoint_(4) = bounds_param.upper_ddjoint_bounds.ddq5_u;
+    u_bounds_ddjoint_(5) = bounds_param.upper_ddjoint_bounds.ddq6_u;
+    u_bounds_ddjoint_(6) = bounds_param.upper_ddjoint_bounds.ddq7_u;
+
 
     std::cout << "bounds initialized" << std::endl;
 }
@@ -80,4 +96,13 @@ Bounds_u Bounds::getBoundsUU() const
     return  u_bounds_u_;
 }
 
+ddJointVector Bounds::getBoundsLddJoint() const
+{
+    return l_bounds_ddjoint_;
+}
+
+ddJointVector Bounds::getBoundsUddJoint() const
+{
+    return u_bounds_ddjoint_;
+}
 }

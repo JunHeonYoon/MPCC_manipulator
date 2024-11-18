@@ -9,7 +9,7 @@
 #include "Params/params.h"
 #include "Model/robot_model.h"
 #include "Constraints/SelfCollision/SelfCollisionModel.h"
-// #include "Constraints/EnvCollision/EnvCollisionModel.h"
+#include "Constraints/EnvCollision/EnvCollisionModel.h"
 #include "Model/integrator.h"
 #include "Params/track.h"
 #include "Spline/cubic_spline_rot.h"
@@ -175,6 +175,7 @@ BOOST_PYTHON_MODULE(MPC_WRAPPER)
     // =================================================
     // Binding constants
     scope().attr("PANDA_DOF") = PANDA_DOF;
+    scope().attr("PANDA_NUM_LINKS") = PANDA_NUM_LINKS;
     scope().attr("NX") = NX;
     scope().attr("NU") = NU;
     scope().attr("NPC") = NPC;
@@ -200,7 +201,15 @@ BOOST_PYTHON_MODULE(MPC_WRAPPER)
         .def_readonly("dq7", &StateInputIndex::dq7)
         .def_readonly("con_selcol", &StateInputIndex::con_selcol)
         .def_readonly("con_sing", &StateInputIndex::con_sing)
-        .def_readonly("con_envcol", &StateInputIndex::con_envcol)
+        .def_readonly("con_envcol1", &StateInputIndex::con_envcol1)
+        .def_readonly("con_envcol2", &StateInputIndex::con_envcol2)
+        .def_readonly("con_envcol3", &StateInputIndex::con_envcol3)
+        .def_readonly("con_envcol4", &StateInputIndex::con_envcol4)
+        .def_readonly("con_envcol5", &StateInputIndex::con_envcol5)
+        .def_readonly("con_envcol6", &StateInputIndex::con_envcol6)
+        .def_readonly("con_envcol7", &StateInputIndex::con_envcol7)
+        .def_readonly("con_envcol8", &StateInputIndex::con_envcol8)
+        .def_readonly("con_envcol9", &StateInputIndex::con_envcol9)
     ;
 
     // Bind the static instance si_index
@@ -332,6 +341,12 @@ BOOST_PYTHON_MODULE(MPC_WRAPPER)
     //         .def("setNeuralNetwork", &EnvCollNNmodel::setNeuralNetwork)
     //         .def("forward", &EnvCollNNmodel::forward)
     // ;
+    class_<EnvCollNNmodel, std::shared_ptr<EnvCollNNmodel>, boost::noncopyable>("EnvCollNNmodel", no_init)
+            .def(init<>())
+            .def(init<const std::string&>())
+            .def("setNeuralNetwork", &EnvCollNNmodel::setNeuralNetwork)
+            .def("calculateMlpOutput", &EnvCollNNmodel::calculateMlpOutput)
+    ;
     
     // =================================================
     // ================= integrator.h ==================

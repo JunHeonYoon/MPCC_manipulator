@@ -143,11 +143,50 @@ public:
         double dq7_u;
     };
 
+    /// @brief  Lower bound of control input
+    /// @param ddq1_l (double) lower bound of ddq1
+    /// @param ddq2_l (double) lower bound of ddq2
+    /// @param ddq3_l (double) lower bound of ddq3
+    /// @param ddq4_l (double) lower bound of ddq4
+    /// @param ddq5_l (double) lower bound of ddq5
+    /// @param ddq6_l (double) lower bound of ddq6
+    /// @param ddq7_l (double) lower bound of ddq7
+    struct LowerddJointBounds{
+        double ddq1_l;
+        double ddq2_l;
+        double ddq3_l;
+        double ddq4_l;
+        double ddq5_l;
+        double ddq6_l;
+        double ddq7_l;
+    };
+
+    /// @brief  Upper bound of control input
+    /// @param ddq1_u (double) upper bound of ddq1
+    /// @param ddq2_u (double) upper bound of ddq2
+    /// @param ddq3_u (double) upper bound of ddq3
+    /// @param ddq4_u (double) upper bound of ddq4
+    /// @param ddq5_u (double) upper bound of ddq5
+    /// @param ddq6_u (double) upper bound of ddq6
+    /// @param ddq7_u (double) upper bound of ddq7
+    struct UpperddJointBounds{
+        double ddq1_u;
+        double ddq2_u;
+        double ddq3_u;
+        double ddq4_u;
+        double ddq5_u;
+        double ddq6_u;
+        double ddq7_u;
+    };
+
     LowerStateBounds lower_state_bounds;
     UpperStateBounds upper_state_bounds;
 
     LowerInputBounds lower_input_bounds;
     UpperInputBounds upper_input_bounds;
+
+    LowerddJointBounds lower_ddjoint_bounds;
+    UpperddJointBounds upper_ddjoint_bounds;
 
     BoundsParam();
     BoundsParam(std::string file);

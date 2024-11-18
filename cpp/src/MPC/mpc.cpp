@@ -78,14 +78,18 @@ void MPC::generateNewInitialGuess(const State &x0)
 
 bool MPC::runMPC(MPCReturn &mpc_return, State &x0, Input &u0, const int &time_idx)
 {
-    std::vector<float> free_voxel;
-    free_voxel.resize(36*36*36);
-    std::fill(free_voxel.begin(), free_voxel.end(), 0.);
-
-    return runMPC_(mpc_return, x0, u0, free_voxel, time_idx);
+    // std::vector<float> free_voxel;
+    // free_voxel.resize(36*36*36);
+    // std::fill(free_voxel.begin(), free_voxel.end(), 0.);
+    // return runMPC_(mpc_return, x0, u0, free_voxel, time_idx);
+    Eigen::Vector3d dummy_position;
+    dummy_position << 3,3,3;
+    double dummy_radius = 0.;
+    return runMPC_(mpc_return, x0, u0, time_idx, dummy_position, dummy_radius);
 }
 
-bool MPC::runMPC_(MPCReturn &mpc_return, State &x0, Input &u0, const std::vector<float> &voxel, const int &time_idx)
+// bool MPC::runMPC_(MPCReturn &mpc_return, State &x0, Input &u0, const std::vector<float> &voxel, const int &time_idx)
+bool MPC::runMPC_(MPCReturn &mpc_return, State &x0, Input &u0, const int &time_idx, const Eigen::Vector3d &obs_position, const double &obs_radius)
 {
     auto start_mpc = std::chrono::high_resolution_clock::now();
     // double s0 = track_.projectOnSpline(robot_->getEEPosition(stateToJointVector(x0)));
@@ -93,9 +97,11 @@ bool MPC::runMPC_(MPCReturn &mpc_return, State &x0, Input &u0, const std::vector
     if(valid_initial_guess_) updateInitialGuess(x0);
     else generateNewInitialGuess(x0);
 
+    solver_interface_->setCurrentInput(u0);
     solver_interface_->setInitialGuess(initial_guess_, time_idx);
     auto start_env = std::chrono::high_resolution_clock::now();
-    solver_interface_->setEnvData(voxel);
+    // solver_interface_->setEnvData(voxel);
+    solver_interface_->setEnvData(obs_position, obs_radius);
     auto end_env = std::chrono::high_resolution_clock::now();
 
     Status sqp_status;

@@ -9,7 +9,8 @@ using namespace RigidBodyDynamics;
 using namespace Eigen;
 using namespace std;
 
-#define PANDA_NUM_LINKS 10 // with hand
+// #define PANDA_NUM_LINKS 10 // with hand
+#define PANDA_NUM_LINKS 9 // with hand
 
 namespace mpc
 {   

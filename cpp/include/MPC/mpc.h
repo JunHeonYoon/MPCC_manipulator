@@ -73,10 +73,13 @@ public:
     /// @param (MPCReturn) log for MPC; optimal control input, total horizon results, time to run MPC
     /// @param x0 (State) current state
     /// @param u0 (Input) current control input
-    /// @param voxel (std::vector<float>) Voxel Occupancy grid map
     /// @param time_idx (int) current time index
+    // /// @param voxel (std::vector<float>) Voxel Occupancy grid map
+    /// @param obs_position (Eigen::Vector3d) position of the external obstacle
+    /// @param obs_radius (double) radius of the external obstacle
     /// @return (bool) whether mpc is solved or not
-    bool runMPC_(MPCReturn &mpc_return, State &x0, Input &u0, const std::vector<float> &voxel, const int &time_idx);
+    // bool runMPC_(MPCReturn &mpc_return, State &x0, Input &u0, const std::vector<float> &voxel, const int &time_idx);
+    bool runMPC_(MPCReturn &mpc_return, State &x0, Input &u0, const int &time_idx, const Eigen::Vector3d &obs_position, const double &obs_radius);
 
     /// @brief set track given X-Y-Z-R path data
     /// @param X (Eigen::VectorXd) X path data
