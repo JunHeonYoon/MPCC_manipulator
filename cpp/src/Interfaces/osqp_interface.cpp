@@ -649,6 +649,7 @@ bool OsqpInterface::solveQP(const Eigen::MatrixXd &P, const Eigen::VectorXd &q, 
     solver_.settings()->setWarmStart(false);
     solver_.settings()->getSettings()->eps_abs = 1e-4;
     solver_.settings()->getSettings()->eps_rel = 1e-5;
+    solver_.settings()->getSettings()->time_limit = (Ts_ / 10.);
     solver_.settings()->getSettings()->verbose = false;
 
     // set the initial data of the QP solver
@@ -666,8 +667,8 @@ bool OsqpInterface::solveQP(const Eigen::MatrixXd &P, const Eigen::VectorXd &q, 
     // solve the QP problem
     if (solver_.solveProblem() != OsqpEigen::ErrorExitFlag::NoError) return false;
     qp_status = solver_.getStatus();
-    if (solver_.getStatus() != OsqpEigen::Status::Solved) return false;
-    // if (solver_.getStatus() != OsqpEigen::Status::Solved && solver_.getStatus() != OsqpEigen::Status::SolvedInaccurate) return false;
+    // if (solver_.getStatus() != OsqpEigen::Status::Solved) return false;
+    if (solver_.getStatus() != OsqpEigen::Status::Solved && solver_.getStatus() != OsqpEigen::Status::TimeLimitReached) return false;
 
     // get the controller input
     step = solver_.getSolution();
