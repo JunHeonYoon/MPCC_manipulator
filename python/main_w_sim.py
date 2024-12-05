@@ -1,12 +1,11 @@
 import MPCC
 import numpy as np
+from numpy.linalg import inv
 from math import pi
 
-import numpy as np
 import matplotlib.pyplot as plt
 from srmt.planning_scene import PlanningScene
 import argparse
-import matplotlib.pyplot as plt
 import scipy.io
 
 ## ROS library
@@ -19,12 +18,12 @@ np.set_printoptions(suppress=True, precision=3)
 
 ## MPCC parameters
 param_value = {'cost': {
-                    "qC" : 500.0,
+                    "qC" : 200.0,
                     "qCNmult": 10,
-                    "qL" : 100.0,
+                    "qL" : 200.0,
                     "qVs" : 500.0,
 
-                    "qOri": 2,
+                    "qOri": 10,
 
                     "rdq"  : 0.002,
                     "rdVs" : 0.2,
@@ -32,7 +31,7 @@ param_value = {'cost': {
                     },
             'param': {
                     "desired_ee_velocity": 0.1,
-                    "tol_sing": 0.01,
+                    "tol_sing": 0.001,
                     "tol_selcol": 1.0,
                     }
             }
@@ -140,16 +139,23 @@ def main(args):
 
     while not rospy.is_shutdown():
         ##  Obstacle moovement
-        if (obs_step > 0 and obs_position[2] >= obs_limit[1,2]) or (obs_step < 0 and obs_position[2] <= obs_limit[0,2]):
-            obs_step = obs_step*-1
-        obs_position[2] = obs_position[2] + obs_step
-        pc.add_sphere("obs", 0.01*obs_radius, obs_position + np.array([0.3, 0, 0.256]), np.array([1,0,0,0]))
+        if args.is_obs:
+            if (obs_step > 0 and obs_position[2] >= obs_limit[1,2]) or (obs_step < 0 and obs_position[2] <= obs_limit[0,2]):
+                obs_step = obs_step*-1
+            obs_position[2] = obs_position[2] + obs_step
+            pc.add_sphere("obs", 0.01*obs_radius, obs_position + np.array([0.3, 0, 0.256]), np.array([1,0,0,0]))
 
         ## run MPCC
-        status, state, input, mpc_horizon, compute_time = mpc.runMPC(state, input, obs_position, obs_radius)
+        status, state, input, mpc_horizon, compute_time = mpc.runMPC(state, input, obs_position, obs_radius) if args.is_obs else mpc.runMPC(state, input)
         if status == False:
             print("MPC did not solve properly!!")
             break
+        ## Virtual contact scenario
+        # if time_idx > 500 and time_idx < 600:
+        #     j = robot.getEEJacobian(state[:robot_dof])
+        #     xdot = j @ input[:robot_dof]
+        #     j_pinv = j.T.dot(inv(j.dot(j.T)))
+        #     input[:robot_dof] = 0.5 * j_pinv @ xdot + (np.identity(robot_dof) - j_pinv.dot(j)) @ input[:robot_dof]
         state = integrator.simTimeStep(state, input)
 
         ## get robot information
@@ -242,7 +248,7 @@ def main(args):
         ref_local_path_pub.publish(ref_local_path_msg)
 
         ## End condition 
-        if np.linalg.norm((spline_pos[-1] - x), 2) < 1E-2 and np.linalg.norm(MPCC.Log(spline_ori[-1].T @ rotation), 2) and abs(state[-2] - spline_arc_length[-1]) < 1E-2:
+        if np.linalg.norm((spline_pos[-1] - x), 2) < 1E-2 and np.linalg.norm(MPCC.Log(spline_ori[-1].T @ rotation), 2) < 1E-2 and abs(state[-2] - spline_arc_length[-1]) < 1E-2:
             print("End point reached!!!")
             break
         
@@ -260,7 +266,7 @@ def main(args):
     scipy.io.savemat("debug_data.mat", debug_data)
     print("Data written to debug.mat")
 
-    scipy.io.savemat("time_data.mat", debug_data)
+    scipy.io.savemat("time_data.mat", time_data)
     print("Data written to debug.mat")
 
 
@@ -339,6 +345,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument("--is_obs", type=bool, default=False)
     parser.add_argument("--plot", type=bool, default=False)
 
     args = parser.parse_args()
