@@ -2,13 +2,17 @@ from math import pi
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
-# For self collision experiment
 r = 0.1
 t = np.linspace(pi/2, 2*pi+pi/2, 100)
 
+# For Self  & Singularity
+# x = 2.5*r * np.sin(t)
+# y = 2.0*r * np.sin(2 * t)
+# z = 2.3*r * np.cos(t)
+
+# For Self collision & Env collision
 x = 2.2*r * np.sin(t)
-y = 2.2*r * np.sin(2 * t)
-# z = 2.2*r * np.cos(t)
+y = 2.6*r * np.sin(2 * t)
 z = 0*r * np.cos(t)
 
 rot = R.from_matrix([[1,  0,  0],
@@ -16,22 +20,6 @@ rot = R.from_matrix([[1,  0,  0],
                      [0,  0, -1]])
 quat = rot.as_quat()
 quat_list = np.tile(quat, (x.size, 1))
-
-
-# For singularity experiment
-# r = 0.1
-# t = np.linspace(0, 8*pi, 100)
-
-# x = 2.0*r * np.sin(t)
-# y = 1.5*r * np.sin(2 * t)
-# z = 2.15*r * np.cos(t)
-# # z = 0*r * np.cos(t)
-
-# rot = R.from_matrix([[1,  0,  0],
-#                      [0, -1, 0],
-#                      [0,  0, -1]])
-# quat = rot.as_quat()
-# quat_list = np.tile(quat, (x.size, 1))
 
 total_desc = f""" 
 {{
