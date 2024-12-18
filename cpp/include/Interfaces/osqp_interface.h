@@ -38,11 +38,12 @@
 #include <filesystem>
 #include <cassert>
 #include <vector>
+#include <thread>
 
-#ifdef USE_LIBTORCH
-#include <torch/script.h>
-#include <torch/torch.h>
-#endif
+// #ifdef USE_LIBTORCH
+// #include <torch/script.h>
+// #include <torch/torch.h>
+// #endif
 
 namespace mpcc{
 
@@ -149,6 +150,7 @@ private:
     bool is_solved_ = false;
     OsqpEigen::Status qp_status_;
 
+    void setMultiThread();
     void setCost(const std::vector<OptVariables> &initial_guess, 
                  double *obj, Eigen::VectorXd *grad_obj, Eigen::MatrixXd *hess_obj);
     void setDynamics(const std::vector<OptVariables> &initial_guess,

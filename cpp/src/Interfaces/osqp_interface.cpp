@@ -29,6 +29,7 @@ path_(path),
 Ts_(Ts)
 // device_(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
 {   
+    setMultiThread();
     robot_ = std::make_unique<RobotModel>();
 
     selcolNN_ = std::make_unique<SelCollNNmodel>();
@@ -63,6 +64,7 @@ path_(path),
 Ts_(Ts)
 // device_(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
 {   
+    setMultiThread();
     robot_ = std::make_unique<RobotModel>();
 
     selcolNN_ = std::make_unique<SelCollNNmodel>();
@@ -85,6 +87,17 @@ Ts_(Ts)
     initial_guess_.resize(N+1);
     rb_.resize(N+1);
     for(size_t i=0; i<rb_.size(); i++) rb_[i].setZero();
+}
+
+void OsqpInterface::setMultiThread()
+{
+    unsigned int cores = thread::hardware_concurrency();
+    cout << "Available cores: " << cores << endl;
+
+    cout << "Default threads: " << Eigen::nbThreads() << endl;
+    Eigen::setNbThreads(cores > 1 ? cores - 1 : 1);
+    Eigen::initParallel();
+    cout << "Updated threads: " << Eigen::nbThreads() << endl;
 }
 
 void OsqpInterface::setTrack(const ArcLengthSpline track)
@@ -649,7 +662,7 @@ bool OsqpInterface::solveQP(const Eigen::MatrixXd &P, const Eigen::VectorXd &q, 
     solver_.settings()->setWarmStart(false);
     solver_.settings()->getSettings()->eps_abs = 1e-4;
     solver_.settings()->getSettings()->eps_rel = 1e-5;
-    solver_.settings()->getSettings()->time_limit = (Ts_ / 10.);
+    solver_.settings()->getSettings()->time_limit = (Ts_ / 3.);
     solver_.settings()->getSettings()->verbose = false;
 
     // set the initial data of the QP solver
