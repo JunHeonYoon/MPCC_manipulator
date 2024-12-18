@@ -17,11 +17,11 @@
 #ifndef MPCC_ARC_LENGTH_SPLINE_H
 #define MPCC_ARC_LENGTH_SPLINE_H
 
+#include "Model/robot_model.h"
 #include "cubic_spline.h"
 #include "cubic_spline_rot.h"
 #include "types.h"
 #include "Params/params.h"
-#include "Model/robot_model.h"
 #include <map>
 #include <vector>
 
