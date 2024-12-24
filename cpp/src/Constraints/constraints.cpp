@@ -150,16 +150,16 @@ void Constraints::getEnvcollConstraint(const State &x,const Input &u,const Robot
                                        XDConstraintInfo *constraint, XDConstraintsJac* Jac)
 {
     // compute environment-collision constraints
-    // -∇_q Γ(q)^T * q_dot + RBF(Γ(q) - r) <= 0, where r is radius of obstacle
+    // -∇_q Γ(q)^T * q_dot + RBF(Γ(q) - r - ɛ) <= 0, where r is radius of obstacle and ɛ is buffer
     const JointVector q = stateToJointVector(x);
     const dJointVector dq = inputTodJointVector(u);
 
     // compute minimum distance between each links and its derivative
-    Eigen::Matrix<double, PANDA_NUM_LINKS, 1> min_dist = 0.01*rb.env_min_dist_; // unit: [cm]->[m]
+    Eigen::Matrix<double, PANDA_NUM_LINKS, 1> min_dist = 0.01*(rb.env_min_dist_ - Eigen::Matrix<double, PANDA_NUM_LINKS, 1>::Constant(rb.obs_radius_*1.2)); // unit: [cm]->[m]
     Eigen::Matrix<double, PANDA_NUM_LINKS, PANDA_DOF> d_min_dist = 0.01*rb.d_env_min_dist_; // unit: [cm]->[m]
 
     // compute RBF value of minimum distance and its derivative
-    double r = 0.01*rb.obs_radius_*1.3; // radius [cm]->[m]
+    double r = 0.01*param_.tol_envcol; //  [cm]->[m]
     double delta = -0.5; // switching point of RBF
     Eigen::Matrix<double, PANDA_NUM_LINKS, 1> RBF = getRBF(Eigen::Matrix<double, PANDA_NUM_LINKS, 1>::Constant(delta), 
                                                            min_dist - Eigen::Matrix<double, PANDA_NUM_LINKS, 1>::Constant(r));
