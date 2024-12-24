@@ -11,6 +11,7 @@ import scipy.io
 ## ROS library
 import rospy
 from nav_msgs.msg import Path
+from std_msgs.msg import Float32
 
 from main_utils import create_path_message2, create_pred_path_message, plt_func
 
@@ -18,21 +19,23 @@ np.set_printoptions(suppress=True, precision=3)
 
 ## MPCC parameters
 param_value = {'cost': {
-                    "qC" : 200.0,
-                    "qCNmult": 10,
-                    "qL" : 200.0,
-                    "qVs" : 500.0,
+                    "qC" : 500.0,
+                    "qCNmult": 5,
+                    "qL" : 100.0,
+                    "qVs" : 20.0,
 
-                    "qOri": 10,
+                    "qOri": 50,
 
                     "rdq"  : 0.002,
-                    "rdVs" : 0.2,
-                    "rVee" : 0.001,
+                    "rddq"  : 10,
+                    "rdVs" : 0.1,
+                    "rVee" : 0,
                     },
             'param': {
                     "desired_ee_velocity": 0.1,
-                    "tol_sing": 0.001,
+                    "tol_sing": 0.018,
                     "tol_selcol": 1.0,
+                    "tol_envcol": 1.0,
                     }
             }
 
@@ -51,6 +54,11 @@ def main(args):
     splined_path_pub = rospy.Publisher('/mpcc/splined_path', Path, queue_size=10)
     local_path_pub = rospy.Publisher('/mpcc/local_path', Path, queue_size=10)
     ref_local_path_pub = rospy.Publisher('/mpcc/ref_local_path', Path, queue_size=10)
+    ee_speed_pub = rospy.Publisher('/mpcc/ee_speed', Float32, queue_size=1)
+    mani_pub = rospy.Publisher('/mpcc/mani', Float32, queue_size=1)
+    sel_min_dist_pub = rospy.Publisher('/mpcc/sel_min_dist', Float32, queue_size=1)
+    env_min_dist_pub = rospy.Publisher('/mpcc/env_min_dist', Float32, queue_size=1)
+    contour_error_pub = rospy.Publisher('/mpcc/contour_error', Float32, queue_size=1)
 
     ## Create mpc controller
     mpc = MPCC.MPCC()
@@ -243,9 +251,27 @@ def main(args):
         ## Publish data
         local_path_msg = create_pred_path_message(pred_ee_T[:, :3, 3], pred_ee_T[:, :3, :3])
         ref_local_path_msg = create_pred_path_message(ref_ee_T[:, :3, 3], ref_ee_T[:, :3, :3])
+        ee_speed_msg = Float32()
+        mani_msg = Float32()
+        sel_min_dist_msg = Float32()
+        env_min_dist_msg = Float32()
+        contour_error_msg = Float32()
+        ee_speed_msg.data = x_speed
+        mani_msg.data = mani
+        sel_min_dist_msg.data = sel_min_dist
+        env_min_dist_msg.data = np.min(env_min_dist)
+        contour_error_msg.data = contour_error*100 # [m] -> [cm]
+        
         splined_path_pub.publish(splined_path_msg)
         local_path_pub.publish(local_path_msg)
         ref_local_path_pub.publish(ref_local_path_msg)
+        ee_speed_pub.publish(ee_speed_msg)
+        mani_pub.publish(mani_msg)
+        sel_min_dist_pub.publish(sel_min_dist_msg)
+        env_min_dist_pub.publish(env_min_dist_msg)
+        contour_error_pub.publish(contour_error_msg)
+        
+        
 
         ## End condition 
         if np.linalg.norm((spline_pos[-1] - x), 2) < 1E-2 and np.linalg.norm(MPCC.Log(spline_ori[-1].T @ rotation), 2) < 1E-2 and abs(state[-2] - spline_arc_length[-1]) < 1E-2:
