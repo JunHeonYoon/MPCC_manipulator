@@ -5,8 +5,8 @@ cpp/NNmodel/env_collision.pt
 
 python/__pycache__/
 python/*.pyc
-python/mpcc/__pycache__/
-python/mpcc/*.pyc
+python/MPCC/__pycache__/
+python/MPCC/*.pyc
 python/debug.txt
 python/spline_path.txt
 python/simulation_path.txt
