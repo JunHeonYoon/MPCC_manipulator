@@ -25,9 +25,9 @@ constraints_(Ts,path),
 bounds_(BoundsParam(path.bounds_path),Param(path.param_path)),
 normalization_param_(path.normalization_path),
 sqp_param_(path.sqp_path),
+cost_param_(path.cost_path),
 path_(path),
 Ts_(Ts)
-// device_(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
 {   
     setMultiThread();
     robot_ = std::make_unique<RobotModel>();
@@ -41,12 +41,6 @@ Ts_(Ts)
     Eigen::VectorXd env_col_n_hidden(4);
     env_col_n_hidden << 256, 256, 256, 256;
     envcolNN_->setNeuralNetwork(PANDA_DOF+3, PANDA_NUM_LINKS, env_col_n_hidden, true);
-
-
-    // envcolNN_->setNeuralNetwork(std::vector<int>{36, 36, 36}, PANDA_DOF);
-    // envcolNN_.setNeuralNetwork(std::vector<int>{36, 36, 36}, PANDA_DOF);
-    // env_model_ = torch::jit::load(pkg_path + "NNmodel/env_collision.pt");
-    // env_model_.to(device_);
 
     initial_guess_.resize(N+1);
     rb_.resize(N+1);
@@ -60,9 +54,9 @@ constraints_(Ts,path,param_value),
 bounds_(BoundsParam(path.bounds_path),Param(path.param_path,param_value.param)),
 normalization_param_(path.normalization_path,param_value.normalization),
 sqp_param_(path.sqp_path,param_value.sqp),
+cost_param_(path.cost_path),
 path_(path),
 Ts_(Ts)
-// device_(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
 {   
     setMultiThread();
     robot_ = std::make_unique<RobotModel>();
@@ -76,13 +70,6 @@ Ts_(Ts)
     Eigen::VectorXd env_col_n_hidden(4);
     env_col_n_hidden << 256, 256, 256, 256;
     envcolNN_->setNeuralNetwork(PANDA_DOF+3, PANDA_NUM_LINKS, env_col_n_hidden, true);
-
-    // envcolNN_ = std::make_unique<EnvCollNNmodel>();
-    // envcolNN_->setNeuralNetwork(std::vector<int>{36, 36, 36}, PANDA_DOF);
-    // envcolNN_.setNeuralNetwork(std::vector<int>{36, 36, 36}, PANDA_DOF);
-    // env_model_ = torch::jit::load(pkg_path + "NNmodel/env_collision.pt");
-    // env_model_.to(device_);
-
 
     initial_guess_.resize(N+1);
     rb_.resize(N+1);
@@ -112,78 +99,10 @@ void OsqpInterface::setParam(const ParamValue &param_value)
     bounds_ = Bounds(BoundsParam(path_.bounds_path),Param(path_.param_path,param_value.param));
 }
 
-// void OsqpInterface::setEnvData(const std::vector<float> &voxel)
 void OsqpInterface::setEnvData(const Eigen::Vector3d &obs_position, const double &obs_radius)
 {
-    // std::vector<float> x_occ;
-    // std::vector<float> x_q;
-
-    // x_occ.resize(voxel.size()*(N+1));
-    // x_q.resize(PANDA_DOF*(N+1));
-    // for(size_t i=0; i<=N; i++)
-    // {
-    //     assert(rb_[i].is_data_valid == true);
-    //     std::copy(voxel.begin(), voxel.end(), x_occ.begin() + i * voxel.size());
-    //     std::transform(rb_[i].q_.data(), rb_[i].q_.data() + rb_[i].q_.size(),
-    //                    x_q.begin() + i * rb_[i].q_.size(),
-    //                    [](double val) { return static_cast<float>(val); });
-    // }
-    // // auto env_pred = envcolNN_->forward(x_occ, x_q);
-    // // auto env_pred = envcolNN_.forward(x_occ, x_q);
-
-
-    // at::Tensor x_q_ten = torch::from_blob(x_q.data(), {N+1, PANDA_DOF}, torch::kFloat32).clone().to(device_);
-    // at::Tensor x_occ_ten = torch::from_blob(x_occ.data(), {N+1, 1, 36,36,36}, torch::kFloat32).clone().to(device_);
-    // // std::cout << x_q << std::endl;
-    // // std::cout << x_occ << std::endl;
-
-    // // Set requires_grad_ to true for x_q to enable gradient computation
-    // x_q_ten.set_requires_grad(true);
-
-    // // Forward pass through the model
-    // std::vector<torch::jit::IValue> inputs;
-    // inputs.push_back(x_q_ten);
-    // inputs.push_back(x_occ_ten);
-
-    // // for(auto& val : inputs) std::cout << inputs <<std::endl;
-
-    // torch::Tensor output = env_model_.forward(inputs).toTensor();
-
-
-    // // Convert the output tensor to a vector for easy handling
-    // Eigen::VectorXf env_min_dist_pred(output.numel());
-    // std::memcpy(env_min_dist_pred.data(), output.cpu().data_ptr<float>(), output.numel() * sizeof(float));
-
-    // // Calculate the Jacobian
-    // // GPU에서 병렬로 Jacobian 계산
-    // // grad_outputs를 std::vector로 래핑
-    // std::vector<torch::Tensor> grad_outputs = {torch::ones_like(output).to(device_)};
-
-    // // autograd::grad로 Jacobian 계산
-    // std::vector<torch::Tensor> jacobians = torch::autograd::grad(
-    //     {output},                // Output tensor
-    //     {x_q_ten},               // Input tensor we want to differentiate
-    //     grad_outputs,            // Gradient w.r.t the outputs (as a vector)
-    //     true,                    // Create graph
-    //     true                     // Retain graph
-    // );
-
-
-    // // Tensor를 Eigen 형태로 변환
-    // Eigen::MatrixXf jacobian_pred_T(7, output.size(0));
-    // std::memcpy(jacobian_pred_T.data(), jacobians[0].cpu().data_ptr<float>(), 7 * output.size(0) * sizeof(float));
-
-    // auto env_pred = std::make_pair(env_min_dist_pred.cast<double>(), jacobian_pred_T.transpose().cast<double>());
-    // // std::cout << "Model inference completed\n";
-    // // std::cout << "Ans: " << env_pred.first.size() << std:: endl;
-    // // std::cout << "Jac: " << env_pred.second.rows() << ", "<< env_pred.second.cols() << std:: endl;
-
-
-
     for(size_t i=0; i<=N; i++)
     {
-        // rb_[i].updateEnv(env_pred.first(i), env_pred.second.row(i).transpose());
-        // rb_[i].updateEnv(0., Eigen::MatrixXd::Zero(PANDA_DOF,1));
         rb_[i].updateEnv(obs_position, obs_radius, envcolNN_);
     }
 }
@@ -224,6 +143,7 @@ void OsqpInterface::setCost(const std::vector<OptVariables> &initial_guess,
         if(obj && !grad_obj && !hess_obj)
         {
             cost_.getCost(track_,initial_guess[i].xk,initial_guess[i].uk,rb_[i],i, &obj_k, NULL,NULL);
+            
         }
         else if(obj && grad_obj && !hess_obj)
         {
@@ -242,6 +162,58 @@ void OsqpInterface::setCost(const std::vector<OptVariables> &initial_guess,
             if(hess_obj) hess_obj->block(NX*(N+1)+NU*i,NX*(N+1)+NU*i,NU,NU) = normalization_param_.T_u*hess_cost_k.f_uu*normalization_param_.T_u;
             if(hess_obj) hess_obj->block(NX*i,NX*(N+1)+NU*i,NX,NU) = normalization_param_.T_x*hess_cost_k.f_xu*normalization_param_.T_u;
             if(hess_obj) hess_obj->block(NX*(N+1)+NU*i,NX*i,NU,NX) = (normalization_param_.T_x*hess_cost_k.f_xu*normalization_param_.T_u).transpose();
+        }
+        // for ddjoint cost
+        if(i != N)
+        {
+            if(obj)
+            {
+                if(i != N-1) 
+                {
+                    (*obj) += cost_param_.r_ddq * (inputTodJointVector(initial_guess[i+1].uk) - inputTodJointVector(initial_guess[i].uk)).squaredNorm();
+                }
+            }
+            if(grad_obj)
+            {
+                Eigen::VectorXd ddq_grad(PANDA_DOF);
+                if(i == 0)
+                {
+                    ddq_grad = 2. * cost_param_.r_ddq * (inputTodJointVector(initial_guess[i].uk) - inputTodJointVector(initial_guess[i+1].uk));
+                }
+                else if(i == N-1)
+                {
+                    ddq_grad = 2. * cost_param_.r_ddq * (inputTodJointVector(initial_guess[i].uk) - inputTodJointVector(initial_guess[i-1].uk));
+                }
+                else
+                {
+                    ddq_grad = 2. * cost_param_.r_ddq * (2.*inputTodJointVector(initial_guess[i].uk) - inputTodJointVector(initial_guess[i+1].uk) - inputTodJointVector(initial_guess[i-1].uk));
+                }
+                grad_obj->segment(NX*(N+1)+NU*i, PANDA_DOF) += normalization_param_.T_u.block(si_index.dq1,si_index.dq1,PANDA_DOF,PANDA_DOF)*ddq_grad;
+            }
+            if(hess_obj)
+            {
+                Eigen::Matrix<double, PANDA_DOF, PANDA_DOF> ddq_hess_ii, ddq_hess_ij; // j=i+1
+                if(i == 0)
+                {
+                    ddq_hess_ii = 2. * cost_param_.r_ddq * Eigen::MatrixXd::Identity(PANDA_DOF, PANDA_DOF);
+                    ddq_hess_ij = -2. * cost_param_.r_ddq * Eigen::MatrixXd::Identity(PANDA_DOF, PANDA_DOF);
+                }
+                else if(i == N-1)
+                {
+                    ddq_hess_ii = 2. * cost_param_.r_ddq * Eigen::MatrixXd::Identity(PANDA_DOF, PANDA_DOF);
+                }
+                else
+                {
+                    ddq_hess_ii = 4. * cost_param_.r_ddq * Eigen::MatrixXd::Identity(PANDA_DOF, PANDA_DOF);
+                    ddq_hess_ij = -2. * cost_param_.r_ddq * Eigen::MatrixXd::Identity(PANDA_DOF, PANDA_DOF);
+                }
+                hess_obj->block(NX*(N+1)+NU*i,NX*(N+1)+NU*i,PANDA_DOF,PANDA_DOF) += normalization_param_.T_u.block(si_index.dq1,si_index.dq1,PANDA_DOF,PANDA_DOF)*ddq_hess_ii*normalization_param_.T_u.block(si_index.dq1,si_index.dq1,PANDA_DOF,PANDA_DOF);
+                if(i != N-1)
+                {
+                    hess_obj->block(NX*(N+1)+NU*i,NX*(N+1)+NU*(i+1),PANDA_DOF,PANDA_DOF) += normalization_param_.T_u.block(si_index.dq1,si_index.dq1,PANDA_DOF,PANDA_DOF)*ddq_hess_ij*normalization_param_.T_u.block(si_index.dq1,si_index.dq1,PANDA_DOF,PANDA_DOF);
+                    hess_obj->block(NX*(N+1)+NU*(i+1),NX*(N+1)+NU*i,PANDA_DOF,PANDA_DOF) += normalization_param_.T_u.block(si_index.dq1,si_index.dq1,PANDA_DOF,PANDA_DOF)*ddq_hess_ij*normalization_param_.T_u.block(si_index.dq1,si_index.dq1,PANDA_DOF,PANDA_DOF);
+                }
+            }
         }
     }
 }
@@ -289,18 +261,6 @@ void OsqpInterface::setBounds(const std::vector<OptVariables> &initial_guess,
 
     for(size_t i=0;i<=N;i++)
     {
-        // if(jac_constr_ineqb) jac_constr_ineqb->block(NX*i, NX*i, NX, NX).setIdentity();
-        // if(constr_ineqb) constr_ineqb->segment(NX*i, NX) = normalization_param_.T_x_inv*stateToVector(initial_guess[i].xk);
-        // if(l_ineqb) l_ineqb->segment(NX*i, NX) = normalization_param_.T_x_inv*bounds_.getBoundsLX(initial_guess[i].xk);
-        // if(u_ineqb) u_ineqb->segment(NX*i, NX) = normalization_param_.T_x_inv*bounds_.getBoundsUX(initial_guess[i].xk,track_.getLength());
-        // if(i != N)
-        // {
-        //     if(jac_constr_ineqb) jac_constr_ineqb->block(NX*(N+1) + NU*i, NU*i, NU, NU).setIdentity();
-        //     if(constr_ineqb) constr_ineqb->segment(NX*(N+1) + NU*i, NU) = normalization_param_.T_u_inv*inputToVector(initial_guess[i].uk);
-        //     if(l_ineqb) l_ineqb->segment(NX*(N+1) + NU*i, NU) = normalization_param_.T_u_inv*bounds_.getBoundsLU();
-        //     if(u_ineqb) u_ineqb->segment(NX*(N+1) + NU*i, NU) = normalization_param_.T_u_inv*bounds_.getBoundsUU();
-        // }
-
         // for state bounds
         if(jac_constr_ineqb) jac_constr_ineqb->block(NX*i, NX*i, NX, NX) = Eigen::MatrixXd::Identity(NX, NX) * normalization_param_.T_x;
         if(constr_ineqb) constr_ineqb->segment(NX*i, NX) = stateToVector(initial_guess[i].xk);
@@ -662,7 +622,7 @@ bool OsqpInterface::solveQP(const Eigen::MatrixXd &P, const Eigen::VectorXd &q, 
     solver_.settings()->setWarmStart(false);
     solver_.settings()->getSettings()->eps_abs = 1e-4;
     solver_.settings()->getSettings()->eps_rel = 1e-5;
-    solver_.settings()->getSettings()->time_limit = (Ts_ / 3.);
+    solver_.settings()->getSettings()->time_limit = (Ts_ / 5.);
     solver_.settings()->getSettings()->verbose = false;
 
     // set the initial data of the QP solver

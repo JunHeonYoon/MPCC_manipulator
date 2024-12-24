@@ -62,6 +62,7 @@ public:
 
     // Input cost
     double r_dq;     // weight for joint velocity
+    double r_ddq;    // weight for joint acceleration
     double r_Vee;    // weight for end-effector velocity
     double r_dVs;    // weight for accelerate of path parameter
 

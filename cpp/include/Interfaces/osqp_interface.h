@@ -40,11 +40,6 @@
 #include <vector>
 #include <thread>
 
-// #ifdef USE_LIBTORCH
-// #include <torch/script.h>
-// #include <torch/torch.h>
-// #endif
-
 namespace mpcc{
 
 /// @brief parameters for optimization, state and control input of MPC
@@ -103,16 +98,14 @@ private:
     std::unique_ptr<SelCollNNmodel> selcolNN_;
     std::unique_ptr<EnvCollNNmodel> envcolNN_;
 
-    // torch::jit::script::Module env_model_;
-    // torch::Device device_;
-
-
     Cost cost_;
     Model model_;
     Constraints constraints_;
     Bounds bounds_;
     NormalizationParam normalization_param_;
     SQPParam sqp_param_;
+    CostParam cost_param_;
+
     double Ts_;
 
     std::vector<RobotData> rb_;
