@@ -331,8 +331,24 @@ double ArcLengthSpline::projectOnSpline(const double &s, const Eigen::Vector3d e
         Eigen::ArrayXd diff_z_all = path_data_.Z.array() - ee_pos(2);
         Eigen::ArrayXd dist_square = diff_x_all.square() + diff_y_all.square() + diff_z_all.square();
         std::vector<double> dist_square_vec(dist_square.data(),dist_square.data() + dist_square.size());
-        auto min_iter = std::min_element(dist_square_vec.begin(),dist_square_vec.end());
-        s_opt = path_data_.s(std::distance(dist_square_vec.begin(), min_iter));
+        // auto min_iter = std::min_element(dist_square_vec.begin(),distr_squae_vec.end());
+        // s_opt = path_data_.s(std::distance(dist_square_vec.begin(), min_iter));
+
+        Eigen::ArrayXd diff_s_all = path_data_.s.array() - s_guess;
+        Eigen::Array<bool, Eigen::Dynamic, 1> valid_mask = (diff_s_all.abs() <= param_.max_dist_proj);
+        Eigen::ArrayXd filtered_dist = dist_square * valid_mask.cast<double>();
+        filtered_dist = filtered_dist + (1.0 - valid_mask.cast<double>()) * std::numeric_limits<double>::infinity();
+        Eigen::Index min_idx;
+        filtered_dist.minCoeff(&min_idx);
+        if (!valid_mask.any()) 
+        {
+            auto min_iter = std::min_element(dist_square_vec.begin(),dist_square_vec.end());
+            s_opt = path_data_.s(std::distance(dist_square_vec.begin(), min_iter));
+        } 
+        else 
+        {
+            s_opt = path_data_.s(min_idx);
+        }
     }
     // else return s_opt;
 
