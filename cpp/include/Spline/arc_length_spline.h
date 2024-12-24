@@ -40,11 +40,11 @@ struct RawPath{
 };
 
 /// @brief arc length path data
-/// @param X (Eigen::VEctorXd) X position data
-/// @param Y (Eigen::VEctorXd) Y position data
-/// @param Z (Eigen::VEctorXd) Z position data
+/// @param X (Eigen::VectorXd) X position data
+/// @param Y (Eigen::VectorXd) Y position data
+/// @param Z (Eigen::VectorXd) Z position data
 /// @param R (std::vector<Eigen::Matrix3d>) Rotation matrix data
-/// @param s (Eigen::VEctorXd) arc length
+/// @param s (Eigen::VectorXd) arc length
 /// @param n_points (int) number of path points
 struct PathData{
     Eigen::VectorXd X;
