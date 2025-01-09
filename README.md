@@ -60,7 +60,7 @@ git clone https://github.com/psh117/suhan_robot_model_tools.git
 
 cd .. && catkin build
 
-source ../devel/setup.bash
+source devel/setup.bash
 ```
 5. [husky_panda](https://github.com/JunHeonYoon/husky_panda)
 ```sh
