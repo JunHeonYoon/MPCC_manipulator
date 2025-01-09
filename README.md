@@ -4,6 +4,7 @@
 ### C++ dependency
 Install C++ dependencies and build
 ```sh
+git clone https://github.com/JunHeonYoon/MPCC_manipulator.git
 cd MPCC_manipulator/cpp
 ./install.sh
 
