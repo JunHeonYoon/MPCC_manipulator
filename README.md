@@ -28,7 +28,8 @@ source ~/.bashrc
 
 Check if install was done successfully
 ```sh
-./build/MPCC_TEST
+cd build
+./MPCC_TEST
 ```
 
 ### Python dependency
