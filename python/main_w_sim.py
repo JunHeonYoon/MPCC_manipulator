@@ -13,7 +13,7 @@ import rospy
 from nav_msgs.msg import Path
 from std_msgs.msg import Float32
 
-from main_utils import create_path_message2, create_pred_path_message, plt_func
+from main_utils import create_path_message2, create_pred_path_message
 
 np.set_printoptions(suppress=True, precision=3)
 
@@ -116,29 +116,6 @@ def main(args):
     SLECOL_BUFFER = param_value["param"]["tol_selcol"]
     MANI_BUFFER = param_value["param"]["tol_sing"]
 
-    if(args.plot):
-        ## Animated plotter
-        plt.ion()
-        fig, (selcol_ax, mani_ax) = plt.subplots(2, 1, figsize=(12, 8))
-
-        min_dist_true_line, = selcol_ax.plot([],[], label='ans', color="blue", linewidth=4.0, linestyle='--')
-        min_dist_pred_line, = selcol_ax.plot([],[], label='pred', color = "red", linewidth=2.0)
-        min_dist_pred_line, = selcol_ax.plot([],[], label='min dist', color = "red", linewidth=2.0)
-        selcol_ax.legend()
-        selcol_ax.set_ylim([SLECOL_BUFFER - 5, 25])
-        selcol_ax.grid()
-
-        ## Second subplot
-        mani_line, = mani_ax.plot([], [], label='mani', color="red", linewidth=2.0)
-        mani_ax.legend()
-        mani_ax.set_ylim([MANI_BUFFER - 0.05, 0.2])
-        mani_ax.grid()
-
-        sim_time_data = np.zeros((1))
-        min_dist_real_data = np.zeros((1))
-        min_dist_pred_data = np.zeros((1))
-        mani_data = np.zeros((1))
-
     obs_step = obs_speed * mpc.Ts
     
     time_idx=0
@@ -178,7 +155,6 @@ def main(args):
         vs = state[-1]
         dVs = input[-1]
         sel_min_dist, _ = selcolNN.calculateMlpOutput(q)
-        real_sel_min_dist = pc.min_distance(q)*100
         env_min_dist, _ = envcolNN.calculateMlpOutput(np.concatenate((q, obs_position), axis=0))
         mani = robot.getEEManipulability(q)
         contour_error = mpc.getContourError(s, x)
@@ -210,21 +186,6 @@ def main(args):
         print("env min dist[cm]: ",env_min_dist)
         print("MPC time        : {:0.5f}".format(compute_time["total"]))
         print("===============================================================")
-
-
-        if(args.plot):
-            sim_time_data = np.append(sim_time_data, np.array([time_idx*mpc.Ts]), axis=0)
-            min_dist_real_data = np.append(min_dist_real_data, np.array([real_sel_min_dist]), axis=0)
-            min_dist_pred_data = np.append(min_dist_pred_data, np.array([sel_min_dist]), axis=0)
-            mani_data = np.append(mani_data, np.array([mani]), axis=0)
-
-            if sim_time_data.shape[0] > 10:
-                sim_time_data = sim_time_data[-10:]
-                min_dist_real_data = min_dist_real_data[-10:]
-                min_dist_pred_data = min_dist_pred_data[-10:]
-                mani_data = mani_data[-10:]
-
-            plt_func(fig, selcol_ax, mani_ax, min_dist_true_line, min_dist_pred_line, mani_line, sim_time_data, min_dist_real_data, min_dist_pred_data, mani_data, SLECOL_BUFFER, MANI_BUFFER)
 
         ## Save data 
         debug_data["q"].append(q) 
@@ -372,7 +333,6 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--is_obs", type=bool, default=False)
-    parser.add_argument("--plot", type=bool, default=False)
-
+    
     args = parser.parse_args()
     main(args)
