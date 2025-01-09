@@ -198,7 +198,6 @@ def main(args):
                             'qL_increase_ratio': 1, 
                             # 'qOri_reduction_ratio': 0.7380133441510759,
                             'qOri_reduction_ratio': 1,
-                            'rVee': 0.5
                             }}
 
     # mpc.setParam(param_value)

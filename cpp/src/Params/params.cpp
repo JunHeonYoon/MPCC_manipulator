@@ -106,7 +106,6 @@ CostParam::CostParam(std::string file){
 
     r_dq = jsonCost["rdq"];
     r_ddq = jsonCost["rddq"];
-    r_Vee = jsonCost["rVee"];
     r_dVs = jsonCost["rdVs"];
 
     q_c_red_ratio = jsonCost["qC_reduction_ratio"];
@@ -152,7 +151,6 @@ CostParam::CostParam(std::string file, std::map<std::string, double> cost_param)
 
     get_cost_value("rdq", r_dq);
     get_cost_value("rddq", r_ddq);
-    get_cost_value("rVee", r_Vee);
     get_cost_value("rdVs", r_dVs);
 
     get_cost_value("qC_reduction_ratio", q_c_red_ratio);

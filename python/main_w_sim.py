@@ -29,7 +29,6 @@ param_value = {'cost': {
                     "rdq"  : 0.002,
                     "rddq"  : 10,
                     "rdVs" : 0.1,
-                    "rVee" : 0,
                     },
             'param': {
                     "desired_ee_velocity": 0.1,

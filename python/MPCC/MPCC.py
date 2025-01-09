@@ -36,7 +36,7 @@ class MPCC():
 
         param_dict = {
             "param": ["max_dist_proj", "desired_ee_velocity", "s_trust_region", "tol_sing", "tol_selcol", "tol_envcol"],
-            "cost": ["qC","qCNmult","qL","qVs","qOri","qSing","rdq","rddq","rVee","rdVs","qC_reduction_ratio","qL_increase_ratio","qOri_reduction_ratio"],
+            "cost": ["qC","qCNmult","qL","qVs","qOri","qSing","rdq","rddq","rdVs","qC_reduction_ratio","qL_increase_ratio","qOri_reduction_ratio"],
             "bounds": ["q1l","q2l","q3l","q4l","q5l","q6l","q7l","sl","vsl","q1u","q2u","q3u","q4u","q5u","q6u","q7u","su","vsu","dq1l","dq2l","dq3l","dq4l","dq5l","dq6l","dq7l","dVsl","dq1u","dq2u","dq3u","dq4u","dq5u","dq6u","dq7u","dVsu"],
             "normalization": ["q1","q2","q3","q4","q5","q6","q7","s","vs","dq1","dq2","dq3","dq4","dq5","dq6","dq7","dVs"],
             "sqp": ["eps_prim","eps_dual","line_search_tau","line_search_eta","line_search_rho","max_iter","line_search_max_iter","do_SOC","use_BFGS"]

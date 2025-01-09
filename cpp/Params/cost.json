@@ -11,7 +11,6 @@
   "rdq"  : 0.002,
   "rddq"  : 10,
   "rdVs" : 0.1,
-  "rVee" : 0,
 
   "qC_reduction_ratio"   : 1.0,
   "qL_increase_ratio"    : 1.0,
