@@ -1,4 +1,5 @@
 # MPCC for manipulator
+This code run at ROS1 noetic with Ubuntu 20.04.
 
 ## Installation guide
 ### C++ dependency
