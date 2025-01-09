@@ -99,7 +99,7 @@ echo "[INFO] Installing osqp-eigen..."
 cd $localFolder_osqp_eigen
 mkdir -p build lib
 cd build
-cmake .. -DCMAKE_INSTALL_PREFIX:PATH=$(realpath ../lib) -DCMAKE_PREFIX_PATH=$(realpath ../../../$localFolder_osqp/lib) -DBUILD_SHARED_LIBS=OFF
+cmake .. -DCMAKE_INSTALL_PREFIX:PATH=$(realpath ../lib) -DCMAKE_PREFIX_PATH=$(realpath ../../../$localFolder_osqp/lib) -DCMAKE_POSITION_INDEPENDENT_CODE=ON ..
 make
 make install
 EXPORT_LINE="export OsqpEigen_DIR=\"$(realpath ..)\""

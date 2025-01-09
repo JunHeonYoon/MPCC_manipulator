@@ -4,6 +4,8 @@ project(MPCC)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "-O2")
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/External/Eigen/cmake")
 list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/External/osqp_eigen/lib")
 list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/External/osqp/lib")
@@ -35,7 +37,7 @@ include_directories(
 )
 
 
-add_library(MPCC_LIB
+add_library(MPCC_LIB SHARED
         src/types.cpp
         src/Model/robot_model.cpp
         src/Constraints/SelfCollision/SelfCollisionModel.cpp
@@ -102,7 +104,7 @@ include_directories(
         ${eigenpy_INCLUDE_DIRS}
 )
 
-add_library(MPCC_WRAPPER src/MPCC_wrapper.cpp)
+add_library(MPCC_WRAPPER SHARED src/MPCC_wrapper.cpp)
 target_link_libraries(MPCC_WRAPPER 
         ${Boost_LIBRARIES} 
         ${PYTHON_LIBRARIES} 
