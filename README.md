@@ -84,3 +84,24 @@ Running MPCC
 cd MPCC_manipulator/python
 python3 main_w_sim.py
 ```
+
+## User parameter
+Users can modify parameters and path in [Params](https://github.com/JunHeonYoon/MPCC_manipulator/tree/master/cpp/Params)
+
+### [bounds](https://github.com/JunHeonYoon/MPCC_manipulator/blob/master/cpp/Params/bounds.json)
+Upper, lower bound for state and input
+- joint angle(q)
+- joint velocity(qdot)
+- joint acceleration(qddot)
+- path parameter(s)
+- velocity of s(vs)
+- acceleration of s(dVs) 
+
+### [config](https://github.com/JunHeonYoon/MPCC_manipulator/blob/master/cpp/Params/config.json)
+- n_sim: Limit for simulation [tick]
+- Ts: Sampling time for MPCC [sec]
+
+### [cost](https://github.com/JunHeonYoon/MPCC_manipulator/blob/master/cpp/Params/cost.json)
+Weighing scalar paramters
+- qC: Contouring error
+- qCNmult: 
