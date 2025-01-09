@@ -65,7 +65,7 @@ source ../devel/setup.bash
 ```sh
 cd ~/catkin_ws/src/
 
-git clone git@github.com:JunHeonYoon/husky_panda.git
+git clone https://github.com/JunHeonYoon/husky_panda.git
 
 cd .. && catkin build
 
