@@ -30,6 +30,7 @@ endif()
 
 include_directories(
         ${EIGEN3_INCLUDE_DIR}
+        ${RBDL_INCLUDE_DIR}
         include
 )
 
