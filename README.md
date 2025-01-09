@@ -4,7 +4,7 @@
 ### C++ dependency
 Install C++ dependencies and build
 ```sh
-cd cpp
+cd MPCC_manipulator/cpp
 ./install.sh
 
 mkdir build && cd build
