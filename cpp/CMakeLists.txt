@@ -35,7 +35,7 @@ include_directories(
 )
 
 
-add_library(MPCC_LIB SHARED
+add_library(MPCC_LIB
         src/types.cpp
         src/Model/robot_model.cpp
         src/Constraints/SelfCollision/SelfCollisionModel.cpp
@@ -102,7 +102,7 @@ include_directories(
         ${eigenpy_INCLUDE_DIRS}
 )
 
-add_library(MPCC_WRAPPER SHARED src/MPCC_wrapper.cpp)
+add_library(MPCC_WRAPPER src/MPCC_wrapper.cpp)
 target_link_libraries(MPCC_WRAPPER 
         ${Boost_LIBRARIES} 
         ${PYTHON_LIBRARIES} 
