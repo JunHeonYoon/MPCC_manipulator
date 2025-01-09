@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "-O2")
 
 list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/External/Eigen/cmake")
-list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/External/osqp_eigen/cmake")
+list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/External/osqp_eigen/lib")
 list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/External/osqp/lib")
 list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/External/rbdl-orb/lib")
 
