@@ -4,22 +4,18 @@ project(MPCC)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "-O2")
 
-option(USE_CVPLOT "Use cv-plot library" ON)
-MESSAGE( STATUS "Using CvPlot: " ${USE_CVPLOT} )
+list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/External/Eigen/cmake")
+list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/External/osqp_eigen/cmake")
+list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/External/osqp/lib")
+list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/External/rbdl-orb/lib")
 
-# option(USE_LIBTORCH "Use libtorch library" OFF)
-# MESSAGE( STATUS "Using lbtorch: " ${USE_LIBTORCH} )
+option(USE_CVPLOT "Use cv-plot library" OFF)
+MESSAGE( STATUS "Using CvPlot: " ${USE_CVPLOT} )
 
 add_definitions(-DBUILD_DIRECTORY=\"${CMAKE_SOURCE_DIR}\")
 
-# if(USE_LIBTORCH)
-#         set(CMAKE_CUDA_ARCHITECTURES "native")
-#         set(CUDA_TOOLKIT_ROOT_DIR /usr/local/cuda-11.8)
-#         set(CMAKE_CUDA_COMPILER /usr/local/cuda-11.8/bin/nvcc)
-#         set(CUDACXX /usr/local/cuda-11.8/bin/nvcc)
-#         find_package(Torch REQUIRED)
-#         include_directories(${TORCH_INCLUDE_DIRS})
-# endif()
+include_directories(.)
+include_directories(External/json/include)
 
 find_package(Eigen3 REQUIRED)
 find_package(RBDL REQUIRED)
@@ -57,18 +53,8 @@ add_library(MPCC_LIB SHARED
         src/MPC/mpc.cpp
         src/Params/track.cpp
         include/config.h
-        # include/types.h
         include/Model/robot_model.h
-        # include/Constraints/SelfCollision/SelfCollisionModel.h
-        # include/Constraints/EnvCollision/EnvCollisionModel.h
-        # include/Params/track.h
         )
-# if(USE_LIBTORCH)
-#         add_library(MPCC_LIB SHARED
-#         src/Constraints/EnvCollision/EnvCollisionModel.cpp
-#         include/Constraints/EnvCollision/EnvCollisionModel.h
-#         )
-# endif()
 target_link_libraries(MPCC_LIB PUBLIC
         ${RBDL_LIBRARY} 
         OsqpEigen::OsqpEigen 
@@ -77,10 +63,6 @@ target_link_libraries(MPCC_LIB PUBLIC
 if(OpenMP_CXX_FOUND)
     target_link_libraries(MPCC_LIB PUBLIC OpenMP::OpenMP_CXX)
 endif()
-
-# if(USE_LIBTORCH)
-#         target_link_libraries(MPCC_LIB PUBLIC "${TORCH_LIBRARIES}")
-# endif()
 
 add_executable(MPCC_EXE src/main.cpp)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
@@ -107,8 +89,6 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 find_package(Python COMPONENTS Development)
 target_include_directories(MPCC_TEST PRIVATE ${Python_INCLUDE_DIRS})
 target_link_libraries(MPCC_TEST PRIVATE MPCC_LIB gtest gtest_main pthread ${Python_LIBRARIES})
-
-
 
 find_package(Boost REQUIRED python)
 find_package(PythonLibs REQUIRED)
