@@ -120,8 +120,8 @@ MPCC model parameters
 - s_trust_region:
 - deaccelerate_ratio:
 - tol_sing: tolerence for singularity avoidance constraint
-- tol_selcol: tolerence for self-collision avoidance constraint
-- tol_envcol: tolerence for environment-collision avoidance constraint
+- tol_selcol: tolerence for self-collision avoidance constraint [cm]
+- tol_envcol: tolerence for environment-collision avoidance constraint [cm]
  
 ### [noramalization](https://github.com/JunHeonYoon/MPCC_manipulator/blob/master/cpp/Params/normalization.json)
 Normalization for state and control input setting QP
