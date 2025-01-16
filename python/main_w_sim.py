@@ -2,14 +2,15 @@ import MPCC
 import numpy as np
 from numpy.linalg import inv
 from math import pi
+import time
 
 import matplotlib.pyplot as plt
-from srmt.planning_scene import PlanningScene
+from srmt2.planning_scene import PlanningScene
 import argparse
 import scipy.io
 
 ## ROS library
-import rospy
+import rclpy
 from nav_msgs.msg import Path
 from std_msgs.msg import Float32
 
@@ -47,17 +48,18 @@ obs_speed = 0.05       # unit: [m/s]
 
 def main(args):
     ## Create Planning Scene
-    pc = PlanningScene(arm_names=["panda"], arm_dofs=[7], base_link="world")
+    pc = PlanningScene(arm_names=["fr3"], arm_dofs=[7], base_link="world")
 
-    ## ros publisher
-    splined_path_pub = rospy.Publisher('/mpcc/splined_path', Path, queue_size=10)
-    local_path_pub = rospy.Publisher('/mpcc/local_path', Path, queue_size=10)
-    ref_local_path_pub = rospy.Publisher('/mpcc/ref_local_path', Path, queue_size=10)
-    ee_speed_pub = rospy.Publisher('/mpcc/ee_speed', Float32, queue_size=1)
-    mani_pub = rospy.Publisher('/mpcc/mani', Float32, queue_size=1)
-    sel_min_dist_pub = rospy.Publisher('/mpcc/sel_min_dist', Float32, queue_size=1)
-    env_min_dist_pub = rospy.Publisher('/mpcc/env_min_dist', Float32, queue_size=1)
-    contour_error_pub = rospy.Publisher('/mpcc/contour_error', Float32, queue_size=1)
+    # Create publishers
+    node = rclpy.create_node('mpcc_node')
+    splined_path_pub = node.create_publisher(Path, '/mpcc/splined_path', 10)
+    local_path_pub = node.create_publisher(Path, '/mpcc/local_path', 10)
+    ref_local_path_pub = node.create_publisher(Path, '/mpcc/ref_local_path', 10)
+    ee_speed_pub = node.create_publisher(Float32, '/mpcc/ee_speed', 1)
+    mani_pub = node.create_publisher(Float32, '/mpcc/mani', 1)
+    sel_min_dist_pub = node.create_publisher(Float32, '/mpcc/sel_min_dist', 1)
+    env_min_dist_pub = node.create_publisher(Float32, '/mpcc/env_min_dist', 1)
+    contour_error_pub = node.create_publisher(Float32, '/mpcc/contour_error', 1)
 
     ## Create mpc controller
     mpc = MPCC.MPCC()
@@ -85,7 +87,7 @@ def main(args):
         spline_T[i, :3, 3] = posi
 
 
-    splined_path_msg = create_path_message2(spline_pos, spline_ori)
+    splined_path_msg = create_path_message2(node, spline_pos, spline_ori)
 
     ## Debugging data  
     debug_data = {}
@@ -118,10 +120,10 @@ def main(args):
     obs_step = obs_speed * mpc.Ts
     
     time_idx=0
-    rate = rospy.Rate(1./mpc.Ts)
     qdot_pre = np.zeros(robot_dof)
 
-    while not rospy.is_shutdown():
+    while rclpy.ok():
+        start = time.time()
         ##  Obstacle moovement
         if args.is_obs:
             if (obs_step > 0 and obs_position[2] >= obs_limit[1,2]) or (obs_step < 0 and obs_position[2] <= obs_limit[0,2]):
@@ -209,8 +211,8 @@ def main(args):
         time_data["get_alpha"].append(compute_time["get_alpha"])
 
         ## Publish data
-        local_path_msg = create_pred_path_message(pred_ee_T[:, :3, 3], pred_ee_T[:, :3, :3])
-        ref_local_path_msg = create_pred_path_message(ref_ee_T[:, :3, 3], ref_ee_T[:, :3, :3])
+        local_path_msg = create_pred_path_message(node, pred_ee_T[:, :3, 3], pred_ee_T[:, :3, :3])
+        ref_local_path_msg = create_pred_path_message(node, ref_ee_T[:, :3, 3], ref_ee_T[:, :3, :3])
         ee_speed_msg = Float32()
         mani_msg = Float32()
         sel_min_dist_msg = Float32()
@@ -237,8 +239,10 @@ def main(args):
         if np.linalg.norm((spline_pos[-1] - x), 2) < 1E-2 and np.linalg.norm(MPCC.Log(spline_ori[-1].T @ rotation), 2) < 1E-2 and abs(state[-2] - spline_arc_length[-1]) < 1E-2:
             print("End point reached!!!")
             break
-        
-        rate.sleep()
+        end = time.time()
+        elapsed = end - start
+        if elapsed < mpc.Ts:
+            time.sleep(mpc.Ts - elapsed)# rate.sleep()
         qdot_pre = qdot
         time_idx += 1
 

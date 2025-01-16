@@ -1,15 +1,14 @@
 import MPCC
-import rospy
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import Header
 
 # Function to create a Path message from the track data
-def create_path_message1(track_data, init_position):
+def create_path_message1(node, track_data, init_position):
     path = Path()
     path.header = Header()
-    path.header.stamp = rospy.Time.now()
-    path.header.frame_id = 'panda_link0'
+    path.header.stamp = node.get_clock().now().to_msg()
+    path.header.frame_id = 'fr3_link0'
 
     initial_x = track_data['X'][0] - 0.
     initial_y = track_data['Y'][0] - 0.
@@ -31,12 +30,12 @@ def create_path_message1(track_data, init_position):
     
     return path
 
-def create_path_message2(track_pos, track_ori):
+def create_path_message2(node, track_pos, track_ori):
     assert track_pos.shape[0] == track_ori.shape[0]
     path = Path()
     path.header = Header()
-    path.header.stamp = rospy.Time.now()
-    path.header.frame_id = 'panda_link0'
+    path.header.stamp = node.get_clock().now().to_msg()
+    path.header.frame_id = 'fr3_link0'
 
 
     initial_x = track_pos[0,0] - 0.
@@ -59,12 +58,12 @@ def create_path_message2(track_pos, track_ori):
     return path
 
 # Function to create a Path message from the dataset
-def create_pred_path_message(track_pos, track_ori):
+def create_pred_path_message(node, track_pos, track_ori):
     assert track_pos.shape[0] == track_ori.shape[0]
     path = Path()
     path.header = Header()
-    path.header.stamp = rospy.Time.now()
-    path.header.frame_id = 'panda_link0'
+    path.header.stamp = node.get_clock().now().to_msg()
+    path.header.frame_id = 'fr3_link0'
 
     for pos, ori in zip(track_pos, track_ori):
         if(ori.shape == (3,3)):
