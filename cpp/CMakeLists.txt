@@ -108,7 +108,7 @@ add_library(MPCC_WRAPPER SHARED src/MPCC_wrapper.cpp)
 target_link_libraries(MPCC_WRAPPER 
         ${Boost_LIBRARIES} 
         ${PYTHON_LIBRARIES} 
-        ${eigenpy_LIBRARIES}
+        eigenpy::eigenpy
         Eigen3::Eigen 
         MPCC_LIB
 )
