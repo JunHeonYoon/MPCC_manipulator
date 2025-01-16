@@ -93,7 +93,26 @@ cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=$(realpath ../lib)
 make
 make install
+EXPORT_LINE="export LD_LIBRARY_PATH=\"$(realpath ../lib/lib)\":\$LD_LIBRARY_PATH"
+if ! grep -Fxq "$EXPORT_LINE" ~/.bashrc
+then
+    echo "$EXPORT_LINE" >> ~/.bashrc
+    echo "[INFO] Added LD_LIBRARY_PATH to ~/.bashrc"
+else
+    echo "[INFO] LD_LIBRARY_PATH already exists in ~/.bashrc. Skipping."
+fi
+. ~/.bashrc
 cd ../../..
+
+echo "[INFO] Installing rbdl..."
+cd $localFolder_rbdl
+mkdir -p build lib
+cd build
+cmake .. -DCMAKE_INSTALL_PREFIX:PATH=$(realpath ../lib)
+make
+make install
+cd ../../..
+
 
 echo "[INFO] Installing osqp-eigen..."
 cd $localFolder_osqp_eigen
