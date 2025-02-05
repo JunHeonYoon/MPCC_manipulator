@@ -50,13 +50,19 @@ public:
     /// @brief get Track waypoints 
     /// @param init_position (Eigen::Vector3d) initial End-Effector position 
     /// @return (TrackPos) Tracking waypoints about x, y, z-axis and rotation matrix(not yet)
-    TrackPos getTrack(Eigen::Vector3d init_position = Eigen::Vector3d::Zero());
+    TrackPos getTrack(Eigen::Vector3d init_position = Eigen::Vector3d::Zero(),
+                      Eigen::Matrix3d init_rotation = Eigen::Matrix3d::Identity());
 
 private:
     Eigen::VectorXd X;
     Eigen::VectorXd Y;
     Eigen::VectorXd Z;
     std::vector<Eigen::Matrix3d> R;
+
+    Eigen::Matrix3d enforceOrthogonality(const Eigen::Matrix3d &R);
+    Eigen::Matrix3d normalizeDeterminant(const Eigen::Matrix3d &R);
+    Eigen::Matrix3d correctRotationMatrix(const Eigen::Matrix3d &R);
+
 };
 };
 

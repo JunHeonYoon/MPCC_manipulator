@@ -65,7 +65,7 @@ int main() {
     Eigen::Matrix3d ee_ori = robot.getEEOrientation(stateToJointVector(x0));
 
     Track track = Track(json_paths.track_path);
-    TrackPos track_xyzr = track.getTrack(ee_pos);
+    TrackPos track_xyzr = track.getTrack(ee_pos, ee_ori);
     mpc.setTrack(track_xyzr.X,track_xyzr.Y,track_xyzr.Z,track_xyzr.R);
 
     Eigen::Vector3d end_point;

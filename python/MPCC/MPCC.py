@@ -59,8 +59,9 @@ class MPCC():
         self.init_state = state
 
         ee_pos = self.robot_model.getEEPosition(self.init_state[:self.robot_model.num_q])
+        ee_ori = self.robot_model.getEEOrientation(self.init_state[:self.robot_model.num_q])
         track = MPCC_CPP.Track(self.json_paths.track_path)
-        track_xyzr = track.getTrack(ee_pos)
+        track_xyzr = track.getTrack(ee_pos, ee_ori)
 
         self.mpc.setTrack(track_xyzr.X, 
                           track_xyzr.Y,
@@ -69,6 +70,7 @@ class MPCC():
         
         self.spline_track = self.mpc.getTrack()
         self.spline_path = self.spline_track.getPathData()
+        # print(np.array(self.spline_path.R))
 
         self.track_set = True
     

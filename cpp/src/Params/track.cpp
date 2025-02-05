@@ -53,15 +53,45 @@ Track::Track(std::string file)
     }
 }
 
-TrackPos Track::getTrack(Eigen::Vector3d init_position)
+TrackPos Track::getTrack(Eigen::Vector3d init_position, Eigen::Matrix3d init_rotation)
 {
     X = X.array() - X(0) + init_position(0);
     Y = Y.array() - Y(0) + init_position(1);
     Z = Z.array() - Z(0) + init_position(2);
+
+    Eigen::Matrix3d tmp_R = R[0].transpose() * init_rotation;
+    for(size_t i=0; i<R.size(); i++)
+    {
+        R[i] = correctRotationMatrix(R[i] * tmp_R);
+    }
+
     return {Eigen::Map<Eigen::VectorXd>(X.data(), X.size()), 
             Eigen::Map<Eigen::VectorXd>(Y.data(), Y.size()),
             Eigen::Map<Eigen::VectorXd>(Z.data(), Z.size()),
             R
             };
+}
+
+Eigen::Matrix3d Track::enforceOrthogonality(const Eigen::Matrix3d& R) 
+{
+    Eigen::JacobiSVD<Eigen::Matrix3d> svd(R, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    Eigen::Matrix3d U = svd.matrixU();
+    Eigen::Matrix3d V = svd.matrixV();
+    return U * V.transpose();  // Orthogonalized rotation matrix
+}
+
+Eigen::Matrix3d Track::normalizeDeterminant(const Eigen::Matrix3d& R) 
+{
+    double det = R.determinant();
+    if (std::abs(det - 1.0) > 1e-10) {
+        return R / std::cbrt(det);  // Scale to ensure determinant is 1
+    }
+    return R;
+}
+
+Eigen::Matrix3d Track::correctRotationMatrix(const Eigen::Matrix3d& R) 
+{
+    Eigen::Matrix3d R_orthogonalized = enforceOrthogonality(R);
+    return normalizeDeterminant(R_orthogonalized);
 }
 }
