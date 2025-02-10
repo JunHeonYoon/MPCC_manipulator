@@ -42,7 +42,6 @@ double CubicSpline(double x, double x_0, double x_f, double y_0, double y_f)
     return y_0 + (y_f - y_0) * (3 * x_temp2 - 2 * x_temp3);
 }
 
-
 TrackPoint Cost::getRefPoint(const ArcLengthSpline &track,const State &x)
 {
     // compute all the geometry information of the track at a given arc length
@@ -64,7 +63,7 @@ TrackPoint Cost::getRefPoint(const ArcLengthSpline &track,const State &x)
     const double ddy_ref = ddpos_ref(1);
     const double ddz_ref = ddpos_ref(1);
 
-    return {x_ref,y_ref,z_ref,dx_ref,dy_ref,dz_ref,ddx_ref,ddy_ref,ddz_ref};
+    return {pos_ref, dpos_ref, ddpos_ref};
 }
 
 TrackOrienatation Cost::getRefOrientation(const ArcLengthSpline &track,const State &x)
@@ -85,10 +84,10 @@ ErrorInfo Cost::getErrorInfo(const ArcLengthSpline &track,const State &x,const R
     // compute error between reference and X-Y-Z position of the robot EE
     const Eigen::Vector3d pos = rb.EE_position_;
     const TrackPoint track_point = getRefPoint(track,x);
-    const Eigen::Vector3d total_error = pos - Eigen::Vector3d(track_point.x_ref,track_point.y_ref, track_point.z_ref);
+    const Eigen::Vector3d total_error = pos - track_point.p_ref;
     
     // lag error
-    Eigen::Vector3d Tangent = Eigen::Vector3d(track_point.dx_ref, track_point.dy_ref, track_point.dz_ref); // tangent vector for ref point
+    Eigen::Vector3d Tangent = track_point.dp_ref; // tangent vector for ref point
     Eigen::Vector3d lag_error = (Tangent.dot(total_error)) * Tangent; // e_l = <T, e> * T
 
     // contouring error
@@ -103,10 +102,10 @@ ErrorInfo Cost::getErrorInfo(const ArcLengthSpline &track,const State &x,const R
     // jacobian of the lag error with respect to state X
     Eigen::Matrix<double,3,NX> d_Tangent;
     d_Tangent.setZero();
-    d_Tangent.block(0,si_index.s,3,1) = Eigen::Vector3d(track_point.ddx_ref, track_point.ddy_ref, track_point.ddz_ref); // normal vector for ref point
+    d_Tangent.block(0,si_index.s,3,1) = track_point.ddp_ref; // normal vector for ref point
     Eigen::Matrix<double,3,NX> d_lag_error;
     d_lag_error.setZero();
-    d_lag_error = (Tangent*Tangent.transpose()) * d_total_error + (Tangent*total_error.transpose() + lag_error.norm()*Eigen::MatrixXd::Identity(3,3)) * d_Tangent;
+    d_lag_error = (Tangent*Tangent.transpose()) * d_total_error + (Tangent*total_error.transpose() + Tangent.transpose()*total_error*Eigen::Matrix3d::Identity()) * d_Tangent;
     
     // jacobian of the contouring error with respect to state X
     Eigen::Matrix<double,3,NX> d_contouring_error;
@@ -130,8 +129,7 @@ void Cost::getContouringCost(const ArcLengthSpline &track,const State &x,const R
 
 
     // progress maximization part
-    double s_max = track.getLength();
-    double desired_ee_vel = (x.s < s_max * param_.deacc_ratio) ? param_.desired_ee_velocity : -param_.desired_ee_velocity / (s_max * param_.deacc_ratio) * (x.s - s_max);
+    double desired_ee_vel = (x.s < 1. * param_.deacc_ratio) ? param_.desired_s_velocity : -param_.desired_s_velocity / (1. * param_.deacc_ratio) * (x.s - 1.);
 
     // Exact Contouring error cost
     if(obj)
@@ -211,16 +209,6 @@ void Cost::getInputCost(const ArcLengthSpline &track,const State &x,const Input 
 {
     // compute control input cost, formed by joint velocity, joint acceleration, acceleration of path parameter 
     dJointVector dq = inputTodJointVector(u);
-    Eigen::Matrix<double, 6, PANDA_DOF> J = rb.J_;
-    Eigen::Matrix<double, 3, PANDA_DOF> Jv = rb.Jv_;
-    TrackPoint track_point = getRefPoint(track, x);
-    Eigen::Vector3d Tangent = Eigen::Vector3d(track_point.dx_ref,track_point.dy_ref, track_point.dz_ref);
-    Eigen::Vector3d Normal = Eigen::Vector3d(track_point.ddx_ref,track_point.ddy_ref, track_point.ddz_ref);
-    
-    double path_vel = Tangent.dot(Jv * dq);
-    double vel_error = path_vel - x.vs;
-    double NJq = Normal.dot(Jv * dq);
-
 
     // Exact Input cost
     if(obj)
@@ -228,8 +216,6 @@ void Cost::getInputCost(const ArcLengthSpline &track,const State &x,const Input 
         (*obj) = 0;
         if(k != N) (*obj) = cost_param_.r_dq * dq.squaredNorm() +
                             cost_param_.r_dVs * pow(u.dVs,2);
-                            // cost_param_.r_Vee * (J * dq).squaredNorm();
-                            // cost_param_.r_Vee * pow(vel_error, 2);
     }
 
 
@@ -237,13 +223,9 @@ void Cost::getInputCost(const ArcLengthSpline &track,const State &x,const Input 
     if(grad)
     {
         grad->setZero();
-        // grad->f_x(si_index.s) = 2.0 * cost_param_.r_Vee * vel_error * NJq;
-        // grad->f_x(si_index.vs) = 2.0 * cost_param_.r_Vee * vel_error * (-1);
         if(k != N)
         {
             grad->f_u.segment(si_index.dq1,PANDA_DOF) = 2.0 * cost_param_.r_dq * dq;
-                                                        // 2.0 * cost_param_.r_Vee * (J.transpose() * J * dq);
-                                                        // 2.0 * cost_param_.r_Vee * vel_error * (Jv.transpose() * Tangent);
             grad->f_u(si_index.dVs) = 2.0 * cost_param_.r_dVs*u.dVs;
         }
     }
@@ -251,18 +233,10 @@ void Cost::getInputCost(const ArcLengthSpline &track,const State &x,const Input 
     if(hess)
     {
         hess->setZero();
-        // hess->f_xx(si_index.s,si_index.s) = 2.0 * cost_param_.r_Vee * NJq * NJq;
-        // hess->f_xx(si_index.vs,si_index.vs) = 2.0 * cost_param_.r_Vee;
-        // hess->f_xx(si_index.vs,si_index.s) = 2.0 * cost_param_.r_Vee * (-1) * NJq;
-        // hess->f_xx(si_index.s,si_index.vs) = hess->f_xx(si_index.vs,si_index.s);
         if(k != N)
         {
             hess->f_uu.block(si_index.dq1,si_index.dq1,PANDA_DOF,PANDA_DOF) = 2.0 * cost_param_.r_dq * Eigen::MatrixXd::Identity(PANDA_DOF,PANDA_DOF);
-                                                                            //   2.0 * cost_param_.r_Vee * (J.transpose() * J);
-                                                                            //   2.0 * cost_param_.r_Vee * (Jv.transpose() * Tangent) * (Tangent.transpose() * Jv);
             hess->f_uu(si_index.dVs,si_index.dVs) = 2.0 * cost_param_.r_dVs;
-            // hess->f_xu.block(si_index.s,si_index.dq1,1,PANDA_DOF) = 2.0 * cost_param_.r_Vee * (NJq * (Tangent.transpose() * Jv) + vel_error * (Normal.transpose() * Jv));
-            // hess->f_xu.block(si_index.vs,si_index.dq1,1,PANDA_DOF) = 2.0 * cost_param_.r_Vee * (-1) * Tangent.transpose() * Jv;
         }
     }
 
@@ -293,9 +267,6 @@ void Cost::getCost(const ArcLengthSpline &track,const State &x,const Input &u,co
     double ratio = std::min(rb.sel_min_dist_ / (param_.tol_selcol*2.0), rb.manipul_ / (param_.tol_sing*2.0));
     if(ratio <= 1.0)
     {
-        // contouring_cost_ = cost_param_.q_c * ((1.0 - cost_param_.q_c_red_ratio) / (1.0 - 0.5) * (ratio - 0.5) + cost_param_.q_c_red_ratio);
-        // lag_cost_ = cost_param_.q_l * ((1.0 - cost_param_.q_l_inc_ratio) / (1.0 - 0.5) * (ratio - 0.5) + cost_param_.q_l_inc_ratio);
-        // heading_cost_ = cost_param_.q_ori * ((1.0 - cost_param_.q_ori_red_ratio) / (1.0 - 0.5) * (ratio - 0.5) + cost_param_.q_ori_red_ratio);
         contouring_cost_ = cost_param_.q_c * CubicSpline(ratio, 0.5, 1.0, cost_param_.q_c_red_ratio, 1.0);
         lag_cost_ = cost_param_.q_l * CubicSpline(ratio, 0.5, 1.0, cost_param_.q_l_inc_ratio, 1.0);
         heading_cost_ = cost_param_.q_ori * CubicSpline(ratio, 0.5, 1.0, cost_param_.q_ori_red_ratio, 1.0);
