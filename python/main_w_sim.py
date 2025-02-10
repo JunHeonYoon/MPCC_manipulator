@@ -14,25 +14,27 @@ import rclpy
 from nav_msgs.msg import Path
 from std_msgs.msg import Float32
 
-from main_utils import create_path_message2, create_pred_path_message
+from main_utils import create_path_message, create_pred_path_message
 
 np.set_printoptions(suppress=True, precision=3)
 
 ## MPCC parameters
 param_value = {'cost': {
-                    "qC" : 500.0,
-                    "qCNmult": 5,
-                    "qL" : 100.0,
-                    "qVs" : 20.0,
+                    "qC" : 1000.0,
+                    "qCNmult": 10,
+                    "qL" : 500.0,
+                    "qVs" : 10.0,
 
-                    "qOri": 50,
+                    "qOri": 100,
+                    
+                    "qSing": 1,
 
                     "rdq"  : 0.002,
-                    "rddq"  : 10,
+                    "rddq"  : 50,
                     "rdVs" : 0.1,
                     },
             'param': {
-                    "desired_ee_velocity": 0.1,
+                    "desired_s_velocity": 0.1,
                     "tol_sing": 0.018,
                     "tol_selcol": 1.0,
                     "tol_envcol": 1.0,
@@ -52,6 +54,7 @@ def main(args):
 
     # Create publishers
     node = rclpy.create_node('mpcc_node')
+    path_pub = node.create_publisher(Path, '/mpcc/path', 10)
     splined_path_pub = node.create_publisher(Path, '/mpcc/splined_path', 10)
     local_path_pub = node.create_publisher(Path, '/mpcc/local_path', 10)
     ref_local_path_pub = node.create_publisher(Path, '/mpcc/ref_local_path', 10)
@@ -80,14 +83,15 @@ def main(args):
     input = np.array([0., 0., 0., 0., 0., 0., 0., 0.])
     mpc.setTrack(state)
     mpc.setParam(param_value)
+    path_pos, path_ori = mpc.getPath()
     spline_pos, spline_ori, spline_arc_length = mpc.getSplinePath()
     spline_T = np.zeros([spline_pos.shape[0], 4, 4])
     for i, (posi, rot) in enumerate(zip(spline_pos, spline_ori)):
         spline_T[i, :3, :3] = rot
         spline_T[i, :3, 3] = posi
 
-
-    splined_path_msg = create_path_message2(node, spline_pos, spline_ori)
+    path_msg = create_path_message(node, path_pos, path_ori)
+    splined_path_msg = create_path_message(node, spline_pos, spline_ori)
 
     ## Debugging data  
     debug_data = {}
@@ -130,6 +134,55 @@ def main(args):
                 obs_step = obs_step*-1
             obs_position[2] = obs_position[2] + obs_step
             pc.add_sphere("obs", 0.01*obs_radius, obs_position + np.array([0.3, 0, 0.256]), np.array([1,0,0,0]))
+            
+        # if time_idx == 500:
+        #     path = np.array([[[1, 0, 0, 0],
+        #                       [0, 1, 0, 0],
+        #                       [0, 0, 1, 0],
+        #                       [0, 0, 0, 1]],
+        #                      [[0, 0, -1, 0.3],
+        #                       [0, 1, 0, 0],
+        #                       [1, 0, 0, 0.3],
+        #                       [0, 0, 0, 1]]])
+        #     mpc.setTrack(state, path)
+        #     spline_pos, spline_ori, spline_arc_length = mpc.getSplinePath()
+        #     spline_T = np.zeros([spline_pos.shape[0], 4, 4])
+        #     for i, (posi, rot) in enumerate(zip(spline_pos, spline_ori)):
+        #         spline_T[i, :3, :3] = rot
+        #         spline_T[i, :3, 3] = posi
+        #     splined_path_msg = create_path_message(node, spline_pos, spline_ori)
+        # if time_idx == 900:
+        #     path = np.array([[[1, 0, 0, 0],
+        #                       [0, 1, 0, 0],
+        #                       [0, 0, 1, 0],
+        #                       [0, 0, 0, 1]],
+        #                      [[0, 0, -1, 0],
+        #                       [0, 1, 0, 0],
+        #                       [1, 0, 0, 0],
+        #                       [0, 0, 0, 1]]])
+        #     mpc.setTrack(state, path)
+        #     spline_pos, spline_ori, spline_arc_length = mpc.getSplinePath()
+        #     spline_T = np.zeros([spline_pos.shape[0], 4, 4])
+        #     for i, (posi, rot) in enumerate(zip(spline_pos, spline_ori)):
+        #         spline_T[i, :3, :3] = rot
+        #         spline_T[i, :3, 3] = posi
+        #     splined_path_msg = create_path_message(node, spline_pos, spline_ori)
+        # if time_idx == 1200:
+        #     path = np.array([[[1, 0, 0, 0],
+        #                       [0, 1, 0, 0],
+        #                       [0, 0, 1, 0],
+        #                       [0, 0, 0, 1]],
+        #                      [[0, 0, 1, 0],
+        #                       [0, 1, 0, 0],
+        #                       [-1, 0, 0, 0],
+        #                       [0, 0, 0, 1]]])
+        #     mpc.setTrack(state, path)
+        #     spline_pos, spline_ori, spline_arc_length = mpc.getSplinePath()
+        #     spline_T = np.zeros([spline_pos.shape[0], 4, 4])
+        #     for i, (posi, rot) in enumerate(zip(spline_pos, spline_ori)):
+        #         spline_T[i, :3, :3] = rot
+        #         spline_T[i, :3, 3] = posi
+        #     splined_path_msg = create_path_message(node, spline_pos, spline_ori)
 
         ## run MPCC
         status, state, input, mpc_horizon, compute_time = mpc.runMPC(state, input, obs_position, obs_radius) if args.is_obs else mpc.runMPC(state, input)
@@ -224,6 +277,7 @@ def main(args):
         env_min_dist_msg.data = np.min(env_min_dist)
         contour_error_msg.data = contour_error*100 # [m] -> [cm]
         
+        path_pub.publish(path_msg)
         splined_path_pub.publish(splined_path_msg)
         local_path_pub.publish(local_path_msg)
         ref_local_path_pub.publish(ref_local_path_msg)
@@ -234,9 +288,8 @@ def main(args):
         contour_error_pub.publish(contour_error_msg)
         
         
-
         ## End condition 
-        if np.linalg.norm((spline_pos[-1] - x), 2) < 1E-2 and np.linalg.norm(MPCC.Log(spline_ori[-1].T @ rotation), 2) < 1E-2 and abs(state[-2] - spline_arc_length[-1]) < 1E-2:
+        if np.linalg.norm((spline_pos[-1] - x), 2) < 1E-2 and np.linalg.norm(MPCC.Log(spline_ori[-1].T @ rotation), 2) < 1E-2 and abs(state[-2] - 1.) < 1E-2:
             print("End point reached!!!")
             break
         end = time.time()
@@ -285,49 +338,49 @@ def main(args):
     fig=plt.figure(figsize=(14, 8))
     fig.subplots_adjust(hspace=1)
     plt.subplot(411)
-    # plt.plot("s", "vs", data=debug_data, label="vs", color='b')
-    plt.plot("s", "ee_speed", data=debug_data, label="ee_speed", color='r')
-    plt.axhline(y=param_value["param"]["desired_ee_velocity"], color='black', linestyle='--', label="desired")
+    # plt.plot("vs", data=debug_data, label="vs", color='b')
+    plt.plot("ee_speed", data=debug_data, label="ee_speed", color='r')
+    # plt.axhline(y=param_value["param"]["desired_ee_velocity"], color='black', linestyle='--', label="desired")
     plt.xlabel("s (m)")
     plt.ylabel("Speed (m/s)")
     plt.title("EE Speed per Arc length")
-    plt.ylim(-0.01, max(max(debug_data["ee_speed"]), max(debug_data["vs"]), param_value["param"]["desired_ee_velocity"])*1.2)  
-    plt.xlim(0, debug_data["s"][-1])
+    plt.ylim(-0.01, max(max(debug_data["ee_speed"]), max(debug_data["vs"]))*1.2)  
+    # plt.xlim(0, debug_data["s"][-1])
     plt.legend()
     plt.grid(True)
 
     ## Plotting the s/min_dist
     plt.subplot(412)
-    plt.plot("s", "sel_min_dist", data=debug_data, label="minimum distance", color='b')
+    plt.plot("sel_min_dist", data=debug_data, label="minimum distance", color='b')
     plt.axhline(y=SLECOL_BUFFER, color='black', linestyle='--', label="buffer")
     plt.xlabel("s (m)")
     plt.ylabel("distance (cm)")
     plt.title("Minimum distance per Arc length")
     plt.ylim(-0.01, max(debug_data["sel_min_dist"])*1.2)  
-    plt.xlim(0, debug_data["s"][-1])
+    # plt.xlim(0, debug_data["s"][-1])
     plt.legend()
     plt.grid(True)
 
     ## Plotting the s/manipulability
     plt.subplot(413)
-    plt.plot("s", "mani", data=debug_data, label="manip", color='b')
+    plt.plot("mani", data=debug_data, label="manip", color='b')
     plt.axhline(y=MANI_BUFFER, color='black', linestyle='--', label="buffer")
     plt.xlabel("s (m)")
     plt.ylabel("Manipulability")
     plt.title("Manipulability per Arc length")
     plt.ylim(-0.01, max(debug_data["mani"])*1.2)  
-    plt.xlim(0, debug_data["s"][-1])
+    # plt.xlim(0, debug_data["s"][-1])
     plt.legend()
     plt.grid(True)
 
     ## Plotting the s/contouring error
     plt.subplot(414)
-    plt.plot("s", "contour_error", data=debug_data, label="Contour Error", color='b')
+    plt.plot("contour_error", data=debug_data, label="Contour Error", color='b')
     plt.xlabel("s (m)")
     plt.ylabel("Error (m)")
     plt.title("Contouring Error per Arc length")
     plt.ylim(-max(debug_data["contour_error"])*0.3, max(debug_data["contour_error"])*1.2)  
-    plt.xlim(0, debug_data["s"][-1])
+    # plt.xlim(0, debug_data["s"][-1])
     plt.legend()
     plt.grid(True)
 

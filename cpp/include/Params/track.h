@@ -47,22 +47,31 @@ class Track {
 public:
     Track(std::string file);
 
+    /// @brief Set Path
+    /// @param X (Eigen::VectorXd) x position
+    /// @param Y (Eigen::VectorXd) y position
+    /// @param Z (Eigen::VectorXd) z position
+    /// @param R (std::vector<Eigen::Matrix3d>) rotation
+    void setTrack(const Eigen::VectorXd& X, const Eigen::VectorXd& Y, const Eigen::VectorXd& Z, const std::vector<Eigen::Matrix3d>& R);
+
     /// @brief get Track waypoints 
-    /// @param init_position (Eigen::Vector3d) initial End-Effector position 
-    /// @return (TrackPos) Tracking waypoints about x, y, z-axis and rotation matrix(not yet)
-    TrackPos getTrack(Eigen::Vector3d init_position = Eigen::Vector3d::Zero(),
-                      Eigen::Matrix3d init_rotation = Eigen::Matrix3d::Identity());
+    /// @param init_pose (Eigen::Matrix4d) initial End-Effector pose 
+    /// @return (TrackPos) Tracking waypoints about x, y, z-axis and rotation matrix
+    TrackPos getTrack(const Eigen::Matrix4d& init_pose);
 
 private:
-    Eigen::VectorXd X;
-    Eigen::VectorXd Y;
-    Eigen::VectorXd Z;
-    std::vector<Eigen::Matrix3d> R;
+    /// @brief initialize Path w.r.t initial EE pose
+    /// @param init_pose (Eigen::Matrix4d) initial End-Effector pose 
+    void initTrack(const Eigen::Matrix4d& init_pose);
+
+    Eigen::VectorXd X_;
+    Eigen::VectorXd Y_;
+    Eigen::VectorXd Z_;
+    std::vector<Eigen::Matrix3d> R_;
 
     Eigen::Matrix3d enforceOrthogonality(const Eigen::Matrix3d &R);
     Eigen::Matrix3d normalizeDeterminant(const Eigen::Matrix3d &R);
     Eigen::Matrix3d correctRotationMatrix(const Eigen::Matrix3d &R);
-
 };
 };
 
