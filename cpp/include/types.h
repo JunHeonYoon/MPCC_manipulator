@@ -28,7 +28,7 @@ namespace mpcc{
 /// @param q5  (double) joint angle 
 /// @param q6  (double) joint angle 
 /// @param q7  (double) joint angle 
-/// @param s   (double) path parameter, arc length 
+/// @param s   (double) path parameter
 /// @param vs  (double) velocity of path parameter 
 struct State{ 
     double q1;  // joint angle
@@ -38,7 +38,7 @@ struct State{
     double q5;  // joint angle
     double q6;  // joint angle
     double q7;  // joint angle
-    double s;   // path parameter (arc length)
+    double s;   // path parameter
     double vs;  // velocity of path parameter
 
     void setZero()
@@ -53,10 +53,10 @@ struct State{
         s = 0.0;
         vs = 0.0;
     }
-    /// @brief mapping s to [0, track_length]
-    void unwrap(double track_length)
+    /// @brief mapping s to [0, 1]
+    void unwrap()
     {
-        s = std::max(0.,std::min(track_length,s));
+        s = std::max(0.,std::min(1.,s));
     }
 
     bool operator==(const State& other) const 

@@ -56,29 +56,17 @@ struct CostHess{
     }
 };
 
-/// @brief refernce X-Y-Z path position and its derivates wrt arc length (s)
-/// @param x_ref (double) reference X position data
-/// @param y_ref (double) reference Y position data
-/// @param z_ref (double) reference Z position data
-/// @param dx_ref (double) reference X'(s) position data
-/// @param dy_ref (double) reference Y'(s) position data
-/// @param dz_ref (double) reference Z'(s) position data
-/// @param ddx_ref (double) reference X''(s) position data
-/// @param ddy_ref (double) reference Y''(s) position data
-/// @param ddz_ref (double) reference Z''(s) position data
+/// @brief refernce X-Y-Z path position and its derivates wrt path parameter (s)
+/// @param p_ref (Eigen::Vector3d) reference X(s)-Y(s)-Z(s) positition data
+/// @param dp_ref (Eigen::Vector3d) reference X'(s)-Y'(s)-Z'(s) positition data
+/// @param ddp_ref (Eigen::Vector3d) reference X''(s)-Y''(s)-Z''(s) positition data
 struct TrackPoint{
-    const double x_ref;
-    const double y_ref;
-    const double z_ref;
-    const double dx_ref;
-    const double dy_ref;
-    const double dz_ref;
-    const double ddx_ref;
-    const double ddy_ref;
-    const double ddz_ref;
+    const Eigen::Vector3d p_ref;
+    const Eigen::Vector3d dp_ref;
+    const Eigen::Vector3d ddp_ref;
 };
 
-/// @brief refernce Orientation and its derivates wrt arc length (s)
+/// @brief refernce Orientation and its derivates wrt path parameter (s)
 /// @param R_ref (Eigen::Matrix3d) reference R rotation matrix data
 /// @param dR_ref (Eigen::Vector3d) reference R'(s) rotation matrix data
 struct TrackOrienatation{
@@ -117,16 +105,16 @@ public:
                  double* obj,CostGrad* grad,CostHess* hess);
 
 private:
-    /// @brief compute all the geometry information of the track at a given current arc length
+    /// @brief compute all the geometry information of the track at a given current path parameter
     /// @param track (ArcLengthSpline) reference track
     /// @param x (State) current state
-    /// @return (TrackPoint) reference X-Y-Z path position and its derivates wrt arc length (s)
+    /// @return (TrackPoint) reference X-Y-Z path position and its derivates wrt path parameter (s)
     TrackPoint getRefPoint(const ArcLengthSpline &track,const State &x);
 
-    /// @brief compute all the geometry information of the track at a given current arc length
+    /// @brief compute all the geometry information of the track at a given current path parameter
     /// @param track (ArcLengthSpline) reference track
     /// @param x (State) current state
-    /// @return (TrackPoint) reference Orientation and its derivates wrt arc length (s)
+    /// @return (TrackPoint) reference Orientation and its derivates wrt path parameter (s)
     TrackOrienatation getRefOrientation(const ArcLengthSpline &track,const State &x);
 
     /// @brief compute error between reference track and X-Y position of the car

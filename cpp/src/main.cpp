@@ -43,7 +43,7 @@ int main() {
                            pkg_path + std::string(jsonConfig["sqp_path"])};
 
     std::map<std::string, double> param, cost_param;
-    param["desired_ee_velocity"] = 0.2;
+    param["desired_s_velocity"] = 0.05;
     cost_param["qOri_reduction_ratio"] = 0.1;
     ParamValue param_value = {param, cost_param};
 
@@ -61,22 +61,19 @@ int main() {
                 0., 0.};
     Input u0 = {0., 0., 0., 0., 0., 0., 0.,
                 0.};
-    Eigen::Vector3d ee_pos = robot.getEEPosition(stateToJointVector(x0));
-    Eigen::Matrix3d ee_ori = robot.getEEOrientation(stateToJointVector(x0));
+    Eigen::Matrix4d ee_pose = robot.getEETransformation(stateToJointVector(x0));
 
     Track track = Track(json_paths.track_path);
-    TrackPos track_xyzr = track.getTrack(ee_pos, ee_ori);
+    TrackPos track_xyzr = track.getTrack(ee_pose);
     mpc.setTrack(track_xyzr.X,track_xyzr.Y,track_xyzr.Z,track_xyzr.R);
 
-    Eigen::Vector3d end_point;
-    Eigen::Matrix3d end_ori;
-    double end_s;
-    end_point(0) = track_xyzr.X(track_xyzr.X.size() - 1); 
-    end_point(1) = track_xyzr.Y(track_xyzr.Y.size() - 1);
-    end_point(2) = track_xyzr.Z(track_xyzr.Z.size() - 1);
-    end_ori = track_xyzr.R[track_xyzr.R.size() - 1];
-    end_s = mpc.getTrackLength();
-    std::cout<<"end posi: "<<end_point.transpose()<<std::endl;
+    Eigen::Matrix4d end_pose;
+    end_pose.setIdentity();
+    end_pose(0,3) = track_xyzr.X(track_xyzr.X.size() - 1); 
+    end_pose(1,3) = track_xyzr.Y(track_xyzr.Y.size() - 1);
+    end_pose(2,3) = track_xyzr.Z(track_xyzr.Z.size() - 1);
+    end_pose.block(0,0,3,3) = track_xyzr.R[track_xyzr.R.size() - 1];
+    std::cout<<"end pose: "<<end_pose<<std::endl;
     
     mpcc::ArcLengthSpline spline_track = mpc.getTrack();
     mpcc::PathData spline_path = spline_track.getPathData();
@@ -100,10 +97,10 @@ int main() {
     for(int i = 0; i < jsonConfig["n_sim"]; i++)
     {
         MPCReturn mpc_sol;
-        if(i == 200)
-        {
-            mpc.setParam(param_value);
-        }
+        // if(i == 200)
+        // {
+        //     mpc.setParam(param_value);
+        // }
         bool mpc_status = mpc.runMPC(mpc_sol, x0, u0);
         if(mpc_status == false)
         {
@@ -112,8 +109,7 @@ int main() {
         }
         u0 = mpc_sol.u0;
         x0 = integrator.simTimeStep(x0,u0,jsonConfig["Ts"]);
-        ee_pos = robot.getEEPosition(stateToJointVector(x0));
-        ee_ori = robot.getEEOrientation(stateToJointVector(x0));
+        ee_pose = robot.getEETransformation(stateToJointVector(x0));
 
         std::cout << "==============================================================="<<std::endl;
         std::cout << "time step: " << i << std::endl;;
@@ -122,12 +118,12 @@ int main() {
         std::cout << "q_dot now       :\t";
         std::cout << std::fixed << std::setprecision(6) << inputTodJointVector(u0).transpose()  << std::endl;
         std::cout << "x               :\t";
-        std::cout << std::fixed << std::setprecision(6) << ee_pos.transpose() << std::endl;
+        std::cout << std::fixed << std::setprecision(6) << ee_pose.block(0,3,3,1).transpose() << std::endl;
         std::cout << "x_dot           :\t";
         std::cout << std::fixed << std::setprecision(6) << (robot.getJacobianv(stateToJointVector(x0))*inputTodJointVector(u0)).transpose() << std::endl;
         std::cout << std::fixed << std::setprecision(6) << (robot.getJacobianv(stateToJointVector(x0))*inputTodJointVector(u0)).norm() << std::endl;
         std::cout << "R               :" << std::endl;
-        std::cout << std::fixed << std::setprecision(6) << ee_ori << std::endl;
+        std::cout << std::fixed << std::setprecision(6) << ee_pose.block(0,0,3,3) << std::endl;
         std::cout << "manipulability  :\t";
         std::cout << std::fixed << std::setprecision(6) << robot.getManipulability(stateToJointVector(x0)) << std::endl;
         std::cout << "min distance[cm]:\t";
@@ -139,9 +135,9 @@ int main() {
         std::cout << "dVs              :";
         std::cout << std::fixed << std::setprecision(6) << u0.dVs << std::endl;
         std::cout << "x_error         :";
-        std::cout << std::fixed << std::setprecision(6) << (end_point - ee_pos).transpose() << std::endl;
+        std::cout << std::fixed << std::setprecision(6) << (end_pose.block(0,3,3,1) -  ee_pose.block(0,3,3,1)).transpose() << std::endl;
         std::cout << "R error         :";
-        std::cout << std::fixed << std::setprecision(6) << getInverseSkewVector(LogMatrix(end_ori.transpose()*ee_ori)).transpose() << std::endl;
+        std::cout << std::fixed << std::setprecision(6) << getInverseSkewVector(LogMatrix(end_pose.block(0,0,3,3).transpose()*ee_pose.block(0,0,3,3))).transpose() << std::endl;
         std::cout << "MPC time        :";
         std::cout << std::fixed << std::setprecision(6) << mpc_sol.compute_time.total << std::endl;
         std::cout << "==============================================================="<<std::endl;
@@ -171,7 +167,9 @@ int main() {
 
         log.push_back(mpc_sol);
 
-        if((end_point - ee_pos).norm() < 1e-2 && (getInverseSkewVector(LogMatrix(end_ori.transpose()*ee_ori))).norm() < 1e-3 && fabs(x0.s - end_s) < 1e-2)
+        if((end_pose.block(0,3,3,1) -  ee_pose.block(0,3,3,1)).norm() < 1e-2 && 
+           (getInverseSkewVector(LogMatrix(end_pose.block(0,0,3,3).transpose()*ee_pose.block(0,0,3,3)))).norm() < 1e-3 && 
+           fabs(x0.s - 1.0) < 1e-2)
         {
             std::cout << "End point reached!!!"<< std::endl;
             break;

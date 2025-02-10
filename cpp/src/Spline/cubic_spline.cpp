@@ -40,26 +40,50 @@ void CubicSpline::setRegularData(const Eigen::VectorXd &x_in,const Eigen::Vector
     }
 }
 
-void CubicSpline::setData(const Eigen::VectorXd &x_in,const Eigen::VectorXd &y_in)
+void CubicSpline::setData(const Eigen::VectorXd &x_in, const Eigen::VectorXd &y_in)
 {
-    //if x and y have same length, store given data in spline data struct
-    if(x_in.size() == y_in.size())
-    {
-        spline_data_.x_data = x_in;
-        spline_data_.y_data = y_in;
-        spline_data_.n_points = x_in.size();
-        spline_data_.is_regular = false;
-        spline_data_.delta_x = 0;
-        for(int i = 0;i<x_in.size();i++){
-            spline_data_.x_map[x_in(i)] = i;
-        }
+    if (x_in.size() != y_in.size()) {
+        std::cout << "Input data does not have the same length" << std::endl;
+        return;
+    }
 
-        data_set_ = true;
+    // Allocate maximum possible size to avoid unnecessary allocations
+    int n = x_in.size();
+    Eigen::VectorXd x_filtered(n), y_filtered(n);
+    x_filtered(0) = x_in(0);
+    y_filtered(0) = y_in(0);
+    int new_size = 1;  // Counter for valid data points
+
+    // Filter only increasing x values
+    for (int i = 1; i < n; i++) {
+        if (x_in(i) > x_filtered(new_size - 1)) {  // Keep only strictly increasing x values
+            x_filtered(new_size) = x_in(i);
+            y_filtered(new_size) = y_in(i);
+            new_size++;
+        }
     }
-    else
-    {
-        std::cout << "input data does not have the same length" << std::endl;
+
+    // Ensure there are enough points for interpolation
+    if (new_size < 2) {
+        std::cout << "Filtered data is too small for spline interpolation" << std::endl;
+        data_set_ = false;
+        return;
     }
+
+    // Resize vectors to store only valid data
+    spline_data_.x_data = x_filtered.head(new_size);
+    spline_data_.y_data = y_filtered.head(new_size);
+    spline_data_.n_points = new_size;
+    spline_data_.is_regular = false;
+    spline_data_.delta_x = 0;
+
+    // Update x_map for fast lookups (using unordered_map)
+    spline_data_.x_map.clear();
+    for (int i = 0; i < new_size; i++) {
+        spline_data_.x_map[spline_data_.x_data(i)] = i;
+    }
+
+    data_set_ = true;
 }
 
 bool CubicSpline::compSplineParams()
@@ -201,6 +225,7 @@ double CubicSpline::getPoint(double x) const
     dx = x-x_i;
     dx2 = dx*dx;
     dx3 = dx*dx2;
+
     // return spline value y = a + b dx + c dx^2 + d dx^3
     if(index == spline_data_.n_points-1) return spline_data_.y_data(spline_data_.n_points-1);
     return spline_params_.a(index) + spline_params_.b(index)*dx + spline_params_.c(index)*dx2 + spline_params_.d(index)*dx3;

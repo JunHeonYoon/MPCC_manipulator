@@ -35,7 +35,7 @@ class MPCC():
         assert set(param_value.keys()).issubset(param_list) == True, f"List of Parameters must be a subset of {param_list}, but got {list(param_value.keys())}"
 
         param_dict = {
-            "param": ["max_dist_proj", "desired_ee_velocity", "s_trust_region", "tol_sing", "tol_selcol", "tol_envcol"],
+            "param": ["max_dist_proj", "desired_s_velocity", "s_trust_region", "tol_sing", "tol_selcol", "tol_envcol"],
             "cost": ["qC","qCNmult","qL","qVs","qOri","qSing","rdq","rddq","rdVs","qC_reduction_ratio","qL_increase_ratio","qOri_reduction_ratio"],
             "bounds": ["q1l","q2l","q3l","q4l","q5l","q6l","q7l","sl","vsl","q1u","q2u","q3u","q4u","q5u","q6u","q7u","su","vsu","dq1l","dq2l","dq3l","dq4l","dq5l","dq6l","dq7l","dVsl","dq1u","dq2u","dq3u","dq4u","dq5u","dq6u","dq7u","dVsu"],
             "normalization": ["q1","q2","q3","q4","q5","q6","q7","s","vs","dq1","dq2","dq3","dq4","dq5","dq6","dq7","dVs"],
@@ -54,50 +54,61 @@ class MPCC():
 
         self.mpc.setParam(param_value_cpp)
 
-    def setTrack(self, state:np.array) -> None:
+    def setTrack(self, state:np.array, path:np.array=None) -> None:
         assert state.size == MPCC_CPP.NX, f"State size {state.size} does not match expected size {MPCC_CPP.NX}"
         self.init_state = state
 
-        ee_pos = self.robot_model.getEEPosition(self.init_state[:self.robot_model.num_q])
-        ee_ori = self.robot_model.getEEOrientation(self.init_state[:self.robot_model.num_q])
+        ee_pose = self.robot_model.getEETransformation(self.init_state[:self.robot_model.num_q])
         track = MPCC_CPP.Track(self.json_paths.track_path)
-        track_xyzr = track.getTrack(ee_pos, ee_ori)
+        if path is not None:
+            track.setTrack(path[:,0,3], path[:,1,3], path[:,2,3], path[:, :3, :3])
+        self.track_xyzr = track.getTrack(ee_pose)
+        
+        print("track X: ", np.array(self.track_xyzr.X))
+        print("track Y: ", np.array(self.track_xyzr.Y))
+        print("track Z: ", np.array(self.track_xyzr.Z))
+        print("track R: ", np.array(self.track_xyzr.R))
 
-        self.mpc.setTrack(track_xyzr.X, 
-                          track_xyzr.Y,
-                          track_xyzr.Z,
-                          track_xyzr.R)
+        self.mpc.setTrack(self.track_xyzr.X, 
+                          self.track_xyzr.Y,
+                          self.track_xyzr.Z,
+                          self.track_xyzr.R)            
         
         self.spline_track = self.mpc.getTrack()
         self.spline_path = self.spline_track.getPathData()
         # print(np.array(self.spline_path.R))
 
         self.track_set = True
+        
+    def getPath(self) -> {np.array, np.array}:
+        assert self.track_set == True, "Set Track first!"
+        position = np.stack([self.track_xyzr.X, self.track_xyzr.Y, self.track_xyzr.Z], axis=1)
+        rotation = np.array(self.track_xyzr.R)
+        
+        return position, rotation
     
     def getSplinePath(self) -> {np.array, np.array, np.array}:
         assert self.track_set == True, "Set Track first!"
         position = np.stack([self.spline_path.X, self.spline_path.Y, self.spline_path.Z], axis=1)
         rotation = np.array(self.spline_path.R)
-        arc_length = self.spline_path.s
+        arc_length = self.spline_path.arc_length
 
         return position, rotation, arc_length
     
     def getRefPose(self, path_parameter:float) -> {np.array, np.array}:
-        assert path_parameter >= np.min(self.spline_path.s)-1E-3 and path_parameter <= np.max(self.spline_path.s)+1E-3, f"Path parameter must be in [{np.min(self.spline_path.s), np.max(self.spline_path.s)}] and your input is {path_parameter}"
+        # assert path_parameter >= 0.-1E-8 and path_parameter <= 1.+1E-8, f"Path parameter must be in [0, 1] and your input is {path_parameter}"
         return self.spline_track.getPosition(path_parameter), self.spline_track.getOrientation(path_parameter)
 
     def getContourError(self, s:float, ee_posi:np.array)-> {float, float}:
         ref_posi = self.spline_track.getPosition(s)
         return np.linalg.norm(ref_posi - ee_posi)
 
-    # def runMPC(self, state:np.array, input:np.array, voxel:np.array = np.zeros(int(36*36*36))) -> {bool, np.array, np.array, list, dict}:
     def runMPC(self, state:np.array, input:np.array, obs_position: np.array = np.array([3,3,3]), obs_radius: float = 0) -> {bool, np.array, np.array, list, dict}:
         assert self.track_set == True, "Set Track first!"
         assert state.size == MPCC_CPP.NX, f"State size {state.size} does not match expected size {MPCC_CPP.NX}"
         x0 = MPCC_CPP.vectorToState(state)
         u0 = MPCC_CPP.vectorToInput(input)
         mpc_sol = MPCC_CPP.MPCReturn()
-        # mpc_status = self.mpc.runMPC_(mpc_sol, x0, u0, voxel)
         mpc_status = self.mpc.runMPC_(mpc_sol, x0, u0, obs_position, obs_radius)
         updated_state = MPCC_CPP.stateToVector(x0)
 

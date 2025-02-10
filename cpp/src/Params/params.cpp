@@ -32,7 +32,7 @@ Param::Param(std::string file){
     iModel >> jsonModel;
 
     max_dist_proj = jsonModel["max_dist_proj"];
-    desired_ee_velocity = jsonModel["desired_ee_velocity"];
+    desired_s_velocity = jsonModel["desired_s_velocity"];
     deacc_ratio = jsonModel["deaccelerate_ratio"];
 
     // initial warm start and trust region (model dependent)
@@ -66,7 +66,7 @@ Param::Param(std::string file, std::map<std::string, double> param){
     };
 
     get_param_value("max_dist_proj", max_dist_proj);
-    get_param_value("desired_ee_velocity", desired_ee_velocity);
+    get_param_value("desired_s_velocity", desired_s_velocity);
     get_param_value("deaccelerate_ratio", deacc_ratio);
     get_param_value("s_trust_region", s_trust_region);
     get_param_value("tol_sing", tol_sing);
@@ -118,7 +118,6 @@ CostParam::CostParam(std::string file){
     // std::cout << "q_vs = " << q_vs << std::endl;
     // std::cout << "q_ori = " << q_ori << std::endl;
     // std::cout << "r_dq = " << r_dq << std::endl;
-    // std::cout << "r_Vee = " << r_Vee << std::endl;
     // std::cout << "r_dVs = " << r_dVs << std::endl;
     // std::cout << "q_c_red_ratio = " << q_c_red_ratio << std::endl;
     // std::cout << "q_l_inc_ratio = " << q_l_inc_ratio << std::endl;
@@ -163,7 +162,6 @@ CostParam::CostParam(std::string file, std::map<std::string, double> cost_param)
     // std::cout << "q_vs = " << q_vs << std::endl;
     // std::cout << "q_ori = " << q_ori << std::endl;
     // std::cout << "r_dq = " << r_dq << std::endl;
-    // std::cout << "r_Vee = " << r_Vee << std::endl;
     // std::cout << "r_dVs = " << r_dVs << std::endl;
     // std::cout << "q_c_red_ratio = " << q_c_red_ratio << std::endl;
     // std::cout << "q_l_inc_ratio = " << q_l_inc_ratio << std::endl;

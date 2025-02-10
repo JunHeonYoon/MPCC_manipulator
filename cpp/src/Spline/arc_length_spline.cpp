@@ -34,15 +34,20 @@ void ArcLengthSpline::setData(const Eigen::VectorXd &X_in,const Eigen::VectorXd 
 {
     // set input data if x, y, z and orienatation have same length
     // compute arc length based on an piecewise linear approximation
-    if(X_in.size() == Y_in.size() && X_in.size() == Z_in.size() && X_in.size() == R_in.size()){
+    if(X_in.size() == Y_in.size() && X_in.size() == Z_in.size() && X_in.size() == R_in.size())
+    {
         path_data_.X = X_in;
         path_data_.Y = Y_in;
         path_data_.Z = Z_in;
         path_data_.R = R_in;
         path_data_.n_points = X_in.size();
-        path_data_.s = compArcLength(X_in,Y_in,Z_in);
+        Eigen::VectorXd arc_length = compArcLength(X_in,Y_in,Z_in,R_in);
+        path_data_.arc_length = arc_length.tail(1)(0);
+        // path_data_.s = arc_length / path_data_.arc_length; // normalization
+        path_data_.s.setLinSpaced(path_data_.n_points,0., 1.); // normalization
     }
-    else{
+    else
+    {
         std::cout << "input data does not have the same length" << std::endl;
     }
 }
@@ -50,54 +55,58 @@ void ArcLengthSpline::setData(const Eigen::VectorXd &X_in,const Eigen::VectorXd 
 void ArcLengthSpline::setRegularData(const Eigen::VectorXd &X_in,const Eigen::VectorXd &Y_in,const Eigen::VectorXd &Z_in,const std::vector<Eigen::Matrix3d> &R_in,const Eigen::VectorXd &s_in) {
     // set final x-y-z-R data if x, y, z and orieatation have same length
     // x-y points are space such that they are very close to arc length parametrized
-    if(X_in.size() == Y_in.size() && X_in.size() == Z_in.size() && X_in.size() == R_in.size()){
+    if(X_in.size() == Y_in.size() && X_in.size() == Z_in.size() && X_in.size() == R_in.size())
+    {
         path_data_.X = X_in;
         path_data_.Y = Y_in;
         path_data_.Z = Z_in;
         path_data_.R = R_in;
         path_data_.n_points = X_in.size();
+        path_data_.arc_length = compArcLength(X_in,Y_in,Z_in,R_in).tail(1)(0);
         path_data_.s = s_in;
     }
-    else{
+    else
+    {
         std::cout << "input data does not have the same length" << std::endl;
     }
 }
 
-Eigen::VectorXd ArcLengthSpline::compArcLength(const Eigen::VectorXd &X_in,const Eigen::VectorXd &Y_in,const Eigen::VectorXd &Z_in) const
+Eigen::VectorXd ArcLengthSpline::compArcLength(const Eigen::VectorXd &X_in,const Eigen::VectorXd &Y_in,const Eigen::VectorXd &Z_in,const std::vector<Eigen::Matrix3d> &R_in) const
 {
     //compute arc length based on straight line distance between the data points
-    double dx,dy,dz;
+    double dx,dy,dz,dR;
     double dist;
 
     int n_points = X_in.size();
-    // initailize s as zero
-    Eigen::VectorXd s;
-    s.setZero(n_points);
-//    std::cout << X_in << std::endl;
+    // initailize a as zero
+    Eigen::VectorXd a;
+    a.setZero(n_points);
     for(int i=0;i<n_points-1;i++)
     {
         dx = X_in(i+1)-X_in(i);
         dy = Y_in(i+1)-Y_in(i);
         dz = Z_in(i+1)-Z_in(i);
-        dist = std::sqrt(dx*dx + dy*dy + dz*dz);    //dist is straight line distance between points
-        s(i+1) = s(i)+dist;       //s is cumulative sum of dist
+
+        dR = getInverseSkewVector(LogMatrix(R_in[i].transpose() * R_in[i+1])).norm();
+
+        dist = std::sqrt(dx*dx + dy*dy + dz*dz) + dR;    //dist is straight line distance between points
+        a(i+1) = a(i)+dist;       //s is cumulative sum of dist
     }
-//    std::cout << s_in << std::endl;
-    return s;
+    return a;
 }
 
-PathData ArcLengthSpline::resamplePath(const CubicSpline &initial_spline_x,const CubicSpline &initial_spline_y,const CubicSpline &initial_spline_z,const CubicSplineRot &initial_spline_r,double total_arc_length) const
+PathData ArcLengthSpline::resamplePath(const CubicSpline &initial_spline_x,const CubicSpline &initial_spline_y,const CubicSpline &initial_spline_z,const CubicSplineRot &initial_spline_r) const
 {
     // re-sample arc length parametrized X-Y-Z-R spline path with N_spline data points
     // using equidistant arc length values
     // successively re-sample, computing the arc length and then fit the path should
     // result in close to equidistant points w.r.t. arc length
 
-    // s -> "arc length" where points should be extracted
-    // equilly spaced between 0 and current length of path
+    // s -> "normalized arc length" where points should be extracted
+    // equilly spaced between 0 and 1
     PathData resampled_path;
     resampled_path.n_points=N_SPLINE;
-    resampled_path.s.setLinSpaced(N_SPLINE,0,total_arc_length);
+    resampled_path.s.setLinSpaced(N_SPLINE,0.,1.);
 
     // initialize new points as zero
     resampled_path.X.setZero(N_SPLINE);
@@ -205,9 +214,7 @@ RawPath ArcLengthSpline::outlierRemoval(const Eigen::VectorXd &X_original,const 
 
 double ArcLengthSpline::unwrapInput(double x) const
 {
-    double x_max = getLength();
-    // return x - x_max*std::floor(x/x_max);
-    return std::max(0., std::min(x,x_max));
+    return std::max(0., std::min(x,1.));
 }
 
 void ArcLengthSpline::fitSpline(const Eigen::VectorXd &X,const Eigen::VectorXd &Y,const Eigen::VectorXd &Z,const std::vector<Eigen::Matrix3d> &R)
@@ -216,11 +223,11 @@ void ArcLengthSpline::fitSpline(const Eigen::VectorXd &X,const Eigen::VectorXd &
     // temporary spline class only used for fitting
     Eigen::VectorXd s_approximation;
     PathData first_refined_path,second_refined_path;
-    double total_arc_length;
 
-    s_approximation = compArcLength(X,Y,Z);
-//    std::cout << s_approximation << std::endl;
-    total_arc_length = s_approximation(s_approximation.size()-1);
+    // s_approximation = compArcLength(X,Y,Z,R);
+    // s_approximation = s_approximation / s_approximation.tail(1)(0);
+    s_approximation.setLinSpaced(X.size(),0.,1.);
+    // std::cout << s_approximation << std::endl;
 
     CubicSpline first_spline_x,first_spline_y,first_spline_z; CubicSplineRot first_spline_r;
     CubicSpline second_spline_x,second_spline_y,second_spline_z; CubicSplineRot second_spline_r;
@@ -230,10 +237,11 @@ void ArcLengthSpline::fitSpline(const Eigen::VectorXd &X,const Eigen::VectorXd &
     first_spline_z.genSpline(s_approximation,Z,false);
     first_spline_r.genSpline(s_approximation,R,false);
     // 1. re-sample
-    first_refined_path = resamplePath(first_spline_x,first_spline_y,first_spline_z,first_spline_r,total_arc_length);
-    s_approximation = compArcLength(first_refined_path.X,first_refined_path.Y,first_refined_path.Z);
-
-    total_arc_length = s_approximation(s_approximation.size()-1);
+    first_refined_path = resamplePath(first_spline_x,first_spline_y,first_spline_z,first_spline_r);
+    // s_approximation = compArcLength(first_refined_path.X,first_refined_path.Y,first_refined_path.Z,first_refined_path.R);
+    // s_approximation = s_approximation / s_approximation.tail(1)(0);
+    s_approximation.setLinSpaced(first_refined_path.X.size(),0.,1.);
+    // std::cout << s_approximation << std::endl;
     ////////////////////////////////////////////
     // 2. spline fit
     second_spline_x.genSpline(s_approximation,first_refined_path.X,false);
@@ -241,7 +249,7 @@ void ArcLengthSpline::fitSpline(const Eigen::VectorXd &X,const Eigen::VectorXd &
     second_spline_z.genSpline(s_approximation,first_refined_path.Z,false);
     second_spline_r.genSpline(s_approximation,first_refined_path.R,false);
     // 2. re-sample
-    second_refined_path = resamplePath(second_spline_x,second_spline_y,second_spline_z,second_spline_r,total_arc_length);
+    second_refined_path = resamplePath(second_spline_x,second_spline_y,second_spline_z,second_spline_r);
     ////////////////////////////////////////////
     setRegularData(second_refined_path.X,second_refined_path.Y,second_refined_path.Z,second_refined_path.R,second_refined_path.s);
     // setData(second_refined_path.X,second_refined_path.Y);
@@ -312,27 +320,30 @@ Eigen::Vector3d ArcLengthSpline::getSecondDerivative(const double s) const
 
 double ArcLengthSpline::getLength() const
 {
-    return path_data_.s(path_data_.n_points-1);
+    return path_data_.arc_length;
 }
 
-double ArcLengthSpline::projectOnSpline(const double &s, const Eigen::Vector3d ee_pos) const
+double ArcLengthSpline::projectOnSpline(const double &s, const Eigen::Matrix4d ee_pose) const
 {
     double s_guess = s;
     Eigen::Vector3d pos_path = getPosition(s_guess);
+    Eigen::Matrix3d ori_path = getOrientation(s_guess);
 
     double s_opt = s_guess;
-    double dist = (ee_pos-pos_path).norm();
+    double dist = (ee_pose.block(0,3,3,1)-pos_path).norm() + getInverseSkewVector(LogMatrix(ori_path.transpose() * ee_pose.block(0,0,3,3))).norm();
 
     if (dist >= param_.max_dist_proj)
     {
         std::cout << "dist too large" << std::endl;
-        Eigen::ArrayXd diff_x_all = path_data_.X.array() - ee_pos(0);
-        Eigen::ArrayXd diff_y_all = path_data_.Y.array() - ee_pos(1);
-        Eigen::ArrayXd diff_z_all = path_data_.Z.array() - ee_pos(2);
+        Eigen::ArrayXd diff_x_all = path_data_.X.array() - ee_pose(0,3);
+        Eigen::ArrayXd diff_y_all = path_data_.Y.array() - ee_pose(1,3);
+        Eigen::ArrayXd diff_z_all = path_data_.Z.array() - ee_pose(2,3);
         Eigen::ArrayXd dist_square = diff_x_all.square() + diff_y_all.square() + diff_z_all.square();
         std::vector<double> dist_square_vec(dist_square.data(),dist_square.data() + dist_square.size());
-        // auto min_iter = std::min_element(dist_square_vec.begin(),distr_squae_vec.end());
-        // s_opt = path_data_.s(std::distance(dist_square_vec.begin(), min_iter));
+        for(size_t i=0; i++; i<dist_square_vec.size())
+        {
+            dist_square_vec[i] += getInverseSkewVector(LogMatrix(path_data_.R[i].transpose() * ee_pose.block(0,0,3,3))).squaredNorm();
+        }
 
         Eigen::ArrayXd diff_s_all = path_data_.s.array() - s_guess;
         Eigen::Array<bool, Eigen::Dynamic, 1> valid_mask = (diff_s_all.abs() <= param_.max_dist_proj);
@@ -350,26 +361,32 @@ double ArcLengthSpline::projectOnSpline(const double &s, const Eigen::Vector3d e
             s_opt = path_data_.s(min_idx);
         }
     }
-    // else return s_opt;
+    else return s_opt;
 
-    if(s_opt >= path_data_.s(path_data_.n_points-1)) return path_data_.s(path_data_.n_points-1);
+    if(s_opt >= 1.) return 1.;
 
     double s_old = s_opt;
     for(int i=0; i<20; i++)
     {
         pos_path = getPosition(s_opt);
-        Eigen::Vector3d ds_path = getDerivative(s_opt);
-        Eigen::Vector3d dds_path = getSecondDerivative(s_opt);
-        Eigen::Vector3d diff = pos_path - ee_pos;
-        double jac = 2.0 * diff(0) * ds_path(0) + 2.0 * diff(1) * ds_path(1) + 2.0 * diff(2) * ds_path(2);
-        double hessian = 2.0 * ds_path(0) * ds_path(0) + 2.0 * diff(0) * dds_path(0) +
-                         2.0 * ds_path(1) * ds_path(1) + 2.0 * diff(1) * dds_path(1) +
-                         2.0 * ds_path(2) * ds_path(2) + 2.0 * diff(2) * dds_path(2);
-        // Newton method
-        s_opt -= jac/hessian;
+        Eigen::Vector3d ds_posi = getDerivative(s_opt);
+        Eigen::Vector3d dds_posi = getSecondDerivative(s_opt);
+        Eigen::Vector3d diff_posi = pos_path - ee_pose.block(0,3,3,1);
+
+        ori_path = getOrientation(s_opt);
+        Eigen::Vector3d diff_ori = getInverseSkewVector(LogMatrix(ori_path.transpose()*ee_pose.block(0,0,3,3)));
+        Eigen::Matrix3d J_r_inv;
+        if(diff_ori.norm() < 1e-8) J_r_inv = Eigen::Matrix3d::Identity();
+        else J_r_inv = Eigen::Matrix3d::Identity() + 1./2.*getSkewMatrix(diff_ori) + ( 1. / diff_ori.squaredNorm() + ( 1. + cos(diff_ori.norm()) ) / ( 2. * diff_ori.norm() * sin(diff_ori.norm()) ) )*getSkewMatrix(diff_ori)*getSkewMatrix(diff_ori);
+        Eigen::Vector3d ds_diff_ori = -J_r_inv * ee_pose.block(0,0,3,3).transpose() * ori_path * getOrientationDerivative(s_opt);
+
+        double jac = 2.0 * ds_posi.dot(diff_posi) + 
+                     2.0 * ds_diff_ori.dot(diff_ori);
+        double hessian = 2.0 * ds_posi.dot(ds_posi) + 2.0 * dds_posi.dot(diff_posi) +
+                         2.0 * ds_diff_ori.dot(ds_diff_ori); // gauss-newton approximation about orientation
+        s_opt -= 0.2*jac/hessian;
         s_opt = unwrapInput(s_opt);
 
-//        std::cout << std::abs(s_old - s_opt) << std::endl;
         if(std::abs(s_old - s_opt) <= 1e-5)
             return s_opt;
         s_old = s_opt;

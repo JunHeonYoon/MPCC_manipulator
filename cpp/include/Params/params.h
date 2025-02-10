@@ -32,7 +32,7 @@ using json = nlohmann::json;
 class Param{
 public:
     double max_dist_proj;
-    double desired_ee_velocity; // desired end-effector velocity
+    double desired_s_velocity; // desired path parameter velocity
     double s_trust_region;
     double deacc_ratio; // starting ratio to deaccelerate movement of s(path parameter)
 
@@ -63,7 +63,6 @@ public:
     // Input cost
     double r_dq;     // weight for joint velocity
     double r_ddq;    // weight for joint acceleration
-    double r_Vee;    // weight for end-effector velocity
     double r_dVs;    // weight for accelerate of path parameter
 
     // Reduction and Increase ratio
