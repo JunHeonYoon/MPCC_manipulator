@@ -90,20 +90,20 @@ namespace mpcc
 
 				return rotation_;
 			}
-            const Affine3d & getTransformation(const int & frame_id) 
+            const Matrix4d & getTransformation(const int & frame_id) 
             {
 				Transformation(frame_id);
-				return trans_;
+				return trans_.matrix();
 			}
-            const Affine3d & getEETransformation() 
+            const Matrix4d & getEETransformation() 
             {
 				Transformation(PANDA_NUM_LINKS);
-				return trans_;
+				return trans_.matrix();
 			}
-            const Affine3d & getEETransformation(const VectorXd &q) 
+            const Matrix4d & getEETransformation(const VectorXd &q) 
             {
 				Transformation(PANDA_NUM_LINKS, q);
-				return trans_;
+				return trans_.matrix();
 			}
             const VectorXd & getJointPosition() 
             {

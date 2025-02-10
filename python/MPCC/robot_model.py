@@ -29,6 +29,10 @@ class RobotModel():
         assert joint_angle.size == self.num_q, f"Joint angle size {joint_angle.size} does not match expected size {self.num_q}"
         return self.robot.getEEOrientation(joint_angle)
     
+    def getEETransformation(self, joint_angle: np.array) -> np.array:
+        assert joint_angle.size == self.num_q, f"Joint angle size {joint_angle.size} does not match expected size {self.num_q}"
+        return self.robot.getEETransformation(joint_angle)
+    
     def getEEManipulability(self, joint_angle: np.array) -> np.array:
         assert joint_angle.size == self.num_q, f"Joint angle size {joint_angle.size} does not match expected size {self.num_q}"
         return self.robot.getManipulability(joint_angle)
