@@ -1,17 +1,17 @@
 # MPCC for manipulator
-This code run at ROS1 noetic with Ubuntu 20.04.
+This code run at ROS2 humble with Ubuntu 22.04.
 
 ## Installation guide
 ### C++ dependency
 Install C++ dependencies and build
 ```sh
-git clone https://github.com/JunHeonYoon/MPCC_manipulator.git
+git clone -b humble https://github.com/JunHeonYoon/MPCC_manipulator.git
 cd MPCC_manipulator/cpp
 ./install.sh
 
 mkdir build && cd build
 cmake ..
-make -j8
+make -j30
 ```
 
 If your cmake version lower than 3.18, than update cmake
@@ -37,41 +37,39 @@ cd build
 1. [MoveIt](https://moveit.ai/)
 ```sh
 sudo apt install ros-$ROS_DISTRO-moveit
+sudo apt install ros-$ROS_DISTRO-rmw-cyclonedds-cpp export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+echo 'export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp' >> ~/.bashrc
+source ~/.bashrc
 ```
-2. [Franka description](https://github.com/frankaemika/franka_ros/tree/develop/franka_description)
+2. [Franka description](https://github.com/frankaemika/franka_description)
 ```sh
-sudo apt install ros-$ROS_DISTRO-franka-ros
+cd ~/ros2_ws/src
+git clone https://github.com/frankaemika/franka_description.git
+cd ../
+colcon build
 ```
-3. [Husky description](https://github.com/husky/husky/tree/noetic-devel/husky_description)
+3. [Husky description](https://github.com/clearpathrobotics/clearpath_common/tree/humble))
 ```sh
-sudo apt install ros-$ROS_DISTRO-husky-desktop
+cd ~/ros2_ws/src
+git clone -b humble https://github.com/clearpathrobotics/clearpath_common.git 
+cd ../
+colcon build
 ```
-4. [suhan_robot_model_tools](https://github.com/psh117/suhan_robot_model_tools)
+4. [suhan_robot_model_tools2](https://github.com/JunHeonYoon/suhan_robot_model_tools/tree/humble)
 ```sh
-sudo apt install ros-$ROS_DISTRO-combined-robot-hw ros-$ROS_DISTRO-trac-ik ros-$ROS_DISTRO-nlopt
-sudo apt install libnlopt-dev libnlopt-cxx-dev libglfw3-dev
-
-pip install tqdm matplotlib
+cd ~/ros2_ws/src
+git clone -b humble https://github.com/JunHeonYoon/suhan_robot_model_tools.git
+cd ../
+colcon build
 ```
+5. [husky_fr3](https://github.com/JunHeonYoon/husky_fr3_ros2)
 ```sh
-cd ~/catkin_ws/src/
+cd ~/ros2_ws/src
+git clone https://github.com/JunHeonYoon/husky_fr3_ros2.git
+cd ../
+colcon build
 
-git clone https://github.com/psh117/gl_depth_sim
-git clone https://github.com/psh117/suhan_robot_model_tools.git
-
-cd .. && catkin build
-
-source devel/setup.bash
-```
-5. [husky_panda](https://github.com/JunHeonYoon/husky_panda)
-```sh
-cd ~/catkin_ws/src/
-
-git clone https://github.com/JunHeonYoon/husky_panda.git
-
-cd .. && catkin build
-
-source ../devel/setup.bash
+source install/setup.bash
 ```
 ## Running MPCC with Python
 Robot visualize setup
