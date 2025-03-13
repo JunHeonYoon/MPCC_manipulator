@@ -37,7 +37,7 @@ cd build
 1. [MoveIt](https://moveit.ai/)
 ```sh
 sudo apt install ros-$ROS_DISTRO-moveit
-sudo apt install ros-$ROS_DISTRO-rmw-cyclonedds-cpp export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+sudo apt install ros-$ROS_DISTRO-rmw-cyclonedds-cpp
 echo 'export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp' >> ~/.bashrc
 source ~/.bashrc
 ```
