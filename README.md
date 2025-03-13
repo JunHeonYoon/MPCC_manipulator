@@ -74,7 +74,7 @@ source install/setup.bash
 ## Running MPCC with Python
 Robot visualize setup
 ```sh
-roslaunch husky_panda_moveit_config vis.launch
+ros2 launch husky_fr3_moveit_config vis.launch.py
 ```
 
 Running MPCC
@@ -84,7 +84,7 @@ python3 main_w_sim.py
 ```
 
 ## User parameter
-Users can modify parameters and path in [Params](https://github.com/JunHeonYoon/MPCC_manipulator/tree/master/cpp/Params)
+Users can modify parameters and path in [Params](https://github.com/JunHeonYoon/MPCC_manipulator/tree/humble/cpp/Params)
 
 ### [bounds](https://github.com/JunHeonYoon/MPCC_manipulator/blob/master/cpp/Params/bounds.json)
 Upper, lower bound for state and input
