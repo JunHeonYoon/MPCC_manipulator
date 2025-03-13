@@ -57,6 +57,7 @@ colcon build
 ```
 4. [suhan_robot_model_tools2](https://github.com/JunHeonYoon/suhan_robot_model_tools/tree/humble)
 ```sh
+sudo apt install ros-$ROS_DISTRO-eigenpy
 cd ~/ros2_ws/src
 git clone -b humble https://github.com/JunHeonYoon/suhan_robot_model_tools.git
 cd ../
