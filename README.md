@@ -48,7 +48,7 @@ git clone https://github.com/frankaemika/franka_description.git
 cd ../
 colcon build
 ```
-3. [Husky description](https://github.com/clearpathrobotics/clearpath_common/tree/humble))
+3. [Husky description](https://github.com/clearpathrobotics/clearpath_common/tree/humble)
 ```sh
 cd ~/ros2_ws/src
 git clone -b humble https://github.com/clearpathrobotics/clearpath_common.git 
