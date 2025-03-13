@@ -63,11 +63,7 @@ class MPCC():
         if path is not None:
             track.setTrack(path[:,0,3], path[:,1,3], path[:,2,3], path[:, :3, :3])
         self.track_xyzr = track.getTrack(ee_pose)
-        
-        print("track X: ", np.array(self.track_xyzr.X))
-        print("track Y: ", np.array(self.track_xyzr.Y))
-        print("track Z: ", np.array(self.track_xyzr.Z))
-        print("track R: ", np.array(self.track_xyzr.R))
+
 
         self.mpc.setTrack(self.track_xyzr.X, 
                           self.track_xyzr.Y,

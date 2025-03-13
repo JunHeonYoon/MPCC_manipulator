@@ -201,43 +201,43 @@ void Constraints::getConstraints(const State &x,const Input &u,const RobotData &
 
     if(Jac)
     {
-        getSelcollConstraint(x, u, rb, k, &constraint_selcol, &jac_selcol);
         getSingularConstraint(x, u, rb, k, &constraint_sing, &jac_sing);
-        getEnvcollConstraint(x, u, rb, k, &constraint_envcol, &jac_envcol);
+        // getSelcollConstraint(x, u, rb, k, &constraint_selcol, &jac_selcol);
+        // getEnvcollConstraint(x, u, rb, k, &constraint_envcol, &jac_envcol);
     }
     else
     {
-        getSelcollConstraint(x, u, rb, k, &constraint_selcol, NULL);
         getSingularConstraint(x, u, rb, k, &constraint_sing, NULL);
-        getEnvcollConstraint(x, u, rb, k, &constraint_envcol, NULL);
+        // getSelcollConstraint(x, u, rb, k, &constraint_selcol, NULL);
+        // getEnvcollConstraint(x, u, rb, k, &constraint_envcol, NULL);
     }
 
     if(constraint)
     {
         constraint->setZero();
-        constraint->c_vec(si_index.con_selcol) = constraint_selcol.c;
         constraint->c_vec(si_index.con_sing) = constraint_sing.c;
-        constraint->c_vec.segment(si_index.con_envcol1, PANDA_NUM_LINKS) = constraint_envcol.c;
+        // constraint->c_vec(si_index.con_selcol) = constraint_selcol.c;
+        // constraint->c_vec.segment(si_index.con_envcol1, PANDA_NUM_LINKS) = constraint_envcol.c;
 
-        constraint->c_lvec(si_index.con_selcol) = constraint_selcol.c_l;
         constraint->c_lvec(si_index.con_sing) = constraint_sing.c_l;
-        constraint->c_lvec.segment(si_index.con_envcol1, PANDA_NUM_LINKS) = constraint_envcol.c_l;
+        // constraint->c_lvec(si_index.con_selcol) = constraint_selcol.c_l;
+        // constraint->c_lvec.segment(si_index.con_envcol1, PANDA_NUM_LINKS) = constraint_envcol.c_l;
 
-        constraint->c_uvec(si_index.con_selcol) = constraint_selcol.c_u;
         constraint->c_uvec(si_index.con_sing) = constraint_sing.c_u;
-        constraint->c_uvec.segment(si_index.con_envcol1, PANDA_NUM_LINKS) = constraint_envcol.c_u;
+        // constraint->c_uvec(si_index.con_selcol) = constraint_selcol.c_u;
+        // constraint->c_uvec.segment(si_index.con_envcol1, PANDA_NUM_LINKS) = constraint_envcol.c_u;
     }
     
     if(Jac)
     {
         Jac->setZero();
-        Jac->c_x.row(si_index.con_selcol) = jac_selcol.c_x_i;
         Jac->c_x.row(si_index.con_sing) = jac_sing.c_x_i;
-        Jac->c_x.block(si_index.con_envcol1, 0, PANDA_NUM_LINKS, NX) = jac_envcol.c_x_i;
+        // Jac->c_x.row(si_index.con_selcol) = jac_selcol.c_x_i;
+        // Jac->c_x.block(si_index.con_envcol1, 0, PANDA_NUM_LINKS, NX) = jac_envcol.c_x_i;
 
-        Jac->c_u.row(si_index.con_selcol) = jac_selcol.c_u_i;
         Jac->c_u.row(si_index.con_sing) = jac_sing.c_u_i;
-        Jac->c_u.block(si_index.con_envcol1, 0, PANDA_NUM_LINKS, NU) = jac_envcol.c_u_i;
+        // Jac->c_u.row(si_index.con_selcol) = jac_selcol.c_u_i;
+        // Jac->c_u.block(si_index.con_envcol1, 0, PANDA_NUM_LINKS, NU) = jac_envcol.c_u_i;
     }
     return;
 }

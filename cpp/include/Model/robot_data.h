@@ -63,9 +63,9 @@ struct RobotData
         manipul_ = robot_model->getManipulability(q_);
         d_manipul_ = robot_model->getDManipulability(q_);
 
-        auto pred = selcol_model->calculateMlpOutput(q_, false);
-        sel_min_dist_ = pred.first.value();
-        d_sel_min_dist_ = pred.second.transpose();
+        // auto pred = selcol_model->calculateMlpOutput(q_, false);
+        // sel_min_dist_ = pred.first.value();
+        // d_sel_min_dist_ = pred.second.transpose();
 
         is_data_valid = true;
     }
@@ -75,14 +75,14 @@ struct RobotData
     {
         assert(is_data_valid == true);
 
-        obs_radius_ = obs_radius;
+        // obs_radius_ = obs_radius;
 
-        Eigen::VectorXd input(PANDA_DOF + obs_position.size());
-        input << q_, obs_position;
+        // Eigen::VectorXd input(PANDA_DOF + obs_position.size());
+        // input << q_, obs_position;
 
-        auto pred = envcol_model->calculateMlpOutput(input, false);
-        env_min_dist_ = pred.first;
-        d_env_min_dist_ = pred.second.block(0, 0, PANDA_NUM_LINKS, PANDA_DOF);
+        // auto pred = envcol_model->calculateMlpOutput(input, false);
+        // env_min_dist_ = pred.first;
+        // d_env_min_dist_ = pred.second.block(0, 0, PANDA_NUM_LINKS, PANDA_DOF);
 
         is_env_data_valid = true;
     }

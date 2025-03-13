@@ -622,7 +622,7 @@ bool OsqpInterface::solveQP(const Eigen::MatrixXd &P, const Eigen::VectorXd &q, 
     solver_.settings()->setWarmStart(false);
     solver_.settings()->getSettings()->eps_abs = 1e-4;
     solver_.settings()->getSettings()->eps_rel = 1e-5;
-    solver_.settings()->getSettings()->time_limit = (Ts_ / 5.);
+    // solver_.settings()->getSettings()->time_limit = (Ts_ / 5.);
     solver_.settings()->getSettings()->verbose = false;
 
     // set the initial data of the QP solver
